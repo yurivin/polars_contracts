@@ -1,0 +1,158 @@
+{
+    "contractName": "iVotingEscrow",
+    "abi": [
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "_value",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_unlock_time",
+                    "type": "uint256"
+                }
+            ],
+            "name": "create_lock_for_origin",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        }
+    ],
+    "metadata": "{\"compiler\":{\"version\":\"0.7.6+commit.7338295f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_value\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_unlock_time\",\"type\":\"uint256\"}],\"name\":\"create_lock_for_origin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"d:/BlackAndWhite/repo/black_and_white/contracts/Incentives/iVotingEscrow.sol\":\"iVotingEscrow\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"d:/BlackAndWhite/repo/black_and_white/contracts/Incentives/iVotingEscrow.sol\":{\"keccak256\":\"0xd953d51caaec526263aca7bfc6dd483ff5bc5ec8d72aa7512906a5515b900939\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://b95fe4d0429a4c08134b2852358726052ce338dbe6b1fba1cd38c154b9e2cbf6\",\"dweb:/ipfs/QmfKLRUEwwhyAGUZBXU6zQvUqWMdNdTwGy9ygf8LuTJfLe\"]}},\"version\":1}",
+    "bytecode": "",
+    "deployedBytecode": "",
+    "sourceMap": "",
+    "deployedSourceMap": "",
+    "sourcePath": "d:/BlackAndWhite/repo/black_and_white/contracts/Incentives/iVotingEscrow.sol",
+    "compiler": {
+        "name": "solc",
+        "version": "0.7.6+commit.7338295f"
+    },
+    "ast": {
+        "absolutePath": "d:/BlackAndWhite/repo/black_and_white/contracts/Incentives/iVotingEscrow.sol",
+        "exportedSymbols": {
+            "iVotingEscrow": [
+                3459
+            ]
+        },
+        "id": 3460,
+        "license": "MIT",
+        "nodeType": "SourceUnit",
+        "nodes": [
+            {
+                "id": 3451,
+                "literals": [
+                    "solidity",
+                    "^",
+                    "0.7",
+                    ".4"
+                ],
+                "nodeType": "PragmaDirective",
+                "src": "0:23:13"
+            },
+            {
+                "abstract": false,
+                "baseContracts": [],
+                "contractDependencies": [],
+                "contractKind": "interface",
+                "fullyImplemented": false,
+                "id": 3459,
+                "linearizedBaseContracts": [
+                    3459
+                ],
+                "name": "iVotingEscrow",
+                "nodeType": "ContractDefinition",
+                "nodes": [
+                    {
+                        "functionSelector": "77a0da73",
+                        "id": 3458,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "create_lock_for_origin",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3456,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3453,
+                                    "mutability": "mutable",
+                                    "name": "_value",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3458,
+                                    "src": "131:14:13",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 3452,
+                                        "name": "uint256",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "131:7:13",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 3455,
+                                    "mutability": "mutable",
+                                    "name": "_unlock_time",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3458,
+                                    "src": "147:20:13",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 3454,
+                                        "name": "uint256",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "147:7:13",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "130:38:13"
+                        },
+                        "returnParameters": {
+                            "id": 3457,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "177:0:13"
+                        },
+                        "scope": 3459,
+                        "src": "99:79:13",
+                        "stateMutability": "nonpayable",
+                        "virtual": false,
+                        "visibility": "external"
+                    }
+                ],
+                "scope": 3460,
+                "src": "62:128:13"
+            }
+        ],
+        "src": "0:192:13"
+    },
+    "functionHashes": {
+        "create_lock_for_origin(uint256,uint256)": "77a0da73"
+    },
+    "gasEstimates": null
+}

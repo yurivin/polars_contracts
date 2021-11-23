@@ -1,0 +1,1605 @@
+{
+    "contractName": "IIncentives",
+    "abi": [
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "string",
+                    "name": "symbol",
+                    "type": "string"
+                },
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "contractAddress",
+                    "type": "address"
+                }
+            ],
+            "name": "IncentivesTokenCreated",
+            "type": "event"
+        },
+        {
+            "inputs": [],
+            "name": "availableTokens",
+            "outputs": [
+                {
+                    "internalType": "address[]",
+                    "name": "",
+                    "type": "address[]"
+                },
+                {
+                    "internalType": "uint256[]",
+                    "name": "",
+                    "type": "uint256[]"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "name",
+                    "type": "string"
+                },
+                {
+                    "internalType": "string",
+                    "name": "symbol",
+                    "type": "string"
+                }
+            ],
+            "name": "createnNewIncentivesToken",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "name",
+                    "type": "string"
+                },
+                {
+                    "internalType": "string",
+                    "name": "symbol",
+                    "type": "string"
+                }
+            ],
+            "name": "getAddress",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "user",
+                    "type": "address"
+                }
+            ],
+            "name": "getGovBalances",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "user",
+                    "type": "address"
+                }
+            ],
+            "name": "getMaxBorrowed",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "lockContract",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "incentivesToken",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "unlock_time",
+                    "type": "uint256"
+                }
+            ],
+            "name": "lockGovernance",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "putGovernance",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "tokenAddress",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "putIncentivesTokens",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "crowdsale",
+                    "type": "address"
+                }
+            ],
+            "name": "setCrowdsale",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "newOwner",
+                    "type": "address"
+                }
+            ],
+            "name": "switchOwner",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_user",
+                    "type": "address"
+                }
+            ],
+            "name": "userState",
+            "outputs": [
+                {
+                    "internalType": "address[]",
+                    "name": "",
+                    "type": "address[]"
+                },
+                {
+                    "internalType": "uint256[]",
+                    "name": "",
+                    "type": "uint256[]"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "userscount",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "withdrawGovernance",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "tokenAddress",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "withdrawIncentives",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        }
+    ],
+    "metadata": "{\"compiler\":{\"version\":\"0.7.6+commit.7338295f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"symbol\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"contractAddress\",\"type\":\"address\"}],\"name\":\"IncentivesTokenCreated\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"availableTokens\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"symbol\",\"type\":\"string\"}],\"name\":\"createnNewIncentivesToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"symbol\",\"type\":\"string\"}],\"name\":\"getAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"getGovBalances\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"getMaxBorrowed\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"lockContract\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"incentivesToken\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"unlock_time\",\"type\":\"uint256\"}],\"name\":\"lockGovernance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"putGovernance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"putIncentivesTokens\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"crowdsale\",\"type\":\"address\"}],\"name\":\"setCrowdsale\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"switchOwner\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_user\",\"type\":\"address\"}],\"name\":\"userState\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"userscount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"withdrawGovernance\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"withdrawIncentives\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"availableTokens()\":{\"returns\":{\"_0\":\"list of token addresses and their respective amounts list including governance token.\"}},\"putIncentivesTokens(address,uint256)\":{\"params\":{\"tokenAddress\":\"address of the incentives token which user plans to return to the contract.\"}},\"userState(address)\":{\"returns\":{\"_0\":\"list of token addresses and their respective amounts list including governance token.\"}},\"withdrawIncentives(address,uint256)\":{\"params\":{\"tokenAddress\":\"address of incentives token user wants to withdraw. Every user can withdraw amount of incentives tokens of all available types equal to amount of his Gov. tokens stored in the contract.\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"availableTokens()\":{\"notice\":\"function returns all available tokens on the contract\"},\"createnNewIncentivesToken(string,string)\":{\"notice\":\"Create new incentives token. Function called by the contract owner to add new type of incentives token to the contract.\"},\"getAddress(string,string)\":{\"notice\":\"Compute the address of the contract to be deployed.\"},\"putGovernance(uint256)\":{\"notice\":\"Put governance tokens into this contract Store token amount in the contract and register it for the user.\"},\"putIncentivesTokens(address,uint256)\":{\"notice\":\"Return incentives tokens to the contract.\"},\"switchOwner(address)\":{\"notice\":\"Switch to the new contract owner.\"},\"userState(address)\":{\"notice\":\"function returns user tokens state. how many different tokens contract holds for the user including Governance tokens.\"},\"userscount()\":{\"notice\":\"Function returns count of unique users with governance tokens in the contract.\"},\"withdrawGovernance(uint256)\":{\"notice\":\"Withdraw Governance tokens. Withdraw amount of gov. tokens registered for the user and not blocked by withdrawan incentives tokens.\"},\"withdrawIncentives(address,uint256)\":{\"notice\":\"Withdraw some amount of specific incentives token.\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"d:/BlackAndWhite/repo/black_and_white/contracts/Incentives/iIncentives.sol\":\"IIncentives\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"d:/BlackAndWhite/repo/black_and_white/contracts/Incentives/iIncentives.sol\":{\"keccak256\":\"0x30685dfe911cf729d46d57247aebfc8181ef2014ae5e06142a716ff93a8e2a7c\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://5ba302b75c93cc482894755a02a71691f8d905fd7f0afceccfb7a839080574b6\",\"dweb:/ipfs/QmRjoZFaAFVVB5tCpEMA2Xxbe1Rpkpg1AL5UWm71oLQYJW\"]}},\"version\":1}",
+    "bytecode": "",
+    "deployedBytecode": "",
+    "sourceMap": "",
+    "deployedSourceMap": "",
+    "sourcePath": "d:/BlackAndWhite/repo/black_and_white/contracts/Incentives/iIncentives.sol",
+    "compiler": {
+        "name": "solc",
+        "version": "0.7.6+commit.7338295f"
+    },
+    "ast": {
+        "absolutePath": "d:/BlackAndWhite/repo/black_and_white/contracts/Incentives/iIncentives.sol",
+        "exportedSymbols": {
+            "IIncentives": [
+                3449
+            ]
+        },
+        "id": 3450,
+        "license": "MIT",
+        "nodeType": "SourceUnit",
+        "nodes": [
+            {
+                "id": 3332,
+                "literals": [
+                    "solidity",
+                    "^",
+                    "0.7",
+                    ".6"
+                ],
+                "nodeType": "PragmaDirective",
+                "src": "0:23:12"
+            },
+            {
+                "abstract": false,
+                "baseContracts": [],
+                "contractDependencies": [],
+                "contractKind": "interface",
+                "fullyImplemented": false,
+                "id": 3449,
+                "linearizedBaseContracts": [
+                    3449
+                ],
+                "name": "IIncentives",
+                "nodeType": "ContractDefinition",
+                "nodes": [
+                    {
+                        "anonymous": false,
+                        "id": 3338,
+                        "name": "IncentivesTokenCreated",
+                        "nodeType": "EventDefinition",
+                        "parameters": {
+                            "id": 3337,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3334,
+                                    "indexed": true,
+                                    "mutability": "mutable",
+                                    "name": "symbol",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3338,
+                                    "src": "126:21:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_string_memory_ptr",
+                                        "typeString": "string"
+                                    },
+                                    "typeName": {
+                                        "id": 3333,
+                                        "name": "string",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "126:6:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_string_storage_ptr",
+                                            "typeString": "string"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 3336,
+                                    "indexed": true,
+                                    "mutability": "mutable",
+                                    "name": "contractAddress",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3338,
+                                    "src": "149:31:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 3335,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "149:7:12",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "125:56:12"
+                        },
+                        "src": "97:85:12"
+                    },
+                    {
+                        "documentation": {
+                            "id": 3339,
+                            "nodeType": "StructuredDocumentation",
+                            "src": "188:131:12",
+                            "text": " Put governance tokens into this contract\n Store token amount in the contract and register it for the user."
+                        },
+                        "functionSelector": "75d2f2fe",
+                        "id": 3344,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "putGovernance",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3342,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3341,
+                                    "mutability": "mutable",
+                                    "name": "amount",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3344,
+                                    "src": "348:14:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 3340,
+                                        "name": "uint256",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "348:7:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "347:16:12"
+                        },
+                        "returnParameters": {
+                            "id": 3343,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "372:0:12"
+                        },
+                        "scope": 3449,
+                        "src": "325:48:12",
+                        "stateMutability": "nonpayable",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "documentation": {
+                            "id": 3345,
+                            "nodeType": "StructuredDocumentation",
+                            "src": "386:160:12",
+                            "text": " Withdraw Governance tokens.\n Withdraw amount of gov. tokens registered for the user and not blocked by withdrawan incentives tokens."
+                        },
+                        "functionSelector": "f0783f82",
+                        "id": 3350,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "withdrawGovernance",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3348,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3347,
+                                    "mutability": "mutable",
+                                    "name": "amount",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3350,
+                                    "src": "581:11:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 3346,
+                                        "name": "uint",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "581:4:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "580:13:12"
+                        },
+                        "returnParameters": {
+                            "id": 3349,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "602:0:12"
+                        },
+                        "scope": 3449,
+                        "src": "553:50:12",
+                        "stateMutability": "nonpayable",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "documentation": {
+                            "id": 3351,
+                            "nodeType": "StructuredDocumentation",
+                            "src": "615:292:12",
+                            "text": " Withdraw some amount of specific incentives token.\n @param tokenAddress address of incentives token user wants to withdraw.\n Every user can withdraw amount of incentives tokens of all available types equal to amount of his Gov. tokens stored in the contract."
+                        },
+                        "functionSelector": "af17eb3e",
+                        "id": 3358,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "withdrawIncentives",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3356,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3353,
+                                    "mutability": "mutable",
+                                    "name": "tokenAddress",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3358,
+                                    "src": "941:20:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 3352,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "941:7:12",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 3355,
+                                    "mutability": "mutable",
+                                    "name": "amount",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3358,
+                                    "src": "963:11:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 3354,
+                                        "name": "uint",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "963:4:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "940:35:12"
+                        },
+                        "returnParameters": {
+                            "id": 3357,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "984:0:12"
+                        },
+                        "scope": 3449,
+                        "src": "913:72:12",
+                        "stateMutability": "nonpayable",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "documentation": {
+                            "id": 3359,
+                            "nodeType": "StructuredDocumentation",
+                            "src": "997:166:12",
+                            "text": " Return incentives tokens to the contract.\n @param tokenAddress address of the incentives token which user plans to return to the contract."
+                        },
+                        "functionSelector": "0d4a9835",
+                        "id": 3366,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "putIncentivesTokens",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3364,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3361,
+                                    "mutability": "mutable",
+                                    "name": "tokenAddress",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3366,
+                                    "src": "1199:20:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 3360,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "1199:7:12",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 3363,
+                                    "mutability": "mutable",
+                                    "name": "amount",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3366,
+                                    "src": "1221:11:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 3362,
+                                        "name": "uint",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "1221:4:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "1198:35:12"
+                        },
+                        "returnParameters": {
+                            "id": 3365,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "1242:0:12"
+                        },
+                        "scope": 3449,
+                        "src": "1170:73:12",
+                        "stateMutability": "nonpayable",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "documentation": {
+                            "id": 3367,
+                            "nodeType": "StructuredDocumentation",
+                            "src": "1257:151:12",
+                            "text": " Create new incentives token.\n Function called by the contract owner to add new type of incentives token to the contract."
+                        },
+                        "functionSelector": "a83fe4e8",
+                        "id": 3374,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "createnNewIncentivesToken",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3372,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3369,
+                                    "mutability": "mutable",
+                                    "name": "name",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3374,
+                                    "src": "1450:18:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "memory",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_string_memory_ptr",
+                                        "typeString": "string"
+                                    },
+                                    "typeName": {
+                                        "id": 3368,
+                                        "name": "string",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "1450:6:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_string_storage_ptr",
+                                            "typeString": "string"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 3371,
+                                    "mutability": "mutable",
+                                    "name": "symbol",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3374,
+                                    "src": "1470:20:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "memory",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_string_memory_ptr",
+                                        "typeString": "string"
+                                    },
+                                    "typeName": {
+                                        "id": 3370,
+                                        "name": "string",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "1470:6:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_string_storage_ptr",
+                                            "typeString": "string"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "1449:42:12"
+                        },
+                        "returnParameters": {
+                            "id": 3373,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "1500:0:12"
+                        },
+                        "scope": 3449,
+                        "src": "1415:86:12",
+                        "stateMutability": "nonpayable",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "documentation": {
+                            "id": 3375,
+                            "nodeType": "StructuredDocumentation",
+                            "src": "1515:56:12",
+                            "text": " Switch to the new contract owner."
+                        },
+                        "functionSelector": "395d7deb",
+                        "id": 3380,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "switchOwner",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3378,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3377,
+                                    "mutability": "mutable",
+                                    "name": "newOwner",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3380,
+                                    "src": "1600:16:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 3376,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "1600:7:12",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "1599:18:12"
+                        },
+                        "returnParameters": {
+                            "id": 3379,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "1626:0:12"
+                        },
+                        "scope": 3449,
+                        "src": "1579:48:12",
+                        "stateMutability": "nonpayable",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "documentation": {
+                            "id": 3381,
+                            "nodeType": "StructuredDocumentation",
+                            "src": "1636:253:12",
+                            "text": " function returns user tokens state. how many different tokens contract holds\n for the user including Governance tokens.\n @return list of token addresses and their respective amounts list including governance token."
+                        },
+                        "functionSelector": "0c8f81b5",
+                        "id": 3392,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "userState",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3384,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3383,
+                                    "mutability": "mutable",
+                                    "name": "_user",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3392,
+                                    "src": "1916:13:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 3382,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "1916:7:12",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "1915:15:12"
+                        },
+                        "returnParameters": {
+                            "id": 3391,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3387,
+                                    "mutability": "mutable",
+                                    "name": "",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3392,
+                                    "src": "1953:16:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "memory",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_array$_t_address_$dyn_memory_ptr",
+                                        "typeString": "address[]"
+                                    },
+                                    "typeName": {
+                                        "baseType": {
+                                            "id": 3385,
+                                            "name": "address",
+                                            "nodeType": "ElementaryTypeName",
+                                            "src": "1953:7:12",
+                                            "stateMutability": "nonpayable",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_address",
+                                                "typeString": "address"
+                                            }
+                                        },
+                                        "id": 3386,
+                                        "nodeType": "ArrayTypeName",
+                                        "src": "1953:9:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                                            "typeString": "address[]"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 3390,
+                                    "mutability": "mutable",
+                                    "name": "",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3392,
+                                    "src": "1971:16:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "memory",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_array$_t_uint256_$dyn_memory_ptr",
+                                        "typeString": "uint256[]"
+                                    },
+                                    "typeName": {
+                                        "baseType": {
+                                            "id": 3388,
+                                            "name": "uint256",
+                                            "nodeType": "ElementaryTypeName",
+                                            "src": "1971:7:12",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_uint256",
+                                                "typeString": "uint256"
+                                            }
+                                        },
+                                        "id": 3389,
+                                        "nodeType": "ArrayTypeName",
+                                        "src": "1971:9:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                                            "typeString": "uint256[]"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "1952:36:12"
+                        },
+                        "scope": 3449,
+                        "src": "1897:92:12",
+                        "stateMutability": "view",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "documentation": {
+                            "id": 3393,
+                            "nodeType": "StructuredDocumentation",
+                            "src": "2006:179:12",
+                            "text": " function returns all available tokens on the contract\n @return list of token addresses and their respective amounts list including governance token."
+                        },
+                        "functionSelector": "69bb4dc2",
+                        "id": 3402,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "availableTokens",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3394,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "2217:2:12"
+                        },
+                        "returnParameters": {
+                            "id": 3401,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3397,
+                                    "mutability": "mutable",
+                                    "name": "",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3402,
+                                    "src": "2242:16:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "memory",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_array$_t_address_$dyn_memory_ptr",
+                                        "typeString": "address[]"
+                                    },
+                                    "typeName": {
+                                        "baseType": {
+                                            "id": 3395,
+                                            "name": "address",
+                                            "nodeType": "ElementaryTypeName",
+                                            "src": "2242:7:12",
+                                            "stateMutability": "nonpayable",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_address",
+                                                "typeString": "address"
+                                            }
+                                        },
+                                        "id": 3396,
+                                        "nodeType": "ArrayTypeName",
+                                        "src": "2242:9:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                                            "typeString": "address[]"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 3400,
+                                    "mutability": "mutable",
+                                    "name": "",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3402,
+                                    "src": "2260:16:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "memory",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_array$_t_uint256_$dyn_memory_ptr",
+                                        "typeString": "uint256[]"
+                                    },
+                                    "typeName": {
+                                        "baseType": {
+                                            "id": 3398,
+                                            "name": "uint256",
+                                            "nodeType": "ElementaryTypeName",
+                                            "src": "2260:7:12",
+                                            "typeDescriptions": {
+                                                "typeIdentifier": "t_uint256",
+                                                "typeString": "uint256"
+                                            }
+                                        },
+                                        "id": 3399,
+                                        "nodeType": "ArrayTypeName",
+                                        "src": "2260:9:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                                            "typeString": "uint256[]"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "2241:36:12"
+                        },
+                        "scope": 3449,
+                        "src": "2193:85:12",
+                        "stateMutability": "view",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "documentation": {
+                            "id": 3403,
+                            "nodeType": "StructuredDocumentation",
+                            "src": "2294:103:12",
+                            "text": " Function returns count of unique users with governance tokens in the contract."
+                        },
+                        "functionSelector": "a5907272",
+                        "id": 3408,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "userscount",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3404,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "2425:2:12"
+                        },
+                        "returnParameters": {
+                            "id": 3407,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3406,
+                                    "mutability": "mutable",
+                                    "name": "",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3408,
+                                    "src": "2450:7:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 3405,
+                                        "name": "uint256",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2450:7:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "2449:9:12"
+                        },
+                        "scope": 3449,
+                        "src": "2406:53:12",
+                        "stateMutability": "view",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "documentation": {
+                            "id": 3409,
+                            "nodeType": "StructuredDocumentation",
+                            "src": "2468:76:12",
+                            "text": " Compute the address of the contract to be deployed."
+                        },
+                        "functionSelector": "791b6d60",
+                        "id": 3418,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "getAddress",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3414,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3411,
+                                    "mutability": "mutable",
+                                    "name": "name",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3418,
+                                    "src": "2573:18:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "memory",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_string_memory_ptr",
+                                        "typeString": "string"
+                                    },
+                                    "typeName": {
+                                        "id": 3410,
+                                        "name": "string",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2573:6:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_string_storage_ptr",
+                                            "typeString": "string"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 3413,
+                                    "mutability": "mutable",
+                                    "name": "symbol",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3418,
+                                    "src": "2593:20:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "memory",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_string_memory_ptr",
+                                        "typeString": "string"
+                                    },
+                                    "typeName": {
+                                        "id": 3412,
+                                        "name": "string",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2593:6:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_string_storage_ptr",
+                                            "typeString": "string"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "2572:42:12"
+                        },
+                        "returnParameters": {
+                            "id": 3417,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3416,
+                                    "mutability": "mutable",
+                                    "name": "",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3418,
+                                    "src": "2638:7:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 3415,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2638:7:12",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "2637:9:12"
+                        },
+                        "scope": 3449,
+                        "src": "2553:94:12",
+                        "stateMutability": "view",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "functionSelector": "157883ae",
+                        "id": 3425,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "getMaxBorrowed",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3421,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3420,
+                                    "mutability": "mutable",
+                                    "name": "user",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3425,
+                                    "src": "2682:12:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 3419,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2682:7:12",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "2681:14:12"
+                        },
+                        "returnParameters": {
+                            "id": 3424,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3423,
+                                    "mutability": "mutable",
+                                    "name": "",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3425,
+                                    "src": "2718:7:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 3422,
+                                        "name": "uint256",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2718:7:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "2717:9:12"
+                        },
+                        "scope": 3449,
+                        "src": "2658:69:12",
+                        "stateMutability": "view",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "functionSelector": "40e1e9f1",
+                        "id": 3432,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "getGovBalances",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3428,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3427,
+                                    "mutability": "mutable",
+                                    "name": "user",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3432,
+                                    "src": "2760:12:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 3426,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2760:7:12",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "2759:14:12"
+                        },
+                        "returnParameters": {
+                            "id": 3431,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3430,
+                                    "mutability": "mutable",
+                                    "name": "",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3432,
+                                    "src": "2796:7:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 3429,
+                                        "name": "uint256",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2796:7:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "2795:9:12"
+                        },
+                        "scope": 3449,
+                        "src": "2736:69:12",
+                        "stateMutability": "view",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "functionSelector": "483a20b2",
+                        "id": 3437,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "setCrowdsale",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3435,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3434,
+                                    "mutability": "mutable",
+                                    "name": "crowdsale",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3437,
+                                    "src": "2836:17:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 3433,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2836:7:12",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "2835:19:12"
+                        },
+                        "returnParameters": {
+                            "id": 3436,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "2863:0:12"
+                        },
+                        "scope": 3449,
+                        "src": "2814:50:12",
+                        "stateMutability": "nonpayable",
+                        "virtual": false,
+                        "visibility": "external"
+                    },
+                    {
+                        "functionSelector": "c2514d1b",
+                        "id": 3448,
+                        "implemented": false,
+                        "kind": "function",
+                        "modifiers": [],
+                        "name": "lockGovernance",
+                        "nodeType": "FunctionDefinition",
+                        "parameters": {
+                            "id": 3446,
+                            "nodeType": "ParameterList",
+                            "parameters": [
+                                {
+                                    "constant": false,
+                                    "id": 3439,
+                                    "mutability": "mutable",
+                                    "name": "lockContract",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3448,
+                                    "src": "2897:20:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 3438,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2897:7:12",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 3441,
+                                    "mutability": "mutable",
+                                    "name": "incentivesToken",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3448,
+                                    "src": "2918:23:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_address",
+                                        "typeString": "address"
+                                    },
+                                    "typeName": {
+                                        "id": 3440,
+                                        "name": "address",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2918:7:12",
+                                        "stateMutability": "nonpayable",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_address",
+                                            "typeString": "address"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 3443,
+                                    "mutability": "mutable",
+                                    "name": "amount",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3448,
+                                    "src": "2942:14:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 3442,
+                                        "name": "uint256",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2942:7:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                },
+                                {
+                                    "constant": false,
+                                    "id": 3445,
+                                    "mutability": "mutable",
+                                    "name": "unlock_time",
+                                    "nodeType": "VariableDeclaration",
+                                    "scope": 3448,
+                                    "src": "2957:19:12",
+                                    "stateVariable": false,
+                                    "storageLocation": "default",
+                                    "typeDescriptions": {
+                                        "typeIdentifier": "t_uint256",
+                                        "typeString": "uint256"
+                                    },
+                                    "typeName": {
+                                        "id": 3444,
+                                        "name": "uint256",
+                                        "nodeType": "ElementaryTypeName",
+                                        "src": "2957:7:12",
+                                        "typeDescriptions": {
+                                            "typeIdentifier": "t_uint256",
+                                            "typeString": "uint256"
+                                        }
+                                    },
+                                    "visibility": "internal"
+                                }
+                            ],
+                            "src": "2896:81:12"
+                        },
+                        "returnParameters": {
+                            "id": 3447,
+                            "nodeType": "ParameterList",
+                            "parameters": [],
+                            "src": "2986:0:12"
+                        },
+                        "scope": 3449,
+                        "src": "2873:114:12",
+                        "stateMutability": "nonpayable",
+                        "virtual": false,
+                        "visibility": "external"
+                    }
+                ],
+                "scope": 3450,
+                "src": "62:2934:12"
+            }
+        ],
+        "src": "0:2998:12"
+    },
+    "functionHashes": {
+        "availableTokens()": "69bb4dc2",
+        "createnNewIncentivesToken(string,string)": "a83fe4e8",
+        "getAddress(string,string)": "791b6d60",
+        "getGovBalances(address)": "40e1e9f1",
+        "getMaxBorrowed(address)": "157883ae",
+        "lockGovernance(address,address,uint256,uint256)": "c2514d1b",
+        "putGovernance(uint256)": "75d2f2fe",
+        "putIncentivesTokens(address,uint256)": "0d4a9835",
+        "setCrowdsale(address)": "483a20b2",
+        "switchOwner(address)": "395d7deb",
+        "userState(address)": "0c8f81b5",
+        "userscount()": "a5907272",
+        "withdrawGovernance(uint256)": "f0783f82",
+        "withdrawIncentives(address,uint256)": "af17eb3e"
+    },
+    "gasEstimates": null
+}
