@@ -1,0 +1,33 @@
+{
+  "name": "polars",
+  "version": "1.0.0",
+  "engines": {
+    "node": "11.6.x",
+    "npm": "6.5.x"
+  },
+  "description": "",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test --stacktrace-extra"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yurivin/polars_contracts.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yurivin/polars_contracts/issues"
+  },
+  "homepage": "https://github.com/yurivin/polars_contracts#readme",
+  "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.15",
+    "prettier": "^2.4.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.19",
+    "solhint": "^3.3.6",
+    "solhint-plugin-prettier": "0.0.5",
+    "solidity-coverage": "^0.7.17"
+  }
+}
