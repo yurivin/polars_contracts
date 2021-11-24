@@ -18,7 +18,9 @@
  *
  */
 
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
+const HDWalletProvider = require('@truffle/hdwallet-provider');
+
+const { PRIVATE_KEY, BSC_SCAN_API_KEY, SEED_ADDRESS_BSC } = require('./env.json');
 //
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
@@ -41,11 +43,19 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
     //
-    // development: {
-    //  host: "127.0.0.1",     // Localhost (default: none)
-    //  port: 8545,            // Standard Ethereum port (default: none)
-    //  network_id: "*",       // Any network (default: none)
-    // },
+    development: {
+     // provider: () => new HDWalletProvider(PRIVATE_KEY, "http://localhost:8545"), //new HDWalletProvider(mnemonic, `https://data-seed-prebsc-1-s1.binance.org:8545`),
+     host: "127.0.0.1",     // Localhost (default: none)
+     port: 8545,            // Standard Ethereum port (default: none)
+     network_id: "*",       // Any network (default: none)
+    },
+    bsc_testnet: {
+     provider: () => new HDWalletProvider(PRIVATE_KEY, SEED_ADDRESS_BSC),
+     network_id: 97,
+     timeoutBlocks: 200,
+     confirmations: 5,
+     production: true    // Treats this network as if it was a public net. (default: false)
+    }
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
@@ -73,11 +83,21 @@ module.exports = {
     // }
   },
 
-  plugins: ["solidity-coverage"],
+  plugins: [
+    "solidity-coverage",
+    "truffle-plugin-verify"
+  ],
+
+  api_keys: {
+    bscscan: BSC_SCAN_API_KEY
+  },
 
   // Set default mocha options here, use special reporters etc.
   mocha: {
     // timeout: 100000
+    useColors: true,
+    reporter: 'eth-gas-reporter',
+    reporterOptions : { excludeContracts: ['Migrations'] }
   },
 
   // Configure your compilers
