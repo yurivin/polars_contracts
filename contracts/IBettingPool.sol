@@ -11,4 +11,5 @@ interface IBettingPool {
     function _whiteToken() external returns(address);
     function _blackToken() external returns(address);
     function _thisCollateralization() external returns(address);
+    function FEE() external returns(uint256);
 }
