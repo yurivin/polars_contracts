@@ -35,7 +35,7 @@ contract BettingPool is Eventable, DSMath {
     uint256 public _whitePrice; // in 1e18
     uint256 public _blackPrice; // in 1e18
 
-    uint256 BW_DECIMALS = 18;
+    uint256 public BW_DECIMALS = 18;
 
     // in percents (1e18 == 100%)
     uint256 public _currentEventPercentChange;
