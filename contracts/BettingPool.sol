@@ -3,11 +3,11 @@ pragma solidity ^0.7.4;
 
 import "./IERC20.sol";
 import "./Eventable.sol";
-import "./iBettingCollateralization.sol";
+import "./iPredictionCollateralization.sol";
 import "./DSMath.sol";
 import "./SafeMath.sol";
 
-contract BettingPool is Eventable, DSMath {
+contract PredictionPool is Eventable, DSMath {
     using SafeMath for uint256;
 
     bool public _eventStarted = false;
@@ -30,7 +30,7 @@ contract BettingPool is Eventable, DSMath {
     IERC20 public _whiteToken;
     IERC20 public _blackToken;
     IERC20 public _collateralToken;
-    iBettingCollateralization public _thisCollateralization;
+    iPredictionCollateralization public _thisCollateralization;
 
     uint256 public _whitePrice; // in 1e18
     uint256 public _blackPrice; // in 1e18
@@ -96,7 +96,7 @@ contract BettingPool is Eventable, DSMath {
             "BLACK token address should not be null"
         );
 
-        _thisCollateralization = iBettingCollateralization(
+        _thisCollateralization = iPredictionCollateralization(
             thisCollateralizationAddress
         );
         _collateralToken = IERC20(collateralTokenAddress);
