@@ -3,9 +3,9 @@ pragma solidity ^0.7.4;
 
 import "./IERC20.sol";
 import "./TokenTemplate.sol";
-import "./iBettingCollateralization.sol";
+import "./iPredictionCollateralization.sol";
 
-contract BettingCollateralization is iBettingCollateralization {
+contract PredictionCollateralization is iPredictionCollateralization {
     address public _poolAddress;
     address public _governanceAddress;
 
