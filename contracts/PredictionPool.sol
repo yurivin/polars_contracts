@@ -16,16 +16,16 @@ contract PredictionPool is Eventable, DSMath {
     address public _governanceAddress;
     address public _eventContractAddress;
     address public _governanceWalletAddress;
+
     /*
     Founders wallets
     */
     address public _controllerWalletAddress;
-    
+
     event BuyBlack(address user, uint256 amount, uint256 price);
     event BuyWhite(address user, uint256 amount, uint256 price);
     event SellBlack(address user, uint256 amount, uint256 price);
     event SellWhite(address user, uint256 amount, uint256 price);
-    
 
     IERC20 public _whiteToken;
     IERC20 public _blackToken;
@@ -35,6 +35,7 @@ contract PredictionPool is Eventable, DSMath {
     uint256 public _whitePrice; // in 1e18
     uint256 public _blackPrice; // in 1e18
 
+    // solhint-disable-next-line var-name-mixedcase
     uint256 public BW_DECIMALS = 18;
 
     // in percents (1e18 == 100%)
@@ -75,8 +76,9 @@ contract PredictionPool is Eventable, DSMath {
     uint256 public _whiteSoldThisCycle;
     uint256 public _blackSoldThisCycle;
 
-    uint public constant MIN_HOLD = 2 * 1e18; //Minimum amount of tokens pool should hold after initial actions.
-    
+    // Minimum amount of tokens pool should hold after initial actions.
+    uint256 public constant MIN_HOLD = 2 * 1e18;
+
     bool public inited;
 
     constructor(
@@ -102,7 +104,7 @@ contract PredictionPool is Eventable, DSMath {
         _collateralToken = IERC20(collateralTokenAddress);
 
         _whiteToken = IERC20(whiteTokenAddress);
-            
+
         _blackToken = IERC20(blackTokenAddress);
 
         _governanceAddress = msg.sender;
@@ -110,12 +112,12 @@ contract PredictionPool is Eventable, DSMath {
         _whitePrice = whitePrice;
         _blackPrice = blackPrice;
     }
-    
+
     function init(
         address governanceWalletAddress,
         address eventContractAddress,
         address controllerWalletAddress
-        ) external {
+    ) external {
         require(!inited, "Pool already initiated");
         require(
             controllerWalletAddress != address(0),
@@ -134,7 +136,7 @@ contract PredictionPool is Eventable, DSMath {
         inited = true;
     }
 
-    modifier noEvent {
+    modifier noEvent() {
         require(
             _eventStarted == false,
             "Function cannot be called during ongoing event"
@@ -142,7 +144,7 @@ contract PredictionPool is Eventable, DSMath {
         _;
     }
 
-    modifier onlyGovernance {
+    modifier onlyGovernance() {
         require(
             _governanceAddress == msg.sender,
             "CALLER SHOULD BE GOVERNANCE"
@@ -150,17 +152,19 @@ contract PredictionPool is Eventable, DSMath {
         _;
     }
 
-    modifier onlyEventContract {
+    modifier onlyEventContract() {
         require(
             _eventContractAddress == msg.sender,
             "CALLER SHOULD BE EVENT CONTRACT"
         );
         _;
     }
-    
-    modifier notPoolShutdown {
-        require(_poolShutdown == false, 
-        "Pool is shutting down. This function does not work");
+
+    modifier notPoolShutdown() {
+        require(
+            _poolShutdown == false,
+            "Pool is shutting down. This function does not work"
+        );
         _;
     }
 
@@ -262,51 +266,61 @@ contract PredictionPool is Eventable, DSMath {
         _blackSoldThisCycle = 0; // We need to start calculations from zero for the next cycle.
         emit BlackSoldThisCycle(blackSoldThisCycle);
 
-
         // Cell 13
         eend.whiteBought = _whiteBought;
         emit WhiteBought(eend.whiteBought);
-        if(eend.whiteBought == 0) {
+        if (eend.whiteBought == 0) {
             return;
         }
 
         // Cell 14
         eend.blackBought = _blackBought;
         emit BlackBought(eend.blackBought);
-        if(eend.blackBought == 0) {
+        if (eend.blackBought == 0) {
             return;
         }
 
         // Cell 16
-        eend.receivedForWhiteThisCycle = wmul(whiteBoughtThisCycle, currentWhitePrice);
+        eend.receivedForWhiteThisCycle = wmul(
+            whiteBoughtThisCycle,
+            currentWhitePrice
+        );
         emit ReceivedForWhiteThisCycle(eend.receivedForWhiteThisCycle);
 
         // Cell 17
-        eend.receivedForBlackThisCycle = wmul(blackBoughtThisCycle, currentBlackPrice);
+        eend.receivedForBlackThisCycle = wmul(
+            blackBoughtThisCycle,
+            currentBlackPrice
+        );
         emit ReceivedForBlackThisCycle(eend.receivedForBlackThisCycle);
 
         // Cell 19
-        eend.spentForWhiteThisCycle = wmul(whiteSoldThisCycle, currentWhitePrice);
+        eend.spentForWhiteThisCycle = wmul(
+            whiteSoldThisCycle,
+            currentWhitePrice
+        );
         emit SpentForWhiteThisCycle(eend.spentForWhiteThisCycle);
-        
-        // Cell 20
-        eend.spentForBlackThisCycle = wmul(blackSoldThisCycle, currentBlackPrice);
-        emit SpentForBlackThisCycle(eend.spentForBlackThisCycle);
 
+        // Cell 20
+        eend.spentForBlackThisCycle = wmul(
+            blackSoldThisCycle,
+            currentBlackPrice
+        );
+        emit SpentForBlackThisCycle(eend.spentForBlackThisCycle);
 
         // Cell 22
         eend.allWhiteCollateral = _collateralForWhite;
         emit AllWhiteCollateral(eend.allWhiteCollateral);
-            
-        if(eend.allWhiteCollateral == 0) {
+
+        if (eend.allWhiteCollateral == 0) {
             return;
         }
 
         // Cell 23
         eend.allBlackCollateral = _collateralForBlack;
         emit AllBlackCollateral(eend.allBlackCollateral);
-        
-        if(eend.allBlackCollateral == 0) {
+
+        if (eend.allBlackCollateral == 0) {
             return;
         }
 
@@ -318,12 +332,18 @@ contract PredictionPool is Eventable, DSMath {
 
         // To exclude division by zero There is a check for a non zero eend.allWhiteCollateral above
         // Cell 26
-        eend.whiteCoefficient = wdiv(eend.allBlackCollateral, eend.allWhiteCollateral);
+        eend.whiteCoefficient = wdiv(
+            eend.allBlackCollateral,
+            eend.allWhiteCollateral
+        );
         emit WhiteCefficient(eend.whiteCoefficient);
 
         // To exclude division by zero There is a check for a non zero eend.allBlackCollateral above
         // Cell 27
-        eend.blackCoefficient = wdiv(eend.allWhiteCollateral, eend.allBlackCollateral);
+        eend.blackCoefficient = wdiv(
+            eend.allWhiteCollateral,
+            eend.allBlackCollateral
+        );
         emit BlackCefficient(eend.blackCoefficient);
 
         // Cell 29
@@ -331,26 +351,38 @@ contract PredictionPool is Eventable, DSMath {
         emit ChangePercent(eend.changePercent);
 
         // Cell 30
-        eend.whiteWinVolatility = wmul(eend.whiteCoefficient, eend.changePercent);
+        eend.whiteWinVolatility = wmul(
+            eend.whiteCoefficient,
+            eend.changePercent
+        );
         emit WhiteWinVolatility(eend.whiteWinVolatility);
 
         // Cell 31
-        eend.blackWinVolatility = wmul(eend.blackCoefficient, eend.changePercent);
+        eend.blackWinVolatility = wmul(
+            eend.blackCoefficient,
+            eend.changePercent
+        );
         emit BlackWinVolatility(eend.blackWinVolatility);
 
         // white won
         if (_result == 1) {
             // Cell 33, 43
-            eend.collateralForWhite = wmul(eend.allWhiteCollateral, WAD.add(eend.whiteWinVolatility));
+            eend.collateralForWhite = wmul(
+                eend.allWhiteCollateral,
+                WAD.add(eend.whiteWinVolatility)
+            );
             emit CollateralForWhite(eend.collateralForWhite);
 
             // Cell 36, 44
-            eend.collateralForBlack = wmul(eend.allBlackCollateral, WAD.sub(eend.changePercent));
+            eend.collateralForBlack = wmul(
+                eend.allBlackCollateral,
+                WAD.sub(eend.changePercent)
+            );
             emit CollateralForBlack(eend.collateralForBlack);
 
             // To exclude division by zero There is a check for a non zero eend.whiteBought above
             // Like Cell 47
-            eend.whitePrice = wdiv(eend.collateralForWhite, eend.whiteBought); 
+            eend.whitePrice = wdiv(eend.collateralForWhite, eend.whiteBought);
             emit WhitePrice(eend.whitePrice);
 
             // To exclude division by zero There is a check for a non zero eend.blackBought above
@@ -366,11 +398,17 @@ contract PredictionPool is Eventable, DSMath {
         // black won
         if (_result == -1) {
             // Cell 34, 43
-            eend.collateralForWhite = wmul(eend.allWhiteCollateral, WAD.sub(eend.changePercent));
+            eend.collateralForWhite = wmul(
+                eend.allWhiteCollateral,
+                WAD.sub(eend.changePercent)
+            );
             emit CollateralForWhite(eend.collateralForWhite);
 
             // Cell 35, 44
-            eend.collateralForBlack = wmul(eend.allBlackCollateral, WAD.add(eend.blackWinVolatility));
+            eend.collateralForBlack = wmul(
+                eend.allBlackCollateral,
+                WAD.add(eend.blackWinVolatility)
+            );
             emit CollateralForBlack(eend.collateralForBlack);
 
             // To exclude division by zero There is a check for a non zero eend.whiteBought above
@@ -417,8 +455,11 @@ contract PredictionPool is Eventable, DSMath {
         _eventStarted = true;
     }
 
-    function exchangeBW(uint256 tokensAmount, uint8 tokenId) external noEvent notPoolShutdown {
-
+    function exchangeBW(uint256 tokensAmount, uint8 tokenId)
+        external
+        noEvent
+        notPoolShutdown
+    {
         require(tokenId == 0 || tokenId == 1, "TokenId should be 0 or 1");
 
         IERC20 sellToken;
@@ -428,14 +469,14 @@ contract PredictionPool is Eventable, DSMath {
         address tokenAddress;
         bool isWhite = false;
 
-        if(tokenId == 0) {
+        if (tokenId == 0) {
             sellToken = _blackToken;
             buyToken = _whiteToken;
             sellPrice = _blackPrice;
             buyPrice = _whitePrice;
             tokenAddress = address(_whiteToken);
             isWhite = true;
-        } else if(tokenId == 1) {
+        } else if (tokenId == 1) {
             sellToken = _whiteToken;
             buyToken = _blackToken;
             sellPrice = _whitePrice;
@@ -444,10 +485,14 @@ contract PredictionPool is Eventable, DSMath {
         }
         require(
             sellToken.allowance(msg.sender, address(_thisCollateralization)) >=
-                tokensAmount, "Not enough delegated tokens");
+                tokensAmount,
+            "Not enough delegated tokens"
+        );
 
         uint256 collateralWithFee = wmul(tokensAmount, sellPrice);
-        uint256 collateralToBuy = collateralWithFee.sub(wmul(collateralWithFee, FEE));
+        uint256 collateralToBuy = collateralWithFee.sub(
+            wmul(collateralWithFee, FEE)
+        );
 
         updateFees(wmul(collateralWithFee, FEE), isWhite);
 
@@ -461,14 +506,14 @@ contract PredictionPool is Eventable, DSMath {
             address(sellToken)
         );
         //--------------------------------
-        if(tokenId == 0) {
+        if (tokenId == 0) {
             _blackBought = _blackBought.sub(tokensAmount);
             _blackSoldThisCycle = _blackSoldThisCycle.add(tokensAmount);
             _collateralForBlack = _collateralForBlack.sub(collateralWithFee);
             _whiteBought = _whiteBought.add(amountToSend);
             _whiteBoughtThisCycle = _whiteBoughtThisCycle.add(amountToSend);
             _collateralForWhite = _collateralForWhite.add(collateralToBuy);
-        } else if(tokenId == 1) {
+        } else if (tokenId == 1) {
             _whiteBought = _whiteBought.sub(tokensAmount);
             _whiteSoldThisCycle = _whiteSoldThisCycle.add(tokensAmount);
             _collateralForWhite = _collateralForWhite.sub(collateralWithFee);
@@ -478,11 +523,19 @@ contract PredictionPool is Eventable, DSMath {
         }
     }
 
-    function sellBlack(uint256 tokensAmount, uint256 minPrice) external noEvent {
-        require(_blackBought > tokensAmount.add(MIN_HOLD), "Cannot buyback more than sold from the pool");
+    function sellBlack(uint256 tokensAmount, uint256 minPrice)
+        external
+        noEvent
+    {
+        require(
+            _blackBought > tokensAmount.add(MIN_HOLD),
+            "Cannot buyback more than sold from the pool"
+        );
 
-        (uint256 collateralAmountWithFee, uint256 collateralToSend) =
-            genericSell(
+        (
+            uint256 collateralAmountWithFee,
+            uint256 collateralToSend
+        ) = genericSell(
                 _blackToken,
                 _blackPrice,
                 minPrice,
@@ -495,16 +548,19 @@ contract PredictionPool is Eventable, DSMath {
         emit SellBlack(msg.sender, collateralToSend, _blackPrice);
     }
 
-    function sellWhite(uint256 tokensAmount, uint256 minPrice) external noEvent {
-        require(_whiteBought > tokensAmount.add(MIN_HOLD), "Cannot buyback more than sold from the pool");
+    function sellWhite(uint256 tokensAmount, uint256 minPrice)
+        external
+        noEvent
+    {
+        require(
+            _whiteBought > tokensAmount.add(MIN_HOLD),
+            "Cannot buyback more than sold from the pool"
+        );
 
-        (uint256 collateralAmountWithFee, uint256 collateralToSend) =
-            genericSell(
-                _whiteToken, 
-                _whitePrice, 
-                minPrice, 
-                tokensAmount,
-                true);
+        (
+            uint256 collateralAmountWithFee,
+            uint256 collateralToSend
+        ) = genericSell(_whiteToken, _whitePrice, minPrice, tokensAmount, true);
         _whiteBought = _whiteBought.sub(tokensAmount);
         _collateralForWhite = _collateralForWhite.sub(collateralAmountWithFee);
         _whiteSoldThisCycle = _whiteSoldThisCycle.add(tokensAmount);
@@ -535,7 +591,8 @@ contract PredictionPool is Eventable, DSMath {
         updateFees(feeAmount, isWhite);
 
         require(
-            _collateralToken.balanceOf(address(_thisCollateralization)) > collateralToSend,
+            _collateralToken.balanceOf(address(_thisCollateralization)) >
+                collateralToSend,
             "Not enought collateral liquidity in the pool"
         );
 
@@ -549,28 +606,36 @@ contract PredictionPool is Eventable, DSMath {
         return (collateralWithFee, collateralToSend);
     }
 
-    function buyBlack(uint256 maxPrice, uint256 payment) external noEvent notPoolShutdown {
-        (uint256 tokenAmount, uint256 collateralToBuy) =
-            genericBuy(
-                maxPrice, 
-                _blackPrice, 
-                _blackToken, 
-                payment,
-                false);
+    function buyBlack(uint256 maxPrice, uint256 payment)
+        external
+        noEvent
+        notPoolShutdown
+    {
+        (uint256 tokenAmount, uint256 collateralToBuy) = genericBuy(
+            maxPrice,
+            _blackPrice,
+            _blackToken,
+            payment,
+            false
+        );
         _collateralForBlack = _collateralForBlack.add(collateralToBuy);
         _blackBought = _blackBought.add(tokenAmount);
         _blackBoughtThisCycle = _blackBoughtThisCycle.add(tokenAmount);
         emit BuyBlack(msg.sender, tokenAmount, _blackPrice);
     }
 
-    function buyWhite(uint256 maxPrice, uint256 payment) external noEvent notPoolShutdown {
-        (uint256 tokenAmount, uint256 collateralToBuy) =
-            genericBuy(
-                maxPrice, 
-                _whitePrice, 
-                _whiteToken, 
-                payment,
-                true);
+    function buyWhite(uint256 maxPrice, uint256 payment)
+        external
+        noEvent
+        notPoolShutdown
+    {
+        (uint256 tokenAmount, uint256 collateralToBuy) = genericBuy(
+            maxPrice,
+            _whitePrice,
+            _whiteToken,
+            payment,
+            true
+        );
         _collateralForWhite = _collateralForWhite.add(collateralToBuy);
         _whiteBought = _whiteBought.add(tokenAmount);
         _whiteBoughtThisCycle = _whiteBoughtThisCycle.add(tokenAmount);
@@ -589,10 +654,13 @@ contract PredictionPool is Eventable, DSMath {
             "Actual price is higher than acceptable by the user"
         );
         require(
-            _collateralToken.allowance(msg.sender, address(_thisCollateralization)) >= payment, 
+            _collateralToken.allowance(
+                msg.sender,
+                address(_thisCollateralization)
+            ) >= payment,
             "Not enough delegated tokens"
         );
-            
+
         uint256 feeAmount = wmul(payment, FEE);
 
         updateFees(feeAmount, isWhite);
@@ -612,18 +680,24 @@ contract PredictionPool is Eventable, DSMath {
 
     function updateFees(uint256 feeAmount, bool isWhite) internal {
         // update team fee collected
-        _controllerFeeCollected = _controllerFeeCollected.add(wmul(feeAmount, _controllerFee));
+        _controllerFeeCollected = _controllerFeeCollected.add(
+            wmul(feeAmount, _controllerFee)
+        );
 
         // update governance fee collected
         _feeGovernanceCollected = _feeGovernanceCollected.add(
             wmul(feeAmount, _governanceFee)
         );
-        
+
         // update BW addition fee collected
-        if(isWhite) {
-            _collateralForWhite = _collateralForWhite.add(wmul(feeAmount, _bwAdditionFee));
+        if (isWhite) {
+            _collateralForWhite = _collateralForWhite.add(
+                wmul(feeAmount, _bwAdditionFee)
+            );
         } else {
-            _collateralForBlack = _collateralForBlack.add(wmul(feeAmount, _bwAdditionFee));
+            _collateralForBlack = _collateralForBlack.add(
+                wmul(feeAmount, _bwAdditionFee)
+            );
         }
     }
 
@@ -639,7 +713,7 @@ contract PredictionPool is Eventable, DSMath {
     }
 
     function changeEventContractAddress(address evevntContractAddress)
-       external
+        external
         onlyGovernance
     {
         require(
@@ -661,17 +735,21 @@ contract PredictionPool is Eventable, DSMath {
 
         _governanceWalletAddress = newAddress;
     }
-    
-    function shutdownPool(bool isShutdown)
-    external
-    onlyGovernance {
+
+    function shutdownPool(bool isShutdown) external onlyGovernance {
         _poolShutdown = isShutdown;
     }
 
     function distributeProjectIncentives() external {
-        _thisCollateralization.withdrawCollateral(_governanceWalletAddress, _feeGovernanceCollected);
+        _thisCollateralization.withdrawCollateral(
+            _governanceWalletAddress,
+            _feeGovernanceCollected
+        );
         _feeGovernanceCollected = 0;
-        _thisCollateralization.withdrawCollateral(_controllerWalletAddress, _controllerFeeCollected);
+        _thisCollateralization.withdrawCollateral(
+            _controllerWalletAddress,
+            _controllerFeeCollected
+        );
         _controllerFeeCollected = 0;
     }
 }
