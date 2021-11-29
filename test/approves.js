@@ -13,11 +13,6 @@ const PredictionCollateralization = artifacts.require("PredictionCollateralizati
 const TokenTemplate = artifacts.require("TokenTemplate");
 const PendingOrders = artifacts.require("PendingOrders");
 
-/*
- * uncomment accounts to access the test accounts made available by the
- * Ethereum client
- * See docs: https://www.trufflesuite.com/docs/truffle/testing/writing-tests-in-javascript
- */
 contract("Approves", (accounts) => {
   "use strict";
 

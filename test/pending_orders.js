@@ -12,11 +12,7 @@ const PendingOrders = artifacts.require("PendingOrders");
 const EventLifeCycle = artifacts.require("EventLifeCycle");
 const PredictionPool = artifacts.require("PredictionPool");
 const TokenTemplate = artifacts.require("TokenTemplate");
-/*
- * uncomment accounts to access the test accounts made available by the
- * Ethereum client
- * See docs: https://www.trufflesuite.com/docs/truffle/testing/writing-tests-in-javascript
- */
+
 contract("PendingOrders", function (accounts) {
   let deployedPredictionPool;
   let deployedEventLifeCycle;
@@ -27,7 +23,6 @@ contract("PendingOrders", function (accounts) {
 
   before(async () => {
     deployedPredictionPool = await PredictionPool.deployed();
-    // deployedPredictionCollateralization = await PredictionCollateralization.deployed();
     deployedEventLifeCycle = await EventLifeCycle.deployed();
     deployedEventLifeCycle = await EventLifeCycle.deployed();
     deployedPendingOrders = await PendingOrders.deployed();

@@ -13,11 +13,6 @@ const PredictionPool = artifacts.require("PredictionPool");
 const PredictionCollateralization = artifacts.require("PredictionCollateralization");
 const TokenTemplate = artifacts.require("TokenTemplate");
 
-/*
- * uncomment accounts to access the test accounts made available by the
- * Ethereum client
- * See docs: https://www.trufflesuite.com/docs/truffle/testing/writing-tests-in-javascript
- */
 contract("PredictionPool", (accounts) => {
   "use strict";
 
@@ -59,11 +54,8 @@ contract("PredictionPool", (accounts) => {
     const initialBlackOrWhitePrice = new BN("500000000000000000");
 
     const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
-    // console.log("CollateralToken deployer balance:", collateralTokenDeployerBalance.toString());
-    // return
-    expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(collateralAmountToBuy);
 
-    // console.log("Betting pool black token price: " + await deployedPredictionPool._blackPrice());
+    expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(collateralAmountToBuy);
 
     const buyBlack = await deployedPredictionPool.buyBlack(
       initialBlackOrWhitePrice,
@@ -95,11 +87,8 @@ contract("PredictionPool", (accounts) => {
     const initialBlackOrWhitePrice = new BN("500000000000000000");
 
     const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
-    // console.log("CollateralToken deployer balance:", collateralTokenDeployerBalance.toString());
 
     expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(collateralAmountToBuy);
-
-    // console.log("Betting pool black token price: " + await deployedPredictionPool._blackPrice());
 
     const buyWhite = await deployedPredictionPool.buyWhite(
       initialBlackOrWhitePrice,
