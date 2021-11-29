@@ -1,3 +1,15 @@
 node_modules/*
-contracts/bin/*
-/contracts/bin/*.bin
+*.bin
+*.abi
+contracts/Incentives/bin/
+contracts/bin/
+# contracts/Viper/
+build/
+coverage/
+.env
+env.json
+
+# Coverage directory used by tools like istanbul
+coverage
+coverage.json
+coverageEnv
