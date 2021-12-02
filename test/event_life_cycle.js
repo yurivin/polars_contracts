@@ -56,7 +56,7 @@ contract("EventLifeCycle", (accounts) => {
     assert.equal(addAndStartEventLog.length, eventCount, `triggers must be ${eventCount} event`);
 
     expectEvent.inLogs(addAndStartEventLog, 'GameEventStarted', {
-      // time: expectedTimestamp, // Need fix timestamp
+      // time: expectedTimestamp, // TODO: Need fix timestamp
       eventId: timestamp
     });
 
