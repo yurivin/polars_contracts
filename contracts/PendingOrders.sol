@@ -204,12 +204,12 @@ contract PendingOrders is DSMath, Ownable {
         );
 
         if (ownWhite > 0) {
-            _predictionPool.sellWhite(MIN_PRICE, ownWhite);
+            _predictionPool.sellWhite(ownWhite, MIN_PRICE);
             // solhint-disable-next-line prettier/prettier
             _detailForEvent[_eventId].whitePriceAfter = _predictionPool._whitePrice();
         }
         if (ownBlack > 0) {
-            _predictionPool.sellBlack(MIN_PRICE, ownBlack);
+            _predictionPool.sellBlack(ownBlack, MIN_PRICE);
             // solhint-disable-next-line prettier/prettier
             _detailForEvent[_eventId].blackPriceAfter = _predictionPool._blackPrice();
         }
