@@ -57,7 +57,7 @@ contract PendingOrders is DSMath, Ownable {
     // mapping from event ID to detail for that event
     mapping(uint256 => Detail) _detailForEvent;
 
-    event OrderCreated(uint256 id);
+    event OrderCreated(uint256 id, uint256 amount);
     event OrderCanceled(uint256 id);
     event CollateralWithdrew(uint256 amount);
     event ContractOwnerChanged(address owner);
@@ -154,7 +154,7 @@ contract PendingOrders is DSMath, Ownable {
         _ordersOfUser[msg.sender].push(_ordersCount);
 
         _collateralToken.transferFrom(msg.sender, address(this), _amount);
-        emit OrderCreated(_ordersCount);
+        emit OrderCreated(_ordersCount, _amount);
     }
 
     function cancelOrder(uint256 orderId) external {
