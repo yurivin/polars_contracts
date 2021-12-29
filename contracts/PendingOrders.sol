@@ -235,32 +235,26 @@ contract PendingOrders is DSMath, Ownable {
             if (order.isPending && eventDetail.isExecuted) {
                 uint256 withdrawAmount = 0;
                 if (order.isWhite) {
-                    uint256 whitePriceBefore = eventDetail.whitePriceBefore;
-                    whitePriceBefore = whitePriceBefore.add(
-                        wmul(whitePriceBefore, _predictionPool.FEE()) + 1
+                    withdrawAmount = wmul(
+                        wdiv(order.amount, eventDetail.whitePriceBefore),
+                        eventDetail.whitePriceAfter
                     );
-                    uint256 whitePriceAfter = eventDetail.whitePriceAfter;
-                    whitePriceAfter = whitePriceAfter.sub(
-                        wmul(whitePriceAfter, _predictionPool.FEE()) + 1
+                    withdrawAmount = withdrawAmount.sub(
+                        wmul(withdrawAmount, _predictionPool.FEE())
                     );
-                    withdrawAmount = calculateNewAmount(
-                        order.amount,
-                        whitePriceBefore,
-                        whitePriceAfter
+                    withdrawAmount = withdrawAmount.sub(
+                        wmul(withdrawAmount, _predictionPool.FEE())
                     );
                 } else {
-                    uint256 blackPriceBefore = eventDetail.blackPriceBefore;
-                    blackPriceBefore = blackPriceBefore.add(
-                        wmul(blackPriceBefore, _predictionPool.FEE()) + 1
+                    withdrawAmount = wmul(
+                        wdiv(order.amount, eventDetail.blackPriceBefore),
+                        eventDetail.blackPriceAfter
                     );
-                    uint256 blackPriceAfter = eventDetail.blackPriceAfter;
-                    blackPriceAfter = blackPriceAfter.sub(
-                        wmul(blackPriceAfter, _predictionPool.FEE()) + 1
+                    withdrawAmount = withdrawAmount.sub(
+                        wmul(withdrawAmount, _predictionPool.FEE())
                     );
-                    withdrawAmount = calculateNewAmount(
-                        order.amount,
-                        blackPriceBefore,
-                        blackPriceAfter
+                    withdrawAmount = withdrawAmount.sub(
+                        wmul(withdrawAmount, _predictionPool.FEE())
                     );
                 }
                 totalWithdrawAmount = totalWithdrawAmount.add(withdrawAmount);
