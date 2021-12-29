@@ -1,17 +1,14 @@
 version: '3.2'
-# version: '2.1'
 
 services:
   ganache:
     image: trufflesuite/ganache-cli
     logging:
       driver: none
-    # command: ganache-cli
     command: ganache-cli -h 0.0.0.0
     network_mode: "host"
     ports:
       - "8545:8545"
-      # - "7545:8545"
     healthcheck:
       test: curl -sf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://127.0.0.1:8545
       interval: 5s
@@ -23,8 +20,6 @@ services:
       context: .
     stdin_open: true
     command: truffle test --stacktrace-extra --network=development
-    # command: truffle test --stacktrace-extra --network=docker
-    # command: truffle test --stacktrace-extra --network=dockerGanache
     working_dir: /src/app
     tty: true
     network_mode: "host"
@@ -32,17 +27,10 @@ services:
       - DEVELOPMENT_HOST=docker
     depends_on:
       - ganache
-    # depends_on:
-    #   ganache:
-    #     condition: service_healthy
     volumes:
       - ./contracts:/src/app/contracts
       - ./migrations:/src/app/migrations
       - ./test:/src/app/test
       - ./truffle-config.js:/src/app/truffle-config.js
       - ./env.json:/src/app/env.json
-      # - ./:/srv/truffle:rw
-      # - /srv/truffle/node_modules/
-    # links:
-    #   - ganache
     restart: on-failure

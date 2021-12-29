@@ -78,7 +78,6 @@ module.exports = async(deployer, network, accounts) => {
         await deployedPredictionCollateralization.changePoolAddress(deployedPredictionPool.address);
         console.log("PredictionPool:          " + await deployedPredictionCollateralization._poolAddress());
 
-        // deployedEventLifeCycleContract
         await deployer.deploy(
             EventLifeCycle,
             deployerAddress,
@@ -90,7 +89,6 @@ module.exports = async(deployer, network, accounts) => {
 
         await deployedPredictionPool.changeEventContractAddress(deployedEventLifeCycle.address);
 
-        // deployedPendingOrders
         await deployer.deploy(
             PendingOrders,
             deployedPredictionPool.address,
@@ -107,13 +105,9 @@ module.exports = async(deployer, network, accounts) => {
 
         // Approves for Secondary collateral & pool
         await deployedCollateralToken.approve(deployedPredictionCollateralization.address, approveValue);
-        // assert.equal(approveValue, await deployedCollateralToken.allowance(deployerAddress, deployedPredictionCollateralization.address));
         await whiteToken.approve(deployedPredictionCollateralization.address, approveValue);
-        // assert.equal(approveValue, await whiteToken.allowance(deployerAddress, deployedPredictionCollateralization.address));
         await blackToken.approve(deployedPredictionCollateralization.address, approveValue);
-        // assert.equal(approveValue, await blackToken.allowance(deployerAddress, deployedPredictionCollateralization.address));
         await deployedCollateralToken.approve(deployedPendingOrders.address, approveValue);
-        // assert.equal(approveValue, await deployedCollateralToken.allowance(deployerAddress, deployedPendingOrders.address));
 
     } else {
         // Perform a different step otherwise.

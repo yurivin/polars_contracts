@@ -81,18 +81,7 @@ contract("PendingOrders", function (accounts) {
     return assert.equal(await deployedEventLifeCycle._usePendingOrders(), true);
   });
 
-  // it('revert on BettingPool now closed', async () => {
-  //   const _eventStarted = web3.eth.abi.encodeFunctionSignature('_eventStarted()')
-  //   await bettingPoolContract.givenMethodReturnBool(_eventStarted, true)
-
-  //   await expectRevert(
-  //     instance.prepareEvent(
-  //       { from: eventRunnerAccount }
-  //     ), "BP closed"
-  //   );
-  // });
-
-  it.skip("should REVERT on 'Cannot buyback more than sold from the pool'", async () => {
+  it("should REVERT on 'Cannot buyback more than sold from the pool'", async () => {
     const amount = new BN("10");
     const expectedWhiteBuy = new BN("20"); // If whitePrice == 0.5
     const isWhite = true;
@@ -490,13 +479,16 @@ contract("PendingOrders", function (accounts) {
       .to.be.bignumber.equal(collateralAmount);
   }
 
-  it.only("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
+  it("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
 
     await addLiquidityToPrediction();
     await sendCollateralTokenToUser(accounts[1], 100000);
     await sendCollateralTokenToUser(accounts[2], 100000);
     await sendCollateralTokenToUser(accounts[3], 100000);
     await sendCollateralTokenToUser(accounts[4], 100000);
+
+    const whitePricePpedictionBeforeTest = await deployedPredictionPool._whitePrice()
+    const blackPricePpedictionBeforeTest = await deployedPredictionPool._blackPrice()
 
     let ordersApplied = [bids[0], bids[1], bids[2], bids[3], bids[4], bids[5]];
     // let ordersApplied = [bids[0], bids[2], bids[4]];
@@ -521,12 +513,19 @@ contract("PendingOrders", function (accounts) {
       { account: 9, sum: 0 }
     ]
 
+    // console.log("whitePrice:", whitePricePpedictionBeforeTest.toString());
+    // console.log("blackPrice:", blackPricePpedictionBeforeTest.toString());
+
     for (let event of eventsArray) {
       const pendingOrders = ordersApplied.filter(el => event.eventId.eq(el.eventId));
 
       await executeEventIteration(event.eventId, event.eventResult, pendingOrders);
       const duration = time.duration.minutes(1);
       await time.increase(duration);
+      const whitePricePpedictionAfterEvent = await deployedPredictionPool._whitePrice()
+      const blackPricePpedictionAfterEvent = await deployedPredictionPool._blackPrice()
+      // console.log("whitePrice:", whitePricePpedictionAfterEvent.toString());
+      // console.log("blackPrice:", blackPricePpedictionAfterEvent.toString());
     }
 
     function* enumerate(iterable) {
@@ -541,17 +540,17 @@ contract("PendingOrders", function (accounts) {
     for (const [i, account] of enumerate(accounts)) {
 
       const pendingOrders = ordersApplied.filter(el => i === el.account);
-      console.log(i, account, JSON.stringify(pendingOrders,null,4));
+      // console.log(i, account, JSON.stringify(pendingOrders, null, 4));
 
       const sumColForWhite = pendingOrders
         .filter(el => el.isWhite === true)
         .reduce((accumulator, a) => accumulator + a.amount, 0);
-      console.log("sumColForWhite:", sumColForWhite);
+      // console.log("sumColForWhite:", sumColForWhite);
 
       const sumColForBlack = pendingOrders
         .filter(el => el.isWhite === false)
         .reduce((accumulator, a) => accumulator + a.amount, 0);
-      console.log("sumColForBlack:", sumColForBlack);
+      // console.log("sumColForBlack:", sumColForBlack);
       // const withdrawCollateral = await deployedPendingOrders.withdrawCollateral({
       //   from: account
       // });

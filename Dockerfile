@@ -1,7 +1,5 @@
 FROM node:12-alpine
 LABEL maintainer="Sergey Sharshunov <s.sharshunov@gmail.com>"
-# RUN rm -rf /var/cache/apk/* && \
-#     mkdir /src/app
 WORKDIR /src/app
 COPY ["package.json", "./"]
 RUN apk update && \

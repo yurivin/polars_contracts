@@ -46,7 +46,8 @@ contract("PredictionPool", (accounts) => {
   it("should assert collateralTokentotalSupply equal collateralTokenDeployerBalance", async function () {
     const collateralTokentotalSupply = await deployedCollateralToken.totalSupply();
     const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
-    return assert.equal(collateralTokentotalSupply, collateralTokenDeployerBalance);
+    // return assert.equal(collateralTokentotalSupply, collateralTokenDeployerBalance);
+    return expect(collateralTokentotalSupply).to.be.bignumber.equal(collateralTokenDeployerBalance);
   });
 
   it("should assert PredictionCollateralization address equal PredictionPool._thisCollateralization()", async function () {

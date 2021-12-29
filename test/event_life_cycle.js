@@ -4,6 +4,7 @@ const {
   constants,    // Common constants, like the zero address and largest integers
   expectEvent,  // Assertions for emitted events
   expectRevert, // Assertions for transactions that should fail
+  snapshot
 } = require('@openzeppelin/test-helpers');
 
 const chai = require('chai');
@@ -22,10 +23,17 @@ contract("EventLifeCycle", (accounts) => {
   let deployedPredictionPool;
   let deployedEventLifeCycle;
 
+  let snapshotA;
+
   before(async () => {
     deployedPredictionPool = await PredictionPool.deployed();
     deployedEventLifeCycle = await EventLifeCycle.deployed();
+    snapshotA = await snapshot();
   })
+
+  afterEach(async () => {
+      await snapshotA.restore()
+  });
 
   it("should assert EventLifeCycle address equal PredictionPool._eventContractAddress()", async () => {
     return assert.equal(deployedEventLifeCycle.address, await deployedPredictionPool._eventContractAddress());
