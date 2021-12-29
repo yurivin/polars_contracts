@@ -7,8 +7,12 @@ const {
   snapshot
 } = require('@openzeppelin/test-helpers');
 
+const bigDecimal = require('js-big-decimal');
+
 const chai = require('chai');
 const expect = require('chai').expect;
+
+const BONE = 10**18;
 
 const PendingOrders = artifacts.require("PendingOrders");
 const EventLifeCycle = artifacts.require("EventLifeCycle");
@@ -16,7 +20,14 @@ const PredictionPool = artifacts.require("PredictionPool");
 const PredictionCollateralization = artifacts.require("PredictionCollateralization");
 const TokenTemplate = artifacts.require("TokenTemplate");
 
-const priceChangePart = new BN("50000000000000000");
+const ntob = (number) => {
+  const amountBD = new bigDecimal(number.toString(10))
+    .multiply(new bigDecimal(BONE.toString(10)))
+    .getValue();
+  return new BN(amountBD);
+}
+
+const priceChangePart = ntob(0.05);
 
 contract("PendingOrders", function (accounts) {
   let deployedPredictionPool;
@@ -35,17 +46,10 @@ contract("PendingOrders", function (accounts) {
     deployedPredictionPool = await PredictionPool.deployed();
     deployedPredictionCollateralization = await PredictionCollateralization.deployed();
     deployedEventLifeCycle = await EventLifeCycle.deployed();
-    // deployedEventLifeCycle = await EventLifeCycle.deployed();
     deployedPendingOrders = await PendingOrders.deployed();
     deployedCollateralToken = await TokenTemplate.deployed();
-    // deployedWhiteToken = await TokenTemplate.deployed();
-    console.log("CollateralToken:        ", deployedCollateralToken.address);
-    // console.log("WhiteToken:     ", deployedWhiteToken.address);
-    // console.log("WhiteToken:     ", await deployedPredictionCollateralization._whiteToken());
     deployedWhiteToken = await TokenTemplate.at(await deployedPredictionCollateralization._whiteToken());
     deployedBlackToken = await TokenTemplate.at(await deployedPredictionCollateralization._blackToken());
-    console.log("WhiteToken:             ", deployedWhiteToken.address);
-    console.log("BlackToken:             ", deployedBlackToken.address);
     snapshotA = await snapshot();
   });
 
@@ -176,10 +180,10 @@ contract("PendingOrders", function (accounts) {
   }
 
   const addLiquidityToPrediction = async () => {
-    const collateralAmountToBuy = new BN("100000000000000000000000");
-    const buyPayment = new BN("5000000000000000000");
+    const collateralAmountToBuy = ntob(100000);
+    const buyPayment = ntob(5);
 
-    const initialBlackOrWhitePrice = new BN("500000000000000000");
+    const initialBlackOrWhitePrice = ntob(0.5);
 
     const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
 
@@ -188,7 +192,7 @@ contract("PendingOrders", function (accounts) {
     const eventCount = 1;
     const buyWhiteLog = await buyToken("white", initialBlackOrWhitePrice, buyPayment);
 
-    const whiteBought = new BN("9970000000000000000");
+    const whiteBought = ntob(9.970);
 
     expectEvent.inLogs(buyWhiteLog, 'BuyWhite', {
       user: deployerAddress,
@@ -202,7 +206,7 @@ contract("PendingOrders", function (accounts) {
 
     const buyBlackLog = await buyToken("black", initialBlackOrWhitePrice, buyPayment);
 
-    const blackBought = new BN("9970000000000000000");
+    const blackBought = ntob(9.970);
 
     expectEvent.inLogs(buyBlackLog, 'BuyBlack', {
       user: deployerAddress,
@@ -215,24 +219,31 @@ contract("PendingOrders", function (accounts) {
     ).to.be.bignumber.equal(blackBought);
   }
 
-  const cretePendingOrder = async (isWhite, amount, eventId) => {
+  const createPendingOrder = async (isWhite, amount, eventId, runner = 0) => {
+    const amountBN = ntob(amount);
+    const ordersCountExpected = (await deployedPendingOrders._ordersCount()).add(new BN("1"));
+
     const createOrder = await deployedPendingOrders.createOrder(
-      amount,
+      amountBN,
       isWhite,
-      // isWhite = color === "white" ? 1 : color === "black" ? 0 : -1,
       eventId,
-      { from: deployerAddress }
+      { from: runner }
     );
 
     const { logs: createOrderLog } = createOrder;
     const eventCount = 1;
     assert.equal(createOrderLog.length, eventCount, `triggers must be ${eventCount} event`);
 
-    return createOrderLog;
+    const ordersCountAfter = await deployedPendingOrders._ordersCount();
 
-    // expectEvent.inLogs(createOrderLog, 'OrderCreated', {
-    //   id: new BN("1")
-    // });
+    expect(ordersCountExpected).to.be.bignumber.equal(ordersCountAfter);
+
+    expectEvent.inLogs(createOrderLog, 'OrderCreated', {
+      id: ordersCountExpected,
+      amount: amountBN
+    });
+
+    return createOrderLog;
   }
 
   it.skip("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
@@ -251,7 +262,7 @@ contract("PendingOrders", function (accounts) {
     // const eventResult = new BN("-1");
     const eventCount = 1;
 
-    const createOrderLog = await cretePendingOrder(isWhite, amount, eventId);
+    const createOrderLog = await createPendingOrder(isWhite, amount, eventId);
     expectEvent.inLogs(createOrderLog, 'OrderCreated', {
       id: new BN("1")
     });
@@ -314,46 +325,49 @@ contract("PendingOrders", function (accounts) {
     return expect(whiteBoughtBefore).to.be.bignumber.equal(whiteBoughtAfter);
   });
 
-  it.only("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
+  const getExactBuyAmountOut = async (amountIn, buyWhite) => {
 
-    await addLiquidityToPrediction();
+    const price0 = buyWhite ? (
+      await deployedPredictionPool._whitePrice()
+    ) : (
+      await deployedPredictionPool._blackPrice()
+    );
+    const price = new bigDecimal(price0.toString(10))
+      .divide(new bigDecimal(BONE.toString(10)), 18);
 
-    const amountBN = new BN("1000000");
-    // const amount = 10;  // withdrew amount: 10
-    // const amount = 100; // withdrew amount: 104
-    const amount = 200; // withdrew amount: 398
-    // const amount = 1000000;
-    const price = 0.5;
-    const fee = 0.003;
-    // const expectedWhiteBuyBN = new BN("2000000"); // If whitePrice == 0.5
-    // let expectedWhiteBuy = 2000000;               // If whitePrice == 0.5
-    const expectedWhiteBuy = new BN(amount / price).sub(new BN((amount / price) * fee));
-    const isWhite = true;
-    const eventId = new BN("101");
+    const fee = new bigDecimal((await deployedPredictionPool.FEE()).toString())
+      .divide(new bigDecimal(BONE.toString(10)), 18);
+
+    const amountBDb = new bigDecimal(ntob(amountIn));
+    const f = amountBDb.multiply(fee);
+    const a = amountBDb.subtract(f);
+    const n1 = a.divide(price, 18);
+    return n1.round().getValue();
+  }
+
+  const getExactSellAmountOut = async (amountIn, sellWhite) => {
+
+    const price0 = sellWhite ? (
+      await deployedPredictionPool._whitePrice()
+    ) : (
+      await deployedPredictionPool._blackPrice()
+    );
+    const price = new bigDecimal(price0.toString(10))
+      .divide(new bigDecimal(BONE.toString(10)), 18);
+
+    const fee = new bigDecimal((await deployedPredictionPool.FEE()).toString())
+      .divide(new bigDecimal(BONE.toString(10)), 18);
+
+    const x = new bigDecimal(amountIn).multiply(price).round()
+    const aFeeBD = x.multiply(fee).round();
+    const collateralToSend = x.subtract(aFeeBD).round();
+    return collateralToSend.getValue();
+  }
+
+  const addAndStartEvent = async (eventId, duration) => {
 
     const eventStartExpected = await time.latest();
-    const eventEndExpected = eventStartExpected.add(time.duration.seconds(5));
-    // const eventResult = new BN("0");
-    const eventResult = new BN("1");
-    // const eventResult = new BN("-1");
-    const eventCount = 1;
-
-    const createOrderLog = await cretePendingOrder(isWhite, new BN(amount), eventId);
-    expectEvent.inLogs(createOrderLog, 'OrderCreated', {
-      id: new BN("1"),
-      amount: new BN(amount)
-    });
-
-    const ordersCount = await deployedPendingOrders._ordersCount();
-    expect(ordersCount).to.be.bignumber.equal(new BN("1"));
-
-    const whitePrice = await deployedPredictionPool._whitePrice();
-    console.log("whitePrice:             ", whitePrice.toString());
-    // TODO: Check price, assertEquals(new BigInteger("525078986960882648"),bettingPool._whitePrice().send());
-    expect(whitePrice).to.be.bignumber.equal(new BN("500000000000000000"));
-
-    const whiteBoughtBefore = await deployedPredictionPool._whiteBought();
-    console.log("whiteBoughtBefore:      ", whiteBoughtBefore.toString());
+    const eventEndExpected = eventStartExpected.add(duration);
 
     const eventTx = await deployedEventLifeCycle.addAndStartEvent(
       priceChangePart,
@@ -366,49 +380,191 @@ contract("PendingOrders", function (accounts) {
       "test event name ",
       eventId
     );
+    return eventTx;
+  }
 
-    console.log("White balanceOf PendOr: ", (await deployedWhiteToken.balanceOf(deployedPendingOrders.address)).toString());
+  const executeEventIteration = async (eventId, eventResult, orders) => {
+    const whiteBoughtBefore = await deployedPredictionPool._whiteBought();
+    const blackBoughtBefore = await deployedPredictionPool._blackBought();
+
+    const eventDuration = time.duration.seconds(5);
+
+    await addAndStartEvent(eventId, eventDuration);
 
     const ongoingEvent = await deployedEventLifeCycle._ongoingEvent();
     expect(ongoingEvent.eventId).to.be.bignumber.equal(eventId);
 
     const whiteBoughtDuringEvent = await deployedPredictionPool._whiteBought();
-    console.log("whiteBoughtDuringEvent: ", whiteBoughtDuringEvent.toString());
+    const blackBoughtDuringEvent = await deployedPredictionPool._blackBought();
 
-    console.log("MIN_HOLD:               ", (await deployedPredictionPool.MIN_HOLD()).toString());
+    const sumWhite = orders
+      .filter(el => el.isWhite === true)
+      .reduce((accumulator, a) => accumulator + a.amount, 0);
 
-    console.log("WT balanceOf PredPool:  ", (await deployedWhiteToken.balanceOf(deployedPredictionPool.address)).toString());
-    console.log("WT balanceOf WhiteTok:  ", (await deployedWhiteToken.balanceOf(deployedWhiteToken.address)).toString());
-    console.log("WT balanceOf PredColl:  ", (await deployedWhiteToken.balanceOf(deployedPredictionCollateralization.address)).toString());
-    console.log("WT balanceOf deployer:  ", (await deployedWhiteToken.balanceOf(deployerAddress)).toString());
+    const sumBlack = orders
+      .filter(el => el.isWhite === false)
+      .reduce((accumulator, a) => accumulator + a.amount, 0);
 
-    console.log("BT balanceOf PredPool:  ", (await deployedBlackToken.balanceOf(deployedPredictionPool.address)).toString());
-    console.log("BT balanceOf WhiteTok:  ", (await deployedBlackToken.balanceOf(deployedBlackToken.address)).toString());
-    console.log("BT balanceOf PredColl:  ", (await deployedBlackToken.balanceOf(deployedPredictionCollateralization.address)).toString());
-    console.log("BT balanceOf deployer:  ", (await deployedBlackToken.balanceOf(deployerAddress)).toString());
+    const buyWhiteAmountOut = await getExactBuyAmountOut(sumWhite, true); // isWhite == true
+    const expectedWhiteBuy = new BN(buyWhiteAmountOut);
 
-    console.log("expectedWhiteBuy:       ", expectedWhiteBuy.toString());
+    const buyBlackAmountOut = await getExactBuyAmountOut(sumBlack, false); // isWhite == false
+    const expectedBlackBuy = new BN(buyBlackAmountOut);
 
-    // expect(whiteBoughtBefore.add(expectedWhiteBuy)).to.be.bignumber.equal(whiteBoughtDuringEvent);
+    expect(whiteBoughtBefore.add(expectedWhiteBuy)).to.be.bignumber.equal(whiteBoughtDuringEvent);
+    expect(blackBoughtBefore.add(expectedBlackBuy)).to.be.bignumber.equal(blackBoughtDuringEvent);
 
+    await time.increase(eventDuration);
     const endEvent = await deployedEventLifeCycle.endEvent(
       eventResult
     );
-    console.log("whitePrice:             ", (await deployedPredictionPool._whitePrice()).toString());
+
     const { logs: endEventLog } = endEvent;
-    assert.equal(endEventLog.length, eventCount, `triggers must be ${eventCount} event`);
+    const eventLogCount = 1;
+    assert.equal(endEventLog.length, eventLogCount, `triggers must be ${eventLogCount} event`);
 
     const whiteBoughtAfter = await deployedPredictionPool._whiteBought();
-    console.log("whiteBoughtAfter:       ", whiteBoughtAfter.toString());
-    // return expect(whiteBoughtBefore).to.be.bignumber.equal(whiteBoughtAfter);
+    expect(whiteBoughtBefore).to.be.bignumber.equal(whiteBoughtAfter);
+  }
 
+  const eventsArray = [
+    { eventId: new BN("101"), eventResult: new BN("1")  },
+    { eventId: new BN("102"), eventResult: new BN("1")  },
+    { eventId: new BN("103"), eventResult: new BN("0")  },
+    { eventId: new BN("104"), eventResult: new BN("1")  },
+    { eventId: new BN("105"), eventResult: new BN("-1") },
+    { eventId: new BN("106"), eventResult: new BN("-1") },
+    { eventId: new BN("107"), eventResult: new BN("0")  }
+  ];
 
-    const withdrawCollateral = await deployedPendingOrders.withdrawCollateral();
+  const bids = [
+    {
+      account: 1,
+      isWhite: true,
+      eventId: new BN("101"),
+      amount: 100
+    }, {
+      account: 1,
+      isWhite: true,
+      eventId: new BN("106"),
+      amount: 273
+    }, {
+      account: 2,
+      isWhite: true,
+      eventId: new BN("101"),
+      amount: 332
+    }, {
+      account: 1,
+      isWhite: false,
+      eventId: new BN("104"),
+      amount: 1253
+    }, {
+      account: 2,
+      isWhite: false,
+      eventId: new BN("105"),
+      amount: 14
+    }, {
+      account: 1,
+      isWhite: true,
+      eventId: new BN("104"),
+      amount: 1253
+    }
+  ]
+
+  const sendCollateralTokenToUser = async (user, amount) => {
+    const collateralAmount = new BN(
+      new bigDecimal((amount * BONE).toString(10)).getValue()
+    );
+
+    const collateralTokenUserBalanceBefore = await deployedCollateralToken.balanceOf(user);
+
+    await deployedCollateralToken.transfer(user, collateralAmount, { from: deployerAddress })
+
+    const collateralTokenUserBalanceAfter = await deployedCollateralToken.balanceOf(user);
+    expect(collateralTokenUserBalanceBefore.add(collateralAmount))
+      .to.be.bignumber.equal(collateralTokenUserBalanceAfter);
+
+    await deployedCollateralToken.approve(deployedPendingOrders.address, collateralAmount, { from: user })
+
+    expect((await deployedCollateralToken.allowance(user, deployedPendingOrders.address)))
+      .to.be.bignumber.equal(collateralAmount);
+  }
+
+  it.only("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
+
+    await addLiquidityToPrediction();
+    await sendCollateralTokenToUser(accounts[1], 100000);
+    await sendCollateralTokenToUser(accounts[2], 100000);
+    await sendCollateralTokenToUser(accounts[3], 100000);
+    await sendCollateralTokenToUser(accounts[4], 100000);
+
+    let ordersApplied = [bids[0], bids[1], bids[2], bids[3], bids[4], bids[5]];
+    // let ordersApplied = [bids[0], bids[2], bids[4]];
+
+    for (let bid of ordersApplied) {
+      const createOrderLog = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]); // runner = 0
+    }
+
+    const ordersCount = await deployedPendingOrders._ordersCount();
+    expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
+
+    let totalWithdrow = [
+      { account: 0, sum: 0 },
+      { account: 1, sum: 0 },
+      { account: 2, sum: 0 },
+      { account: 3, sum: 0 },
+      { account: 4, sum: 0 },
+      { account: 5, sum: 0 },
+      { account: 6, sum: 0 },
+      { account: 7, sum: 0 },
+      { account: 8, sum: 0 },
+      { account: 9, sum: 0 }
+    ]
+
+    for (let event of eventsArray) {
+      const pendingOrders = ordersApplied.filter(el => event.eventId.eq(el.eventId));
+
+      await executeEventIteration(event.eventId, event.eventResult, pendingOrders);
+      const duration = time.duration.minutes(1);
+      await time.increase(duration);
+    }
+
+    function* enumerate(iterable) {
+      let i = 0;
+
+      for (const x of iterable) {
+        yield [i, x];
+        i++;
+      }
+    }
+
+    for (const [i, account] of enumerate(accounts)) {
+
+      const pendingOrders = ordersApplied.filter(el => i === el.account);
+      console.log(i, account, JSON.stringify(pendingOrders,null,4));
+
+      const sumColForWhite = pendingOrders
+        .filter(el => el.isWhite === true)
+        .reduce((accumulator, a) => accumulator + a.amount, 0);
+      console.log("sumColForWhite:", sumColForWhite);
+
+      const sumColForBlack = pendingOrders
+        .filter(el => el.isWhite === false)
+        .reduce((accumulator, a) => accumulator + a.amount, 0);
+      console.log("sumColForBlack:", sumColForBlack);
+      // const withdrawCollateral = await deployedPendingOrders.withdrawCollateral({
+      //   from: account
+      // });
+    }
+
+    /*const withdrawCollateral = await deployedPendingOrders.withdrawCollateral();
     const { logs: withdrawCollateralLog } = withdrawCollateral;
-    expectEvent.inLogs(withdrawCollateralLog, 'CollateralWithdrew', {
-      amount: new BN((amount / price)*0.525078986960882647*0.997)
 
-    });
+    const collateralToSend = await getExactSellAmountOut(buyAmountOut, isWhite);
+
+    expectEvent.inLogs(withdrawCollateralLog, 'CollateralWithdrew', {
+      amount: new BN(collateralToSend)
+    });*/
   });
 
   it.skip("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
@@ -427,13 +583,13 @@ contract("PendingOrders", function (accounts) {
     // const eventResult = new BN("-1");
     const eventCount = 1;
 
-    const createOrderLog = await cretePendingOrder(isWhite, amount, eventId);
+    const createOrderLog = await createPendingOrder(isWhite, amount, eventId);
     expectEvent.inLogs(createOrderLog, 'OrderCreated', {
       id: new BN("1")
     });
 
     // const createOrderLog = await cretePendingOrder(isWhite, amount, eventId);
-    expectEvent.inLogs((await cretePendingOrder(0, 60, eventId)), 'OrderCreated', {
+    expectEvent.inLogs((await createPendingOrder(0, 60, eventId)), 'OrderCreated', {
       id: new BN("2")
     });
 
