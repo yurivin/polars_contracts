@@ -41,7 +41,7 @@ module.exports = async(deployer, network, accounts) => {
             collateralTokenSupply
         );
         const deployedCollateralToken = await TokenTemplate.deployed();
-        console.log("Collateral token contract address: " + deployedCollateralToken.address);
+        console.log("Collateral token:        " + deployedCollateralToken.address);
 
         await deployer.deploy(
             PredictionCollateralization,
@@ -56,9 +56,9 @@ module.exports = async(deployer, network, accounts) => {
 
         const whiteToken = await TokenTemplate.at(await deployedPredictionCollateralization._whiteToken());
         const blackToken = await TokenTemplate.at(await deployedPredictionCollateralization._blackToken());
-        console.log("BettingCollateral: " + deployedPredictionCollateralization.address);
-        console.log("WhiteToken: " + whiteToken.address);
-        console.log("BlackToken: " + blackToken.address);
+        console.log("PredictionCollateral:    " + deployedPredictionCollateralization.address);
+        console.log("WhiteToken:              " + whiteToken.address);
+        console.log("BlackToken:              " + blackToken.address);
 
         await deployer.deploy(
             PredictionPool,
@@ -72,13 +72,12 @@ module.exports = async(deployer, network, accounts) => {
         const deployedPredictionPool = await PredictionPool.deployed();
         let result = await deployedPredictionPool.init(deployerAddress, deployerAddress, deployerAddress)
 
-        console.log("PredictionPool: " + deployedPredictionPool.address);
-        console.log("Gov address: " + await deployedPredictionCollateralization._governanceAddress());
+        console.log("PredictionPool:          " + deployedPredictionPool.address);
+        console.log("Gov address:             " + await deployedPredictionCollateralization._governanceAddress());
 
         await deployedPredictionCollateralization.changePoolAddress(deployedPredictionPool.address);
-        console.log("PredictionPool: " + await deployedPredictionCollateralization._poolAddress());
+        console.log("PredictionPool:          " + await deployedPredictionCollateralization._poolAddress());
 
-        // deployedEventLifeCycleContract
         await deployer.deploy(
             EventLifeCycle,
             deployerAddress,
@@ -86,10 +85,10 @@ module.exports = async(deployer, network, accounts) => {
             deployedPredictionPool.address
         );
         const deployedEventLifeCycle = await EventLifeCycle.deployed();
+        console.log("EventLifeCycle:          " + await deployedEventLifeCycle.address);
 
         await deployedPredictionPool.changeEventContractAddress(deployedEventLifeCycle.address);
 
-        // deployedPendingOrders
         await deployer.deploy(
             PendingOrders,
             deployedPredictionPool.address,
@@ -98,6 +97,7 @@ module.exports = async(deployer, network, accounts) => {
             deployedEventLifeCycle.address
         );
         const deployedPendingOrders = await PendingOrders.deployed();
+        console.log("PendingOrders:           " + await deployedPendingOrders.address);
 
         await deployedEventLifeCycle.setPendingOrders(deployedPendingOrders.address, true);
 
@@ -105,13 +105,9 @@ module.exports = async(deployer, network, accounts) => {
 
         // Approves for Secondary collateral & pool
         await deployedCollateralToken.approve(deployedPredictionCollateralization.address, approveValue);
-        // assert.equal(approveValue, await deployedCollateralToken.allowance(deployerAddress, deployedPredictionCollateralization.address));
         await whiteToken.approve(deployedPredictionCollateralization.address, approveValue);
-        // assert.equal(approveValue, await whiteToken.allowance(deployerAddress, deployedPredictionCollateralization.address));
         await blackToken.approve(deployedPredictionCollateralization.address, approveValue);
-        // assert.equal(approveValue, await blackToken.allowance(deployerAddress, deployedPredictionCollateralization.address));
         await deployedCollateralToken.approve(deployedPendingOrders.address, approveValue);
-        // assert.equal(approveValue, await deployedCollateralToken.allowance(deployerAddress, deployedPendingOrders.address));
 
     } else {
         // Perform a different step otherwise.

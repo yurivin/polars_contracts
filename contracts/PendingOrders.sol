@@ -57,7 +57,7 @@ contract PendingOrders is DSMath, Ownable {
     // mapping from event ID to detail for that event
     mapping(uint256 => Detail) _detailForEvent;
 
-    event OrderCreated(uint256 id);
+    event OrderCreated(uint256 id, uint256 amount);
     event OrderCanceled(uint256 id);
     event CollateralWithdrew(uint256 amount);
     event ContractOwnerChanged(address owner);
@@ -154,7 +154,7 @@ contract PendingOrders is DSMath, Ownable {
         _ordersOfUser[msg.sender].push(_ordersCount);
 
         _collateralToken.transferFrom(msg.sender, address(this), _amount);
-        emit OrderCreated(_ordersCount);
+        emit OrderCreated(_ordersCount, _amount);
     }
 
     function cancelOrder(uint256 orderId) external {
@@ -204,12 +204,12 @@ contract PendingOrders is DSMath, Ownable {
         );
 
         if (ownWhite > 0) {
-            _predictionPool.sellWhite(MIN_PRICE, ownWhite);
+            _predictionPool.sellWhite(ownWhite, MIN_PRICE);
             // solhint-disable-next-line prettier/prettier
             _detailForEvent[_eventId].whitePriceAfter = _predictionPool._whitePrice();
         }
         if (ownBlack > 0) {
-            _predictionPool.sellBlack(MIN_PRICE, ownBlack);
+            _predictionPool.sellBlack(ownBlack, MIN_PRICE);
             // solhint-disable-next-line prettier/prettier
             _detailForEvent[_eventId].blackPriceAfter = _predictionPool._blackPrice();
         }
@@ -235,32 +235,26 @@ contract PendingOrders is DSMath, Ownable {
             if (order.isPending && eventDetail.isExecuted) {
                 uint256 withdrawAmount = 0;
                 if (order.isWhite) {
-                    uint256 whitePriceBefore = eventDetail.whitePriceBefore;
-                    whitePriceBefore = whitePriceBefore.add(
-                        wmul(whitePriceBefore, _predictionPool.FEE()) + 1
+                    withdrawAmount = wmul(
+                        wdiv(order.amount, eventDetail.whitePriceBefore),
+                        eventDetail.whitePriceAfter
                     );
-                    uint256 whitePriceAfter = eventDetail.whitePriceAfter;
-                    whitePriceAfter = whitePriceAfter.sub(
-                        wmul(whitePriceAfter, _predictionPool.FEE()) + 1
+                    withdrawAmount = withdrawAmount.sub(
+                        wmul(withdrawAmount, _predictionPool.FEE())
                     );
-                    withdrawAmount = calculateNewAmount(
-                        order.amount,
-                        whitePriceBefore,
-                        whitePriceAfter
+                    withdrawAmount = withdrawAmount.sub(
+                        wmul(withdrawAmount, _predictionPool.FEE())
                     );
                 } else {
-                    uint256 blackPriceBefore = eventDetail.blackPriceBefore;
-                    blackPriceBefore = blackPriceBefore.add(
-                        wmul(blackPriceBefore, _predictionPool.FEE()) + 1
+                    withdrawAmount = wmul(
+                        wdiv(order.amount, eventDetail.blackPriceBefore),
+                        eventDetail.blackPriceAfter
                     );
-                    uint256 blackPriceAfter = eventDetail.blackPriceAfter;
-                    blackPriceAfter = blackPriceAfter.sub(
-                        wmul(blackPriceAfter, _predictionPool.FEE()) + 1
+                    withdrawAmount = withdrawAmount.sub(
+                        wmul(withdrawAmount, _predictionPool.FEE())
                     );
-                    withdrawAmount = calculateNewAmount(
-                        order.amount,
-                        blackPriceBefore,
-                        blackPriceAfter
+                    withdrawAmount = withdrawAmount.sub(
+                        wmul(withdrawAmount, _predictionPool.FEE())
                     );
                 }
                 totalWithdrawAmount = totalWithdrawAmount.add(withdrawAmount);
