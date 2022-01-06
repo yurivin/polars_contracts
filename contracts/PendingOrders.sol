@@ -234,29 +234,25 @@ contract PendingOrders is DSMath, Ownable {
             // exclude canceled orders, only include executed orders
             if (order.isPending && eventDetail.isExecuted) {
                 uint256 withdrawAmount = 0;
-                if (order.isWhite) {
-                    withdrawAmount = wmul(
-                        wdiv(order.amount, eventDetail.whitePriceBefore),
-                        eventDetail.whitePriceAfter
-                    );
-                    withdrawAmount = withdrawAmount.sub(
-                        wmul(withdrawAmount, _predictionPool.FEE())
-                    );
-                    withdrawAmount = withdrawAmount.sub(
-                        wmul(withdrawAmount, _predictionPool.FEE())
-                    );
-                } else {
-                    withdrawAmount = wmul(
-                        wdiv(order.amount, eventDetail.blackPriceBefore),
-                        eventDetail.blackPriceAfter
-                    );
-                    withdrawAmount = withdrawAmount.sub(
-                        wmul(withdrawAmount, _predictionPool.FEE())
-                    );
-                    withdrawAmount = withdrawAmount.sub(
-                        wmul(withdrawAmount, _predictionPool.FEE())
-                    );
-                }
+
+                withdrawAmount = order.amount.sub(
+                    wmul(order.amount, _predictionPool.FEE())
+                );
+                withdrawAmount = wdiv(
+                    withdrawAmount,
+                    order.isWhite
+                        ? eventDetail.whitePriceBefore
+                        : eventDetail.blackPriceBefore
+                );
+                withdrawAmount = wmul(
+                    withdrawAmount,
+                    order.isWhite
+                        ? eventDetail.whitePriceAfter
+                        : eventDetail.blackPriceAfter
+                );
+                withdrawAmount = withdrawAmount.sub(
+                    wmul(withdrawAmount, _predictionPool.FEE())
+                );
                 totalWithdrawAmount = totalWithdrawAmount.add(withdrawAmount);
             }
 
