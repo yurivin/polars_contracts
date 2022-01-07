@@ -3,7 +3,7 @@ pragma solidity ^0.7.4;
 
 import "./ERC20Detailed.sol";
 import "./ERC20Burnable.sol";
-import "./Ownable.sol";
+import "./Common/Ownable.sol";
 
 contract TokenTemplate is ERC20Burnable, ERC20Detailed, Ownable {
     /**

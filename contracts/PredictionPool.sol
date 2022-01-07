@@ -1,7 +1,7 @@
 pragma solidity ^0.7.4;
 // "SPDX-License-Identifier: MIT"
 
-import "./IERC20.sol";
+import "./Common/IERC20.sol";
 import "./Eventable.sol";
 import "./iPredictionCollateralization.sol";
 import "./DSMath.sol";

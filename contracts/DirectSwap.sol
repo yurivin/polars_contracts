@@ -1,8 +1,8 @@
 pragma solidity ^0.7.6;
 // "SPDX-License-Identifier: Apache License 2.0"
 
-import "./IERC20.sol";
-import "./Ownable.sol";
+import "./Common/IERC20.sol";
+import "./Common/Ownable.sol";
 
 contract DirectSwap is Ownable {
     

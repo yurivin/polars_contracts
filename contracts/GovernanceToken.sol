@@ -1,7 +1,7 @@
 pragma solidity ^0.7.4;
 // "SPDX-License-Identifier: MIT"
 
-import "./IERC20.sol";
+import "./Common/IERC20.sol";
 import "./SafeMath.sol";
 
 contract GovernanceToken is IERC20 {

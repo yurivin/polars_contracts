@@ -4,8 +4,8 @@ pragma solidity ^0.7.4;
 
 import "./DSMath.sol";
 import "./SafeMath.sol";
-import "./IERC20.sol";
-import "./Ownable.sol";
+import "./Common/IERC20.sol";
+import "./Common/Ownable.sol";
 import "./IPredictionPool.sol";
 
 contract PendingOrders is DSMath, Ownable {

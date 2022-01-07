@@ -1,7 +1,7 @@
 pragma solidity ^0.7.4;
 // "SPDX-License-Identifier: Apache License 2.0"
 
-import "./IERC20.sol";
+import "../Common/IERC20.sol";
 
 /**
  * @title Reservoir
