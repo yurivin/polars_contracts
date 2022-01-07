@@ -10,6 +10,12 @@ Start ganache client in a separate terminal
 ganache-cli
 ```
 
+## Install Vyper
+```
+sudo apt install python3-pip
+pip install vyper==0.2.12
+```
+
 ## Install dependencies
 ```
 npm install -g truffle mocha solhint
