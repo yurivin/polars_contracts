@@ -33,3 +33,15 @@ or
 ```
 docker-compose up --exit-code-from truffle
 ```
+
+## Use linter
+
+Install
+```
+npm install -g solhint-plugin-prettier
+```
+
+Run from the project root dir
+```
+solhint contracts/*.sol
+```
