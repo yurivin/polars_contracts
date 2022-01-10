@@ -119,4 +119,39 @@ contract("PredictionPool", (accounts) => {
       await whiteToken.balanceOf(deployerAddress)
     ).to.be.bignumber.equal(whiteBought);
   });
+
+  it("addCollateral", async function() {
+    const addForWhiteAmount = new BN("5000000000000000000");
+    const addForBlackAmount = new BN("3000000000000000000");
+
+    const buyPayment = new BN("5000000000000000000");
+    const initialBlackOrWhitePrice = new BN("500000000000000000");
+    await deployedPredictionPool.buyBlack(
+      initialBlackOrWhitePrice,
+      buyPayment,
+      { from: deployerAddress }
+    );
+
+    const initialCollateralForBlack = await deployedPredictionPool._collateralForBlack();
+    const initialCollateralForWhite = await deployedPredictionPool._collateralForWhite();
+    
+    const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
+    
+    const sumAddition = addForWhiteAmount.add(addForBlackAmount);
+    expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(sumAddition);
+
+    await deployedPredictionPool.addCollateral(
+      addForWhiteAmount, 
+      addForBlackAmount, 
+      { from: deployerAddress }
+    );
+
+    const newCollateralForBlack = await deployedPredictionPool._collateralForBlack();
+    const newCollateralForWhite = await deployedPredictionPool._collateralForWhite();
+
+    expect(newCollateralForBlack).to.be.bignumber.equal(addForBlackAmount.add(initialCollateralForBlack));
+
+    expect(newCollateralForWhite).to.be.bignumber.equal(addForWhiteAmount);
+
+  });
 });

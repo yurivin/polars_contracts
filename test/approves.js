@@ -42,6 +42,12 @@ contract("Approves", (accounts) => {
     ).to.be.bignumber.equal(approveValue);
   });
 
+  it("should assert approveValue equal deployer's CollateralToken allowance count for PredictionPool", async function () {
+    return expect(
+      await deployedCollateralToken.allowance(deployerAddress, deployedPredictionPool.address)
+    ).to.be.bignumber.equal(approveValue);
+  });
+
   it("should assert approveValue equal deployer's whiteToken allowance count for PredictionCollateralization", async function () {
     return expect(
       await whiteToken.allowance(deployerAddress, deployedPredictionCollateralization.address)

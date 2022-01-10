@@ -4,9 +4,9 @@ pragma experimental ABIEncoderV2;
 // "SPDX-License-Identifier: Apache License 2.0"
 // [[0xdE288bC0fCFe25D30Bad8401E70c3183A63F1893, 1619707311, 10000000000000000000]]
 
-import "../IERC20.sol";
+import "../Common/IERC20.sol";
 import "../SafeMath.sol";
-import "./Ownable.sol";
+import "../Common/Ownable.sol";
 import "../SafeERC20.sol";
 import "./ReentrancyGuard.sol";
 import "./iIncentives.sol";

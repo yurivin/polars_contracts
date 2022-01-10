@@ -1,7 +1,7 @@
 pragma solidity ^0.7.4;
 // "SPDX-License-Identifier: MIT"
 
-import "./IERC20.sol";
+import "./Common/IERC20.sol";
 import "./Eventable.sol";
 import "./iPredictionCollateralization.sol";
 import "./DSMath.sol";
@@ -751,5 +751,11 @@ contract PredictionPool is Eventable, DSMath {
             _controllerFeeCollected
         );
         _controllerFeeCollected = 0;
+    }
+
+    function addCollateral(uint256 forWhiteAmount, uint256 forBlackAmount) external onlyGovernance {
+        _collateralForBlack = _collateralForBlack.add(forBlackAmount);
+        _collateralForWhite = _collateralForWhite.add(forWhiteAmount);
+        _collateralToken.transferFrom(msg.sender, address(_thisCollateralization), forWhiteAmount.add(forBlackAmount));
     }
 }
