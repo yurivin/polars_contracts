@@ -121,16 +121,36 @@ contract("PredictionPool", (accounts) => {
   });
 
   it("addCollateral", async function() {
-    const forWhiteAmount = new BN("5000000000000000000");
-    const forBlackAmount = new BN("3000000000000000000");
+    const addForWhiteAmount = new BN("5000000000000000000");
+    const addForBlackAmount = new BN("3000000000000000000");
+
+    const buyPayment = new BN("5000000000000000000");
+    const initialBlackOrWhitePrice = new BN("500000000000000000");
+    await deployedPredictionPool.buyBlack(
+      initialBlackOrWhitePrice,
+      buyPayment,
+      { from: deployerAddress }
+    );
+
     const initialCollateralForBlack = deployedPredictionPool._collateralForBlack();
     const initialCollateralForWhite = deployedPredictionPool._collateralForWhite();
+    
+    const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
+    expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(forWhiteAmount.add(forBlackAmount));
 
-    await deployedPredictionPool.addCollateral(forWhiteAmount, forBlackAmount);
+    await deployedPredictionPool.addCollateral(
+      addForWhiteAmount, 
+      addForBlackAmount, 
+      { from: deployerAddress });
 
-    assert.equal(deployedPredictionPool._collateralForBlack(), new BN("5000000000000000000"));
-    assert.equal(deployedPredictionPool._collateralForWhite(), new BN("5000000000000000000"));
+    const newCollateralForBlack = await deployedPredictionPool._collateralForBlack();
+    const newCollateralForWhite = await deployedPredictionPool._collateralForWhite();
 
+    expect(newCollateralForBlack).to.be
+    .bignumber.equal(addForBlackAmount.add(initialCollateralForBlack));
+
+    expect(newCollateralForWhite).to.be
+    .bignumber.equal(addForWhiteAmount);
+    
   });
-
 });

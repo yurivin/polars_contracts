@@ -108,6 +108,7 @@ module.exports = async(deployer, network, accounts) => {
         await whiteToken.approve(deployedPredictionCollateralization.address, approveValue);
         await blackToken.approve(deployedPredictionCollateralization.address, approveValue);
         await deployedCollateralToken.approve(deployedPendingOrders.address, approveValue);
+        await deployedCollateralToken.approve(deployedPredictionPool.address, approveValue);
 
     } else {
         // Perform a different step otherwise.
