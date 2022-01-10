@@ -119,4 +119,18 @@ contract("PredictionPool", (accounts) => {
       await whiteToken.balanceOf(deployerAddress)
     ).to.be.bignumber.equal(whiteBought);
   });
+
+  it("addCollateral", async function() {
+    const forWhiteAmount = new BN("5000000000000000000");
+    const forBlackAmount = new BN("3000000000000000000");
+    const initialCollateralForBlack = deployedPredictionPool._collateralForBlack();
+    const initialCollateralForWhite = deployedPredictionPool._collateralForWhite();
+
+    await deployedPredictionPool.addCollateral(forWhiteAmount, forBlackAmount);
+
+    assert.equal(deployedPredictionPool._collateralForBlack(), new BN("5000000000000000000"));
+    assert.equal(deployedPredictionPool._collateralForWhite(), new BN("5000000000000000000"));
+
+  });
+
 });
