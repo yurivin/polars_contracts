@@ -753,10 +753,9 @@ contract PredictionPool is Eventable, DSMath {
         _controllerFeeCollected = 0;
     }
 
-    function addCollateral(uint256 amount) external {
-        uint256 half = amount.div(2);
-        _collateralForBlack = _collateralForBlack.add(half);
-        _collateralForWhite = _collateralForWhite.add(half);
-        _collateralToken.transferFrom(msg.sender, address(_thisCollateralization), amount);
+    function addCollateral(uint256 forWhiteAmount, uint256 forBlackAmount) external onlyGovernance {
+        _collateralForBlack = _collateralForBlack.add(forWhiteAmount);
+        _collateralForWhite = _collateralForWhite.add(forBlackAmount);
+        _collateralToken.transferFrom(msg.sender, address(_thisCollateralization), forWhiteAmount.add(forBlackAmount));
     }
 }
