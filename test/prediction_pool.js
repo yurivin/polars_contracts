@@ -132,16 +132,19 @@ contract("PredictionPool", (accounts) => {
       { from: deployerAddress }
     );
 
-    const initialCollateralForBlack = deployedPredictionPool._collateralForBlack();
-    const initialCollateralForWhite = deployedPredictionPool._collateralForWhite();
+    const initialCollateralForBlack = await deployedPredictionPool._collateralForBlack();
+    const initialCollateralForWhite = await deployedPredictionPool._collateralForWhite();
     
     const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
-    expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(addForWhiteAmount.add(addForBlackAmount));
+    
+    const sumAddition = addForWhiteAmount.add(addForBlackAmount);
+    expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(sumAddition);
 
     await deployedPredictionPool.addCollateral(
       addForWhiteAmount, 
       addForBlackAmount, 
-      { from: deployerAddress });
+      { from: deployerAddress }
+    );
 
     const newCollateralForBlack = await deployedPredictionPool._collateralForBlack();
     const newCollateralForWhite = await deployedPredictionPool._collateralForWhite();
