@@ -165,7 +165,6 @@ contract PendingOrders is DSMath, Ownable {
             !_detailForEvent[order.eventId].isExecuted,
             "ORDER HAS ALREADY BEEN EXECUTED"
         );
-        _collateralToken.transfer(order.orderer, order.amount);
 
         /* solhint-disable prettier/prettier */
         order.isWhite
@@ -173,6 +172,7 @@ contract PendingOrders is DSMath, Ownable {
             : _detailForEvent[order.eventId].blackCollateral = _detailForEvent[order.eventId].blackCollateral.sub(order.amount);
         /* solhint-enable prettier/prettier */
         _orders[orderId].isPending = false;
+        _collateralToken.transfer(order.orderer, order.amount);
         emit OrderCanceled(orderId);
     }
 
@@ -323,8 +323,8 @@ contract PendingOrders is DSMath, Ownable {
             _collateralToken.balanceOf(address(this)) >= _collectedFee,
             "INSUFFICIENT TOKEN(THAT IS LOWER THAN EXPECTED COLLECTEDFEE) IN PENDINGORDERS CONTRACT"
         );
-        _collateralToken.transfer(_feeWithdrawAddress, _collectedFee);
         _collectedFee = 0;
+        _collateralToken.transfer(_feeWithdrawAddress, _collectedFee);
         emit FeeWithdrew(_collectedFee);
     }
 
