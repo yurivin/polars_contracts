@@ -235,21 +235,21 @@ contract PendingOrders is DSMath, Ownable {
             if (order.isPending && eventDetail.isExecuted) {
                 uint256 withdrawAmount = 0;
 
+                uint256 priceAfter = 0;
+                uint256 priceBefore = 0;
+                if (order.isWhite) {
+                    priceBefore = eventDetail.whitePriceBefore;
+                    priceAfter = eventDetail.whitePriceAfter;
+                } else {
+                    priceBefore = eventDetail.blackPriceBefore;
+                    priceAfter = eventDetail.blackPriceAfter;
+                }
+
                 withdrawAmount = order.amount.sub(
                     wmul(order.amount, _predictionPool.FEE())
                 );
-                withdrawAmount = wdiv(
-                    withdrawAmount,
-                    order.isWhite
-                        ? eventDetail.whitePriceBefore
-                        : eventDetail.blackPriceBefore
-                );
-                withdrawAmount = wmul(
-                    withdrawAmount,
-                    order.isWhite
-                        ? eventDetail.whitePriceAfter
-                        : eventDetail.blackPriceAfter
-                );
+                withdrawAmount = wdiv(withdrawAmount, priceBefore);
+                withdrawAmount = wmul(withdrawAmount, priceAfter);
                 withdrawAmount = withdrawAmount.sub(
                     wmul(withdrawAmount, _predictionPool.FEE())
                 );
