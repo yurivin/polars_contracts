@@ -165,7 +165,6 @@ contract PendingOrders is DSMath, Ownable {
             !_detailForEvent[order.eventId].isExecuted,
             "ORDER HAS ALREADY BEEN EXECUTED"
         );
-        _collateralToken.transfer(order.orderer, order.amount);
 
         /* solhint-disable prettier/prettier */
         order.isWhite
@@ -173,6 +172,7 @@ contract PendingOrders is DSMath, Ownable {
             : _detailForEvent[order.eventId].blackCollateral = _detailForEvent[order.eventId].blackCollateral.sub(order.amount);
         /* solhint-enable prettier/prettier */
         _orders[orderId].isPending = false;
+        _collateralToken.transfer(order.orderer, order.amount);
         emit OrderCanceled(orderId);
     }
 
@@ -234,29 +234,25 @@ contract PendingOrders is DSMath, Ownable {
             // exclude canceled orders, only include executed orders
             if (order.isPending && eventDetail.isExecuted) {
                 uint256 withdrawAmount = 0;
+
+                uint256 priceAfter = 0;
+                uint256 priceBefore = 0;
                 if (order.isWhite) {
-                    withdrawAmount = wmul(
-                        wdiv(order.amount, eventDetail.whitePriceBefore),
-                        eventDetail.whitePriceAfter
-                    );
-                    withdrawAmount = withdrawAmount.sub(
-                        wmul(withdrawAmount, _predictionPool.FEE())
-                    );
-                    withdrawAmount = withdrawAmount.sub(
-                        wmul(withdrawAmount, _predictionPool.FEE())
-                    );
+                    priceBefore = eventDetail.whitePriceBefore;
+                    priceAfter = eventDetail.whitePriceAfter;
                 } else {
-                    withdrawAmount = wmul(
-                        wdiv(order.amount, eventDetail.blackPriceBefore),
-                        eventDetail.blackPriceAfter
-                    );
-                    withdrawAmount = withdrawAmount.sub(
-                        wmul(withdrawAmount, _predictionPool.FEE())
-                    );
-                    withdrawAmount = withdrawAmount.sub(
-                        wmul(withdrawAmount, _predictionPool.FEE())
-                    );
+                    priceBefore = eventDetail.blackPriceBefore;
+                    priceAfter = eventDetail.blackPriceAfter;
                 }
+
+                withdrawAmount = order.amount.sub(
+                    wmul(order.amount, _predictionPool.FEE())
+                );
+                withdrawAmount = wdiv(withdrawAmount, priceBefore);
+                withdrawAmount = wmul(withdrawAmount, priceAfter);
+                withdrawAmount = withdrawAmount.sub(
+                    wmul(withdrawAmount, _predictionPool.FEE())
+                );
                 totalWithdrawAmount = totalWithdrawAmount.add(withdrawAmount);
             }
 
@@ -278,7 +274,7 @@ contract PendingOrders is DSMath, Ownable {
         _collateralToken.transfer(msg.sender, userWithdrawAmount);
         emit CollateralWithdrew(userWithdrawAmount);
 
-        return totalWithdrawAmount;
+        return userWithdrawAmount;
     }
 
     function calculateNewAmount(
@@ -327,8 +323,8 @@ contract PendingOrders is DSMath, Ownable {
             _collateralToken.balanceOf(address(this)) >= _collectedFee,
             "INSUFFICIENT TOKEN(THAT IS LOWER THAN EXPECTED COLLECTEDFEE) IN PENDINGORDERS CONTRACT"
         );
-        _collateralToken.transfer(_feeWithdrawAddress, _collectedFee);
         _collectedFee = 0;
+        _collateralToken.transfer(_feeWithdrawAddress, _collectedFee);
         emit FeeWithdrew(_collectedFee);
     }
 
