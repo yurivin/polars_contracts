@@ -1,0 +1,62 @@
+@startuml
+class SuiteList {
+    +address[] suites
+    +SuiteFactory suiteFactory
+    +address owner
+    +mapping(address suite => uint256 index) suiteIndexes
+    +mapping(address suite => address owner) suiteOwners
+    +void addSuite(address suite) onlySuiteFactory
+    +void deleteSuite(address suite) onlySuiteOwner, onlyOwner
+    +address[] getUserSeriesPage(uint256 startIndex, uint256 count)
+    +void changeOwner(address owner) onlyOwner
+    +void setSuiteFactory(address factory) onlyOwner
+}
+
+class SuiteFactory {
+    +SuiteList suiteList
+    +address owner
+    +address deploySuite()
+    +void setSuiteList(address suiteList) onlyOwner
+    +void changeOwner(address owner) onlyOwner
+}
+
+class Suite {
+    +address owner
+    +WhiteList whiteList
+    +mapping(uint256 type => address) contracts
+    +void changeOwner(address owner) onlyOwner
+    +void addContract(uint256 type, address contract) onlyWhiteList
+}
+
+class WhiteList {
+    +address owner
+    +mapping(address factory => boolean) whisteList
+    +void changeOwner(address owner) onlyOwner
+}
+
+class PredictionCollateralFactory {
+    +address owner
+    +SuiteList suiteList
+    +void changeOwner(address owner) onlyOwner
+    +void createPredictionCollateral(address suite, predictionCollateralParams...) onlySuiteOwner
+    +void change suiteList(address suiteList) onlyOwner
+}
+
+class PredictionPoolFactory {
+    +address owner
+    +SuiteList suiteList
+    +void changeOwner(address owner) onlyOwner
+    +void createPredictionCollateral(address suite, predictionCollateralParams...) onlySuiteOwner
+    +void change suiteList(address suiteList) onlyOwner
+}
+
+class EventLifeCycleFactory {
+    +address owner
+    +SuiteList suiteList
+    +void changeOwner(address owner) onlyOwner
+    +void createEventLifeCycle(address suite, predictionCollateralParams...) onlySuiteOwner
+    +void change suiteList(address suiteList) onlyOwner
+}
+
+@enduml
+

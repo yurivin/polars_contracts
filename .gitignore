@@ -6,6 +6,7 @@ contracts/bin/
 # contracts/Viper/
 build/
 coverage/
+.idea/
 .env
 env.json
 
