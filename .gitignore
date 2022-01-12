@@ -8,7 +8,6 @@ build/
 coverage/
 .idea/
 .env
-env.json
 
 # Coverage directory used by tools like istanbul
 coverage

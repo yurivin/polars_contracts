@@ -34,6 +34,7 @@ class WhiteList {
     +void changeOwner(address owner) onlyOwner
 }
 
+PredictionCollateralFactory <|-- ContractType
 class PredictionCollateralFactory {
     +address owner
     +SuiteList suiteList
@@ -42,6 +43,7 @@ class PredictionCollateralFactory {
     +void change suiteList(address suiteList) onlyOwner
 }
 
+PredictionPoolFactory <|-- ContractType
 class PredictionPoolFactory {
     +address owner
     +SuiteList suiteList
@@ -50,6 +52,7 @@ class PredictionPoolFactory {
     +void change suiteList(address suiteList) onlyOwner
 }
 
+EventLifeCycleFactory <|-- ContractType
 class EventLifeCycleFactory {
     +address owner
     +SuiteList suiteList
@@ -57,6 +60,13 @@ class EventLifeCycleFactory {
     +void createEventLifeCycle(address suite, predictionCollateralParams...) onlySuiteOwner
     +void change suiteList(address suiteList) onlyOwner
 }
+
+class ContractType {
+    +uint256 contractType
+    +uint256 getContractType()
+}
+
+
 
 @enduml
 
