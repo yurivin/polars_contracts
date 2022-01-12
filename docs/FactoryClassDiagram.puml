@@ -1,0 +1,77 @@
+@startuml
+SuiteList <|-- SuiteOwner
+class SuiteList {
+    +address[] suites
+    +SuiteFactory suiteFactory
+    +mapping(address suite => uint256 index) suiteIndexes
+    +mapping(address suite => address owner) suiteOwners
+    +void addSuite(address suite) onlySuiteFactory
+    +void deleteSuite(address suite) onlySuiteOwner(msg.sender), onlyOwner
+    +address[] getUserSeriesPage(uint256 startIndex, uint256 count)
+    +void setSuiteFactory(address factory) onlyOwner
+    +void changeSuiteOwner(address newOwner) onlySuiteOwner(msg.sender)
+}
+
+SuiteFactory <|-- Ownable
+class SuiteFactory {
+    +SuiteList suiteList
+    +address deploySuite()
+    +void setSuiteList(address suiteList) onlyOwner
+}
+
+Suite <|-- Ownable
+class Suite {
+    +WhiteList whiteList
+    modifier onlyWhiteList()
+    +mapping(uint256 type => address) contracts
+    +void addContract(uint256 type, address contract) onlyWhiteList
+}
+
+WhiteList <|-- Ownable
+class WhiteList {
+    +mapping(address factory => boolean) whisteList
+    +void add(address factory) onlyOwner
+    +void remove(address factory) onlyOwner
+}
+
+PredictionCollateralFactory <|-- ContractType
+PredictionCollateralFactory <|-- SuiteOwner
+class PredictionCollateralFactory {
+    +SuiteList suiteList
+    +void createPredictionCollateral(address suite, predictionCollateralParams...) onlySuiteOwner
+}
+
+PredictionPoolFactory <|-- ContractType
+PredictionPoolFactory <|-- SuiteOwner
+class PredictionPoolFactory {
+    +SuiteList suiteList
+    +void createPredictionCollateral(address suite, predictionCollateralParams...) onlySuiteOwner
+}
+
+EventLifeCycleFactory <|-- ContractType
+EventLifeCycleFactory <|-- SuiteOwner
+class EventLifeCycleFactory {
+    +SuiteList suiteList
+    +void createEventLifeCycle(address suite, predictionCollateralParams...) onlySuiteOwner
+}
+
+class ContractType {
+    +uint256 contractType
+    +uint256 getContractType()
+}
+
+SuiteOwner <|-- Ownable
+/'All functions like Ownable exclude create/cahnge suite owner and vith "suite" prefix, but with
+ suiteOwner logic, where wher we are checking ownership in SuiteList'/
+class SuiteOwner {
+    SuiteList suiteList
+    modifier onlySuiteOwner(address msg.sender)
+    +void changeSuiteList(address suiteList) onlyOwner
+}
+
+class Ownable {
+    Standard Ownable from OpenZeppellin
+}
+
+@enduml
+

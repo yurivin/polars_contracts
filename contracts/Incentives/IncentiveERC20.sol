@@ -3,7 +3,7 @@
 pragma solidity >=0.6.0 <0.8.0;
 
 import "./Context.sol";
-import "../IERC20.sol";
+import "../Common/IERC20.sol";
 import "../SafeMath.sol";
 
 /**
