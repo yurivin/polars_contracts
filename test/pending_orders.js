@@ -457,7 +457,7 @@ contract("PendingOrders", function (accounts) {
       .to.be.bignumber.equal(collateralAmount);
   }
 
-  it.only("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
+  it.only("test suite for multiple pending orders", async () => {
 
     await addLiquidityToPrediction();
     const userColTotal = 100000;
@@ -629,6 +629,64 @@ contract("PendingOrders", function (accounts) {
           }, accountsSum)
           // .reduce((accumulator, a) => accumulator.add(new BN(a.amountAfter)), new BN("0"))
         // console.log("withdraw:         ", withdraw);
+        // var arr = [1, 2, 3, 4, 5];
+
+        // var results = await Promise.all(
+        //   arr.map(async (item) => {
+        //     await callAsynchronousOperation(item);
+        //     return item + 1;
+        //   })
+        // );
+
+        // const arr = [1, 2, 3, 4, 5, 6, 7, 8];
+        // const randomDelay = () => new Promise(resolve => setTimeout(resolve, Math.random() * 1000));
+
+        // const calc = async n => {
+        //   await randomDelay();
+        //   return n * 2;
+        // };
+
+        // const asyncFunc = async () => {
+        //   const unresolvedPromises = arr.map(n => calc(n));
+        //   const results = await Promise.all(unresolvedPromises);
+        //   console.log("results:", results)
+
+        // };
+
+        // asyncFunc();
+
+        // const arr = await Promise.all(
+        //   [1, 2, 3, 4, 5].map(
+        //     async (value) => 2 * await asyncThing(value)
+        //   )
+        // );
+
+        // console.log(arr); // [2, 4, 6, 8, 10]
+
+        // const arr =
+        // await Promise.all(
+        //   withdraw.map(
+        //     async (order) => {
+        //       if (order.needWD) {
+        //         ordersApplied
+        //           .filter(el => el.withdrowDone === false)
+        //           .filter(el => order.account === el.account)
+        //           .filter(el => event.eventId.gte(el.eventId))
+        //           .map(
+        //             (el) => {
+        //               el.withdrowDone = true;
+        //               console.log("ORDER:         ", JSON.stringify(el, null, 4));
+        //               return el
+        //             }
+        //           )
+
+        //         await withdrow(accounts[order.account], order.sum.toString());
+        //       }
+        //       console.log("withdraw:         ", `{ account: ${order.account}, sum: ${order.sum.toString()}, needWD: ${order.needWD} }`);
+        //     }
+        //   )
+        // );
+
         await withdraw.map(
           async (order) => {
             // return order;
@@ -638,13 +696,15 @@ contract("PendingOrders", function (accounts) {
                 .filter(el => el.withdrowDone === false)
                 .filter(el => order.account === el.account)
                 .filter(el => event.eventId.gte(el.eventId))
-                .map((el) => {
-                  console.log("ORDER:         ", JSON.stringify(el, null, 4));
-                  return el.withdrowDone = true;
-                }
-              )
+                .map(
+                  (el) => {
+                    el.withdrowDone = true;
+                    console.log("ORDER:         ", JSON.stringify(el, null, 4));
+                    return el
+                  }
+                )
 
-              await withdrow(accounts[order.account], order.sum.toString());
+              // await withdrow(accounts[order.account], order.sum.toString());
             }
             await console.log("withdraw:         ", `{ account: ${order.account}, sum: ${order.sum.toString()}, needWD: ${order.needWD} }`);
           }
