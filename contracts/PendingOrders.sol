@@ -24,11 +24,6 @@ contract PendingOrders is DSMath, Ownable {
     // ordersCount count number of orders so far, and is id of very last order
     uint256 public _ordersCount;
 
-    // indicates fee percentage of 0.001%, which can be changed by owner
-    uint256 public _FEE = 0; // solhint-disable-line var-name-mixedcase
-
-    uint256 _collectedFee;
-
     IERC20 public _collateralToken;
     IPredictionPool public _predictionPool;
 
@@ -223,9 +218,9 @@ contract PendingOrders is DSMath, Ownable {
         // feeAmount should be subtracted before actual return
         uint256 totalWithdrawAmount;
 
-        uint256[] memory orders = _ordersOfUser[msg.sender];
-        for (uint256 i = 0; i < orders.length; i++) {
-            uint256 _oId = orders[i]; // order ID
+        uint256 i = 0;
+        while(i < _ordersOfUser[msg.sender].length) {
+            uint256 _oId = _ordersOfUser[msg.sender][i]; // order ID
             Order memory order = _orders[_oId];
             uint256 _eId = order.eventId; // event ID
             Detail memory eventDetail = _detailForEvent[_eId];
@@ -234,9 +229,9 @@ contract PendingOrders is DSMath, Ownable {
             // exclude canceled orders, only include executed orders
             if (order.isPending && eventDetail.isExecuted) {
                 uint256 withdrawAmount = 0;
-
                 uint256 priceAfter = 0;
                 uint256 priceBefore = 0;
+
                 if (order.isWhite) {
                     priceBefore = eventDetail.whitePriceBefore;
                     priceAfter = eventDetail.whitePriceAfter;
@@ -256,25 +251,22 @@ contract PendingOrders is DSMath, Ownable {
                 totalWithdrawAmount = totalWithdrawAmount.add(withdrawAmount);
             }
 
-            // pop IDs of canceled or executed orders from ordersOfUser array
-            if (!order.isPending || eventDetail.isExecuted) {
+              // pop IDs of canceled or executed orders from ordersOfUser array
+            if (!_orders[_oId].isPending || eventDetail.isExecuted) {
                 delete _ordersOfUser[msg.sender][i];
-
-                // solhint-disable-next-line prettier/prettier
                 _ordersOfUser[msg.sender][i] = _ordersOfUser[msg.sender][_ordersOfUser[msg.sender].length - 1];
                 _ordersOfUser[msg.sender].pop();
+
+                delete _orders[_oId];
+            } else {
+                i++;
             }
         }
 
-        uint256 feeAmount = wmul(totalWithdrawAmount, _FEE);
-        uint256 userWithdrawAmount = totalWithdrawAmount.sub(feeAmount);
+        _collateralToken.transfer(msg.sender, totalWithdrawAmount);
+        emit CollateralWithdrew(totalWithdrawAmount);
 
-        _collectedFee = _collectedFee.add(feeAmount);
-
-        _collateralToken.transfer(msg.sender, userWithdrawAmount);
-        emit CollateralWithdrew(userWithdrawAmount);
-
-        return userWithdrawAmount;
+        return totalWithdrawAmount;
     }
 
     function calculateNewAmount(
@@ -304,32 +296,5 @@ contract PendingOrders is DSMath, Ownable {
         );
         _eventContractAddress = _newEventAddress;
         emit EventContractAddressChanged(_eventContractAddress);
-    }
-
-    function changeFeeWithdrawAddress(address _newFeeWithdrawAddress)
-        external
-        onlyOwner
-    {
-        require(
-            _newFeeWithdrawAddress != address(0),
-            "NEW WITHDRAW ADDRESS SHOULD NOT BE NULL"
-        );
-        _feeWithdrawAddress = _newFeeWithdrawAddress;
-        emit FeeWithdrawAddressChanged(_feeWithdrawAddress);
-    }
-
-    function withdrawFee() external onlyOwner {
-        require(
-            _collateralToken.balanceOf(address(this)) >= _collectedFee,
-            "INSUFFICIENT TOKEN(THAT IS LOWER THAN EXPECTED COLLECTEDFEE) IN PENDINGORDERS CONTRACT"
-        );
-        _collectedFee = 0;
-        _collateralToken.transfer(_feeWithdrawAddress, _collectedFee);
-        emit FeeWithdrew(_collectedFee);
-    }
-
-    function changeFee(uint256 _newFEE) external onlyOwner {
-        _FEE = _newFEE;
-        emit FeeChanged(_FEE);
     }
 }
