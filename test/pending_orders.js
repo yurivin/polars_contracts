@@ -232,7 +232,7 @@ contract("PendingOrders", function (accounts) {
       amount: amountBN
     });
 
-    return createOrderLog;
+    return ordersCountExpected;
   }
 
   it.skip("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
@@ -427,38 +427,16 @@ contract("PendingOrders", function (accounts) {
   ];
 
   const bids = [
-    {
-      account: 1,
-      isWhite: true,
-      eventId: new BN("101"),
-      amount: 100
-    }, {
-      account: 1,
-      isWhite: true,
-      eventId: new BN("106"),
-      amount: 273
-    }, {
-      account: 2,
-      isWhite: true,
-      eventId: new BN("101"),
-      amount: 332
-    }, {
-      account: 1,
-      isWhite: false,
-      eventId: new BN("104"),
-      amount: 1253
-    }, {
-      account: 2,
-      isWhite: false,
-      eventId: new BN("105"),
-      amount: 14
-    }, {
-      account: 1,
-      isWhite: true,
-      eventId: new BN("104"),
-      amount: 1253
-    }
+    { account: 1, isWhite: true,  eventId: new BN("101"), amount: 100,  withdrowAfterEvent: false },
+    { account: 1, isWhite: false, eventId: new BN("104"), amount: 1253, withdrowAfterEvent: true  },
+    { account: 1, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrowAfterEvent: false },
+    { account: 1, isWhite: true,  eventId: new BN("106"), amount: 273,  withdrowAfterEvent: true  },
+    { account: 2, isWhite: true,  eventId: new BN("101"), amount: 332,  withdrowAfterEvent: false },
+    { account: 2, isWhite: false, eventId: new BN("105"), amount: 14,   withdrowAfterEvent: false },
+    { account: 4, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrowAfterEvent: false }
   ]
+
+
 
   const sendCollateralTokenToUser = async (user, amount) => {
     const collateralAmount = new BN(
@@ -479,92 +457,242 @@ contract("PendingOrders", function (accounts) {
       .to.be.bignumber.equal(collateralAmount);
   }
 
-  it("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
+  it.only("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
 
     await addLiquidityToPrediction();
-    await sendCollateralTokenToUser(accounts[1], 100000);
-    await sendCollateralTokenToUser(accounts[2], 100000);
-    await sendCollateralTokenToUser(accounts[3], 100000);
-    await sendCollateralTokenToUser(accounts[4], 100000);
+    const userColTotal = 100000;
 
-    const whitePricePpedictionBeforeTest = await deployedPredictionPool._whitePrice()
-    const blackPricePpedictionBeforeTest = await deployedPredictionPool._blackPrice()
+    for (const i of [...Array(accounts.length).keys()]) {
+      if (i > 0) { await sendCollateralTokenToUser(accounts[i], userColTotal) }
+    }
 
-    let ordersApplied = [bids[0], bids[1], bids[2], bids[3], bids[4], bids[5]];
+    //================= НЕ УДАЛЯТЬ !!! =============================
+    // let ordersApplied = [bids[0]];
+    // let ordersApplied = [bids[0], bids[1], bids[2], bids[3], bids[4], bids[5], bids[6]];
+    // let ordersApplied = [bids[0], bids[1], bids[2], bids[3], bids[4], bids[5]];
+
+    // let ordersApplied = [
+    //   { account: 1, isWhite: true,  eventId: new BN("102"), amount: 100,  withdrowAfterEvent: false },
+    //   bids[1]
+    // ];
+
+    // let ordersApplied = [bids[0], bids[1]];
+    // let ordersApplied = [bids[0], bids[1], bids[2]];
+    // let ordersApplied = [bids[2]];
+    // let ordersApplied = [bids[0], bids[1], bids[3]];
+    let ordersApplied = [bids[0], bids[1], bids[2], bids[3]];
+    // let ordersApplied = [bids[0], bids[1], bids[2]];
+    // let ordersApplied = [bids[0], bids[1], bids[2], bids[3], bids[4]];
     // let ordersApplied = [bids[0], bids[2], bids[4]];
 
+    //================= НЕ УДАЛЯТЬ !!! =============================
+
     for (let bid of ordersApplied) {
-      const createOrderLog = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]); // runner = 0
+      bid.id = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]); // runner = 0
+      bid.withdrowDone = false;
     }
 
     const ordersCount = await deployedPendingOrders._ordersCount();
     expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
 
-    let totalWithdrow = [
-      { account: 0, sum: 0 },
-      { account: 1, sum: 0 },
-      { account: 2, sum: 0 },
-      { account: 3, sum: 0 },
-      { account: 4, sum: 0 },
-      { account: 5, sum: 0 },
-      { account: 6, sum: 0 },
-      { account: 7, sum: 0 },
-      { account: 8, sum: 0 },
-      { account: 9, sum: 0 }
-    ]
+    let totalWithdrow = [...Array(accounts.length).keys()]
+      .map((el) => {
+        return { account: el, colateral: 0, white: 0, black: 0, orders: [], orders2: [] };
+      });
 
-    // console.log("whitePrice:", whitePricePpedictionBeforeTest.toString());
-    // console.log("blackPrice:", blackPricePpedictionBeforeTest.toString());
+    let pO = []
+
+    let doneEvents = []
 
     for (let event of eventsArray) {
-      const pendingOrders = ordersApplied.filter(el => event.eventId.eq(el.eventId));
+      console.log("Start event #:", event.eventId.toString());
+      const pendingOrders = ordersApplied.filter(el => event.eventId.eq(el.eventId)) //.map(el => { event: event.eventId, el});
+
+      const whitePricePpedictionBeforeEvent = await deployedPredictionPool._whitePrice()
+      const blackPricePpedictionBeforeEvent = await deployedPredictionPool._blackPrice()
+      const whitePriceBefore = new bigDecimal(whitePricePpedictionBeforeEvent.toString(10))
+        .divide(new bigDecimal(BONE.toString(10)), 18);
+      const blackPriceBefore = new bigDecimal(blackPricePpedictionBeforeEvent.toString(10))
+        .divide(new bigDecimal(BONE.toString(10)), 18);
+      const fee = new bigDecimal((await deployedPredictionPool.FEE()).toString())
+        .divide(new bigDecimal(BONE.toString(10)), 18);
+      // doneEvents = [...doneEvents, ...pendingOrders];
+
+      const ttt = pendingOrders.map(
+        (el) => {
+          const amountBDb = new bigDecimal(ntob(el.amount));
+          const f = amountBDb.multiply(fee);
+          const a = amountBDb.subtract(f);
+          const n1 = a.divide(el.isWhite ? whitePriceBefore : blackPriceBefore, 18).round();
+          return {
+            "id": el.id,
+            "account": el.account,
+            "isWhite": el.isWhite,
+            "withdrowAfterEvent": el.withdrowAfterEvent,
+            "eventId2": el.eventId.toString(),
+            "eventId": el.eventId, //.toString(),
+            "amountBefore": el.amount,
+            "feeBefore": f.getValue(),
+            "feeAfter": 0,
+            "tokens": n1.getValue(),
+            "amountAfter": 0,
+            "withdrowDone": false
+          };
+        }
+      )
 
       await executeEventIteration(event.eventId, event.eventResult, pendingOrders);
       const duration = time.duration.minutes(1);
       await time.increase(duration);
+
+      console.log("==================");
       const whitePricePpedictionAfterEvent = await deployedPredictionPool._whitePrice()
       const blackPricePpedictionAfterEvent = await deployedPredictionPool._blackPrice()
-      // console.log("whitePrice:", whitePricePpedictionAfterEvent.toString());
-      // console.log("blackPrice:", blackPricePpedictionAfterEvent.toString());
-    }
+      console.log("whitePriceA:", whitePricePpedictionAfterEvent.toString());
+      console.log("blackPriceA:", blackPricePpedictionAfterEvent.toString());
 
-    function* enumerate(iterable) {
-      let i = 0;
+      const whitePriceAfter = new bigDecimal(whitePricePpedictionAfterEvent.toString(10))
+        .divide(new bigDecimal(BONE.toString(10)), 18);
+      const blackPriceAfter = new bigDecimal(blackPricePpedictionAfterEvent.toString(10))
+        .divide(new bigDecimal(BONE.toString(10)), 18);
 
-      for (const x of iterable) {
-        yield [i, x];
-        i++;
+      const ttt2 = ttt.map(
+        (order) => {
+          const x = new bigDecimal(
+            order.tokens // amountIn
+          ).multiply(order.isWhite ? whitePriceAfter : blackPriceAfter)//.round()
+          const aFeeBD = x.multiply(fee).round();
+          const collateralToSend = x.subtract(aFeeBD).round();
+
+
+          return {
+            "id": order.id,
+            "account": order.account,
+            "isWhite": order.isWhite,
+            "withdrowAfterEvent": order.withdrowAfterEvent,
+            "eventId2": order.eventId.toString(),
+            "eventId": order.eventId, //.toString(),
+            "amount": order.amount,
+            "amountBefore": order.amountBefore,
+            "feeBefore": order.feeBefore,
+            "feeAfter": aFeeBD.getValue(),
+            "tokens": order.tokens,
+            "amountAfter": collateralToSend.getValue(),
+            "amountAfter2": collateralToSend.divide(new bigDecimal(BONE.toString(10)), 18).getValue(),
+            "withdrowDone": order.withdrowDone,
+          };
+        }
+      )
+
+      ordersApplied.map(
+        (order) => {
+          let tmpOrder = ttt2.filter(el => order.id === el.id)
+          if (tmpOrder.length > 0) {
+            tmpOrder = tmpOrder.shift();
+            order.eventId2 = tmpOrder.eventId2;
+            order.amountBefore = tmpOrder.amountBefore;
+            order.feeBefore = tmpOrder.feeBefore;
+            order.feeAfter = tmpOrder.feeAfter;
+            order.amountAfter = tmpOrder.amountAfter;
+            order.amountAfter2 = tmpOrder.amountAfter2;
+          }
+          return order;
+        }
+      )
+
+
+      let accountsSum = [...Array(accounts.length).keys()].map((el) => {
+        return { account: el, sum: new BN("0"), needWD: false }
+      })
+
+      const ordersToWithDraw = ordersApplied
+        .filter(el => el.withdrowDone === false)
+        .filter(el => event.eventId.eq(el.eventId))
+        .filter(el => el.withdrowAfterEvent === true)
+      let withdraw = new BN(0);
+      if (ordersToWithDraw.length > 0) {
+        withdraw = ordersApplied
+          .filter(el => event.eventId.gte(el.eventId))
+          .filter(el => el.withdrowDone === false)
+          .reduce((a, el) => {
+            a[el.account].account = el.account
+            a[el.account].sum = new BN(el.amountAfter).add(a[el.account].sum)
+
+            const rrr = ordersApplied
+              .filter(order => order.account === el.account)
+              .filter(order => event.eventId.eq(order.eventId))
+              .filter(order => order.withdrowAfterEvent === true)
+            if (rrr.length > 0) {
+              a[el.account].needWD = true
+            }
+            return a
+          }, accountsSum)
+          // .reduce((accumulator, a) => accumulator.add(new BN(a.amountAfter)), new BN("0"))
+        // console.log("withdraw:         ", withdraw);
+        await withdraw.map(
+          async (order) => {
+            // return order;
+            if (order.needWD) {
+
+              await ordersApplied
+                .filter(el => el.withdrowDone === false)
+                .filter(el => order.account === el.account)
+                .filter(el => event.eventId.gte(el.eventId))
+                .map((el) => {
+                  console.log("ORDER:         ", JSON.stringify(el, null, 4));
+                  return el.withdrowDone = true;
+                }
+              )
+
+              await withdrow(accounts[order.account], order.sum.toString());
+            }
+            await console.log("withdraw:         ", `{ account: ${order.account}, sum: ${order.sum.toString()}, needWD: ${order.needWD} }`);
+          }
+        )
       }
-    }
 
-    for (const [i, account] of enumerate(accounts)) {
+      ordersApplied
+        .filter(el => event.eventId.gte(el.eventId))
+        .filter(el => el.withdrowDone === false)
+        // .filter(el => el.withdrowAfterEvent === true)
+        .map(
+          (order) => {
+            console.log("ORDER2:         ", JSON.stringify(order, null, 4));
+            return order;
+          }
+        )
 
-      const pendingOrders = ordersApplied.filter(el => i === el.account);
-      // console.log(i, account, JSON.stringify(pendingOrders, null, 4));
+      doneEvents.push({
+        event: event.eventId,
+        eventResult: event.eventResult.toString(),
+        orders: pendingOrders,
+        whitePriceBefore: whitePricePpedictionBeforeEvent.toString(),
+        blackPriceBefore: blackPricePpedictionBeforeEvent.toString(),
+        whitePriceBefore1: whitePriceBefore.getValue(),
+        blackPriceBefore1: blackPriceBefore.getValue(),
+        whitePriceAfter: whitePricePpedictionAfterEvent.toString(),
+        blackPriceAfter: blackPricePpedictionAfterEvent.toString(),
+        whitePriceAfter1: whitePriceAfter.getValue(),
+        blackPriceAfter1: blackPriceAfter.getValue(),
+      });
 
-      const sumColForWhite = pendingOrders
-        .filter(el => el.isWhite === true)
-        .reduce((accumulator, a) => accumulator + a.amount, 0);
-      // console.log("sumColForWhite:", sumColForWhite);
+      console.log("End event #:", event.eventId.toString(), "result:", event.eventResult.toString());
+      console.log("===========================================================");
+    } // <=== for (let event of eventsArray)
 
-      const sumColForBlack = pendingOrders
-        .filter(el => el.isWhite === false)
-        .reduce((accumulator, a) => accumulator + a.amount, 0);
-      // console.log("sumColForBlack:", sumColForBlack);
-      // const withdrawCollateral = await deployedPendingOrders.withdrawCollateral({
-      //   from: account
-      // });
-    }
-
-    /*const withdrawCollateral = await deployedPendingOrders.withdrawCollateral();
-    const { logs: withdrawCollateralLog } = withdrawCollateral;
-
-    const collateralToSend = await getExactSellAmountOut(buyAmountOut, isWhite);
-
-    expectEvent.inLogs(withdrawCollateralLog, 'CollateralWithdrew', {
-      amount: new BN(collateralToSend)
-    });*/
+    console.log("doneEvents:         ", JSON.stringify(doneEvents, null, 4));
   });
+
+  const withdrow = async (account, expextedAmount) => {
+    const withdrawCollateral = await deployedPendingOrders.withdrawCollateral({
+      from: account
+    });
+    const { logs: withdrawCollateralLog } = withdrawCollateral;
+    expectEvent.inLogs(withdrawCollateralLog, 'CollateralWithdrew', {
+      // amount: new BN("20")
+      amount: new BN(expextedAmount)
+    });
+  }
 
   it.skip("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
 
