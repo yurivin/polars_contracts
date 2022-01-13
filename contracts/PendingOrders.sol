@@ -31,10 +31,10 @@ contract PendingOrders is DSMath, Ownable {
     address public _eventContractAddress;
 
     // mapping from order ID to Order detail
-    mapping(uint256 => Order) _orders;
+    mapping(uint256 => Order) public _orders;
 
     // mapping from user address to order IDs for that user
-    mapping(address => uint256[]) _ordersOfUser;
+    mapping(address => uint256[]) public _ordersOfUser;
 
     struct Detail {
         /* solhint-disable prettier/prettier */
@@ -50,7 +50,7 @@ contract PendingOrders is DSMath, Ownable {
     }
 
     // mapping from event ID to detail for that event
-    mapping(uint256 => Detail) _detailForEvent;
+    mapping(uint256 => Detail) public _detailForEvent;
 
     event OrderCreated(uint256 id, uint256 amount);
     event OrderCanceled(uint256 id);
@@ -219,7 +219,7 @@ contract PendingOrders is DSMath, Ownable {
         uint256 totalWithdrawAmount;
 
         uint256 i = 0;
-        while(i < _ordersOfUser[msg.sender].length) {
+        while (i < _ordersOfUser[msg.sender].length) {
             uint256 _oId = _ordersOfUser[msg.sender][i]; // order ID
             Order memory order = _orders[_oId];
             uint256 _eId = order.eventId; // event ID
@@ -251,10 +251,12 @@ contract PendingOrders is DSMath, Ownable {
                 totalWithdrawAmount = totalWithdrawAmount.add(withdrawAmount);
             }
 
-              // pop IDs of canceled or executed orders from ordersOfUser array
+            // pop IDs of canceled or executed orders from ordersOfUser array
             if (!_orders[_oId].isPending || eventDetail.isExecuted) {
                 delete _ordersOfUser[msg.sender][i];
-                _ordersOfUser[msg.sender][i] = _ordersOfUser[msg.sender][_ordersOfUser[msg.sender].length - 1];
+                _ordersOfUser[msg.sender][i] = _ordersOfUser[msg.sender][
+                    _ordersOfUser[msg.sender].length - 1
+                ];
                 _ordersOfUser[msg.sender].pop();
 
                 delete _orders[_oId];
