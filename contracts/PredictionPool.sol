@@ -42,16 +42,18 @@ contract PredictionPool is Eventable, DSMath {
     uint256 public _currentEventPercentChange;
 
     // 0.3% (1e18 == 100%)
-    uint256 public constant FEE = 0.003 * 1e18;
+    uint256 public FEE = 0.003 * 1e18;
 
-    // governance token holders fee: initial – 30% of total FEE
+    // governance token holders fee of total FEE
     uint256 public _governanceFee = 0.4 * 1e18;
 
-    // controller fee: initial – 15% of total FEE
+    // controller fee of total FEE
     uint256 public _controllerFee = 0.55 * 1e18;
 
-    // initial pool fee: 5% of total FEE
+    // initial pool fee  of total FEE
     uint256 public _bwAdditionFee = 0.05 * 1e18;
+
+    uint256 public _maxFeePart = 0.9 * 1e18;
 
     /*
     Part which will be sent as governance incentives
@@ -757,5 +759,18 @@ contract PredictionPool is Eventable, DSMath {
         _collateralForBlack = _collateralForBlack.add(forBlackAmount);
         _collateralForWhite = _collateralForWhite.add(forWhiteAmount);
         _collateralToken.transferFrom(msg.sender, address(_thisCollateralization), forWhiteAmount.add(forBlackAmount));
+    }
+
+    function changeFees(uint256 fee, uint256 governanceFee, uint256 controllerFee, uint256 bwAdditionFee) external onlyGovernance {
+
+    require(fee <= 0.1 * 1e18, "Too high total fee");
+    require(governanceFee <= _maxFeePart, "Too high governance fee");
+    require(controllerFee <= _maxFeePart, "Too high controller fee");
+    require(bwAdditionFee <= _maxFeePart,  "Too high bwAddition fee");
+
+    FEE = fee;
+    _governanceFee = governanceFee;
+    _controllerFee = controllerFee;
+    _bwAdditionFee = bwAdditionFee;
     }
 }
