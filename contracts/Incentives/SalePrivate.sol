@@ -1,4 +1,4 @@
-pragma solidity ^0.7.4;
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 // "SPDX-License-Identifier: Apache License 2.0"
