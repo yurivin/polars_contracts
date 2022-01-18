@@ -680,7 +680,8 @@ contract("PendingOrders", function (accounts) {
         //             }
         //           )
 
-        //         await withdrow(accounts[order.account], order.sum.toString());
+        //         const receipt = await withdrawAmount(accounts[order.account], order.sum.toString());
+        //         console.log(`Pending orders GasUsed: ${receipt}`);
         //       }
         //       console.log("withdraw:         ", `{ account: ${order.account}, sum: ${order.sum.toString()}, needWD: ${order.needWD} }`);
         //     }
@@ -704,7 +705,9 @@ contract("PendingOrders", function (accounts) {
                   }
                 )
 
-              // await withdraw(accounts[order.account], order.sum.toString());
+              // const receipt = await withdrawAmount(accounts[order.account], order.sum.toString());
+              // const gasUsed = receipt.receipt.gasUsed;
+              console.log(`Pending orders GasUsed: ${(await withdrawAmount(accounts[order.account], order.sum.toString()))}`);
             }
             await console.log("withdraw:         ", `{ account: ${order.account}, sum: ${order.sum.toString()}, needWD: ${order.needWD} }`);
           }
@@ -743,7 +746,7 @@ contract("PendingOrders", function (accounts) {
     console.log("doneEvents:         ", JSON.stringify(doneEvents, null, 4));
   });
 
-  const withdraw = async (account, expextedAmount) => {
+  const withdrawAmount = async (account, expextedAmount) => {
     const withdrawCollateral = await deployedPendingOrders.withdrawCollateral({
       from: account
     });
