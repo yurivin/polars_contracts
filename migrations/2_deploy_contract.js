@@ -3,6 +3,8 @@ const PredictionPool = artifacts.require("PredictionPool");
 const PredictionCollateralization = artifacts.require("PredictionCollateralization");
 const TokenTemplate = artifacts.require("TokenTemplate");
 const EventLifeCycle = artifacts.require("EventLifeCycle");
+// const OracleEventManager = artifacts.require("OracleEventManager");
+const OracleSwapEventManager = artifacts.require("OracleSwapEventManager");
 
 const {
   BN,           // Big Number support
@@ -107,6 +109,18 @@ module.exports = async(deployer, network, accounts) => {
         await blackToken.approve(deployedPredictionCollateralization.address, approveValue);
         await deployedCollateralToken.approve(deployedPendingOrders.address, approveValue);
         await deployedCollateralToken.approve(deployedPredictionPool.address, approveValue);
+
+        await deployer.deploy(
+            OracleSwapEventManager,
+            deployedEventLifeCycle.address,
+            deployedPredictionPool.address,
+            new BN("50000000000000000"),
+            new BN("1800"),
+            new BN("1800")
+        );
+        const deployedOracleSwapEventManager = await OracleSwapEventManager.deployed();
+
+        console.log("OracleSwapEventManager:  " + await deployedOracleSwapEventManager.address);
 
     } else {
         // Perform a different step otherwise.
