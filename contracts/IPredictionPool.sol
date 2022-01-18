@@ -21,6 +21,8 @@ interface IPredictionPool {
 
     function _thisCollateralization() external returns (address);
 
+    function _eventStarted() external returns (bool);
+
     // solhint-disable-next-line func-name-mixedcase
     function FEE() external returns (uint256);
 }
