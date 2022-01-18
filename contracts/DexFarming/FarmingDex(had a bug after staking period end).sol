@@ -91,7 +91,7 @@ contract FarmingPool {
 
     // Initialize tokenReservoir after creation (only once)
     function initializeTokenReservoir(IReservoir _tokenReservoir) external {
-        require(tokenReservoir == IReservoir(0), "TokenReservoir has already been initialized");
+        require(tokenReservoir == IReservoir(address(0)), "TokenReservoir has already been initialized");
         tokenReservoir = _tokenReservoir;
     }
 
