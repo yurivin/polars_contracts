@@ -50,7 +50,7 @@ contract OracleEventManager is Ownable {
         uint256 _eventEndTimeOutExpected;
     }
 
-    OracleConfig internal _config;
+    OracleConfig public _config;
 
     uint256 public _lastEventId = 1;
     uint256 public _checkPeriod = 60; // in seconds
@@ -78,7 +78,8 @@ contract OracleEventManager is Ownable {
     event AppStarted(
         uint256 nowTime,
         uint256 eventStartTimeExpected,
-        uint256 startedAt
+        uint256 startedAt,
+        string eventName
     );
     event AppEnded(uint256 nowTime, uint256 eventEndTimeExpected, int8 result);
 
@@ -230,7 +231,8 @@ contract OracleEventManager is Ownable {
         emit AppStarted(
             block.timestamp,
             gameEvent.eventStartTimeExpected,
-            gameEvent.startedAt
+            gameEvent.startedAt,
+            gameEvent.eventName
         );
 
         _gameEvent = gameEvent;
