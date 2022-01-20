@@ -15,3 +15,4 @@ coverage.json
 coverageEnv
 core
 Compiling
+.vscode/settings.json
