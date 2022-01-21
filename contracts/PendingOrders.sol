@@ -27,7 +27,6 @@ contract PendingOrders is DSMath, Ownable {
     IERC20 public _collateralToken;
     IPredictionPool public _predictionPool;
 
-    address public _feeWithdrawAddress;
     address public _eventContractAddress;
 
     // mapping from order ID to Order detail
@@ -65,7 +64,6 @@ contract PendingOrders is DSMath, Ownable {
     constructor(
         address predictionPoolAddress,
         address collateralTokenAddress,
-        address feeWithdrawAddress,
         address eventContractAddress
     ) {
         require(
@@ -77,16 +75,11 @@ contract PendingOrders is DSMath, Ownable {
             "COLLATERAL TOKEN ADDRESS SHOULD NOT BE NULL"
         );
         require(
-            feeWithdrawAddress != address(0),
-            "FEE WITHDRAW ADDRESS SHOULD NOT BE NULL"
-        );
-        require(
             eventContractAddress != address(0),
             "EVENT ADDRESS SHOULD NOT BE NULL"
         );
         _predictionPool = IPredictionPool(predictionPoolAddress);
         _collateralToken = IERC20(collateralTokenAddress);
-        _feeWithdrawAddress = feeWithdrawAddress;
         _eventContractAddress = eventContractAddress;
 
         // solhint-disable-next-line var-name-mixedcase

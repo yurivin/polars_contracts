@@ -69,10 +69,6 @@ contract("PendingOrders", function (accounts) {
     return assert.equal(await deployedPendingOrders._collateralToken(), deployedCollateralToken.address);
   });
 
-  it("should assert PendingOrders._feeWithdrawAddress() equal deployer address", async () => {
-    return assert.equal(await deployedPendingOrders._feeWithdrawAddress(), deployerAddress);
-  });
-
   it("should assert PendingOrders address equal EventLifeCycle._pendingOrders()", async () => {
     return assert.equal(deployedPendingOrders.address, await deployedEventLifeCycle._pendingOrders());
   });
