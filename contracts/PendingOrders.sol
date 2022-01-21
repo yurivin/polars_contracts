@@ -128,7 +128,7 @@ contract PendingOrders is DSMath, Ownable {
             "NOT ENOUGHT DELEGATED TOKENS"
         );
         require(
-            _ordersOfUser[msg.sender].length < 11,
+            _ordersOfUser[msg.sender].length < 10,
             "Cannot have more than 10 orders for a user simultaneously"
         );
 

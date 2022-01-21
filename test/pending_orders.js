@@ -109,12 +109,9 @@ contract("PendingOrders", function (accounts) {
     expect(ordersCount).to.be.bignumber.equal(new BN("1"));
 
     const whitePrice = await deployedPredictionPool._whitePrice();
-    console.log("whitePrice:         ", whitePrice.toString());
-    // TODO: Check price, assertEquals(new BigInteger("525078986960882648"),bettingPool._whitePrice().send());
     expect(whitePrice).to.be.bignumber.equal(new BN("500000000000000000"));
 
     const whiteBoughtBefore = await deployedPredictionPool._whiteBought();
-    console.log("whiteBoughtBefore:  ", whiteBoughtBefore.toString());
 
     const eventTx = await deployedEventLifeCycle.addAndStartEvent(
       priceChangePart,
@@ -132,8 +129,6 @@ contract("PendingOrders", function (accounts) {
     expect(ongoingEvent.eventId).to.be.bignumber.equal(eventId);
 
     const whiteBoughtDuringEvent = await deployedPredictionPool._whiteBought();
-    console.log("whiteBoughtDuringEvent:", whiteBoughtDuringEvent.toString());
-    console.log("expectedWhiteBuy:", expectedWhiteBuy.toString());
     expect(whiteBoughtBefore.add(expectedWhiteBuy)).to.be.bignumber.equal(whiteBoughtDuringEvent);
 
     return await expectRevert(
@@ -145,7 +140,7 @@ contract("PendingOrders", function (accounts) {
 
   it.skip("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
 
-    await addLiquidityToPrediction();
+    await addLiquidityToPrediction(50000);
 
     const amount = new BN("10");
     const expectedWhiteBuy = new BN("20"); // If whitePrice == 0.5
@@ -233,19 +228,19 @@ contract("PendingOrders", function (accounts) {
   ];
 
   const someBids = [
-    { account: 1, isWhite: true,  eventId: new BN("101"), amount: 100,  withdrawAfterEvent: false },
-    { account: 1, isWhite: false, eventId: new BN("104"), amount: 1253, withdrawAfterEvent: true  },
-    { account: 1, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false },
-    { account: 1, isWhite: true,  eventId: new BN("106"), amount: 273,  withdrawAfterEvent: true  },
-    { account: 2, isWhite: true,  eventId: new BN("101"), amount: 332,  withdrawAfterEvent: false },
-    { account: 2, isWhite: false, eventId: new BN("105"), amount: 14,   withdrawAfterEvent: false },
-    { account: 4, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false },
-    { account: 2, isWhite: false, eventId: new BN("103"), amount: 14,   withdrawAfterEvent: true },
+    { account: 1, isWhite: true,  eventId: new BN("101"), amount: 100,  withdrawAfterEvent: false, cancel: false },
+    { account: 1, isWhite: false, eventId: new BN("104"), amount: 1253, withdrawAfterEvent: true,  cancel: false },
+    { account: 1, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false, cancel: false },
+    { account: 1, isWhite: true,  eventId: new BN("106"), amount: 273,  withdrawAfterEvent: true,  cancel: false },
+    { account: 2, isWhite: true,  eventId: new BN("101"), amount: 332,  withdrawAfterEvent: false, cancel: false },
+    { account: 2, isWhite: false, eventId: new BN("105"), amount: 14,   withdrawAfterEvent: false, cancel: false },
+    { account: 4, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false, cancel: false },
+    { account: 2, isWhite: false, eventId: new BN("103"), amount: 14,   withdrawAfterEvent: true,  cancel: false },
   ]
 
   it("test suite for multiple pending orders (8 orders)", async () => {
 
-    await addLiquidityToPrediction();
+    await addLiquidityToPrediction(50000);
     const userColTotal = 100000;
 
     for (const i of [...Array(accounts.length).keys()]) {
@@ -276,7 +271,7 @@ contract("PendingOrders", function (accounts) {
 
   it("test suite for multiple pending orders (7 orders)", async () => {
 
-    await addLiquidityToPrediction();
+    await addLiquidityToPrediction(50000);
     const userColTotal = 100000;
 
     for (const i of [...Array(accounts.length).keys()]) {
@@ -306,7 +301,7 @@ contract("PendingOrders", function (accounts) {
 
   it("test suite for multiple pending orders (10 orders)", async () => {
 
-    await addLiquidityToPrediction();
+    await addLiquidityToPrediction(50000);
     const userColTotal = 100000;
 
     for (const i of [...Array(accounts.length).keys()]) {
@@ -314,16 +309,101 @@ contract("PendingOrders", function (accounts) {
     }
 
     let ordersApplied = [
-      { account: 1, isWhite: true,  eventId: new BN("101"), amount: 100,  withdrawAfterEvent: false },
-      { account: 1, isWhite: false, eventId: new BN("104"), amount: 1253, withdrawAfterEvent: true  },
-      { account: 1, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false },
-      { account: 1, isWhite: true,  eventId: new BN("106"), amount: 273,  withdrawAfterEvent: true  },
-      { account: 2, isWhite: true,  eventId: new BN("101"), amount: 332,  withdrawAfterEvent: false },
-      { account: 2, isWhite: false, eventId: new BN("105"), amount: 14,   withdrawAfterEvent: false },
-      { account: 3, isWhite: false, eventId: new BN("106"), amount: 2730, withdrawAfterEvent: true  },
-      { account: 4, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false },
-      { account: 2, isWhite: false, eventId: new BN("103"), amount: 14,   withdrawAfterEvent: true },
-      { account: 0, isWhite: false, eventId: new BN("104"), amount: 6222, withdrawAfterEvent: false },
+      { account: 1, isWhite: true,  eventId: new BN("101"), amount: 100,  withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: false, eventId: new BN("104"), amount: 1253, withdrawAfterEvent: true,  cancel: false },
+      { account: 1, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: true,  eventId: new BN("106"), amount: 273,  withdrawAfterEvent: true,  cancel: false },
+      { account: 2, isWhite: true,  eventId: new BN("101"), amount: 332,  withdrawAfterEvent: false, cancel: false },
+      { account: 2, isWhite: false, eventId: new BN("105"), amount: 14,   withdrawAfterEvent: false, cancel: false },
+      { account: 3, isWhite: false, eventId: new BN("106"), amount: 2730, withdrawAfterEvent: true,  cancel: false },
+      { account: 4, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false, cancel: false },
+      { account: 2, isWhite: false, eventId: new BN("103"), amount: 14,   withdrawAfterEvent: true,  cancel: false },
+      { account: 0, isWhite: false, eventId: new BN("104"), amount: 6222, withdrawAfterEvent: false, cancel: false },
+    ];
+
+    for (let bid of ordersApplied) {
+      bid.id = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]); // runner = 0
+      bid.withdrawDone = false;
+    }
+
+    const ordersCount = await deployedPendingOrders._ordersCount();
+    expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
+
+    await runEvents(someEventsArray, ordersApplied);
+  });
+
+  it("test suite for multiple pending orders (10 orders, 3 cancel)", async () => {
+
+    await addLiquidityToPrediction(50000);
+    const userColTotal = 100000;
+
+    for (const i of [...Array(accounts.length).keys()]) {
+      if (i > 0) { await sendCollateralTokenToUser(accounts[i], userColTotal) }
+    }
+
+    let ordersApplied = [
+      { account: 1, isWhite: true,  eventId: new BN("101"), amount: 100,  withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: false, eventId: new BN("104"), amount: 1253, withdrawAfterEvent: true,  cancel: false },
+      { account: 1, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false, cancel: true  },
+      { account: 1, isWhite: true,  eventId: new BN("106"), amount: 273,  withdrawAfterEvent: true,  cancel: false },
+      { account: 2, isWhite: true,  eventId: new BN("101"), amount: 332,  withdrawAfterEvent: false, cancel: false },
+      { account: 2, isWhite: false, eventId: new BN("105"), amount: 14,   withdrawAfterEvent: false, cancel: false },
+      { account: 3, isWhite: false, eventId: new BN("106"), amount: 2730, withdrawAfterEvent: true,  cancel: true  },
+      { account: 4, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false, cancel: false },
+      { account: 2, isWhite: false, eventId: new BN("103"), amount: 14,   withdrawAfterEvent: true,  cancel: false },
+      { account: 0, isWhite: false, eventId: new BN("104"), amount: 6222, withdrawAfterEvent: false, cancel: true  },
+    ];
+
+    for (let bid of ordersApplied) {
+      bid.id = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]); // runner = 0
+      bid.withdrawDone = false;
+    }
+
+    const ordersCount = await deployedPendingOrders._ordersCount();
+    expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
+
+    await runEvents(someEventsArray, ordersApplied);
+  });
+
+  it("REVERT: pending orders 'NOT ENOUGH COLLATERAL IN USER'S ACCOUNT'", async () => {
+
+    await addLiquidityToPrediction(50000);
+    const userColTotal = 99999;
+
+    await sendCollateralTokenToUser(accounts[1], userColTotal)
+
+    await expectRevert(
+      deployedPendingOrders.createOrder(
+        ntob(100000),
+        true, // isWhite = true
+        new BN("101"),
+        { from: accounts[1] }
+      ),
+      "NOT ENOUGH COLLATERAL IN USER'S ACCOUNT",
+    );
+
+    const ordersCount = await deployedPendingOrders._ordersCount();
+    expect(ordersCount).to.be.bignumber.equal(new BN(0));
+  });
+
+  it("test suite for multiple pending orders (10 orders from 1 account)", async () => {
+
+    await addLiquidityToPrediction(50000);
+    // await addLiquidityToPrediction(5); // <-- on this, safeMath error
+    const userColTotal = 100000;
+
+    await sendCollateralTokenToUser(accounts[1], userColTotal)
+
+    let ordersApplied = [
+      { account: 1, isWhite: true,  eventId: new BN("101"), amount: 100,  withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: false, eventId: new BN("102"), amount: 1253, withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: true,  eventId: new BN("103"), amount: 1253, withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: true,  eventId: new BN("104"), amount: 273,  withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: true,  eventId: new BN("105"), amount: 332,  withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: false, eventId: new BN("106"), amount: 14,   withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: false, eventId: new BN("107"), amount: 2730, withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: true,  eventId: new BN("105"), amount: 1253, withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: false, eventId: new BN("103"), amount: 2795, withdrawAfterEvent: false, cancel: false },
     ];
 
     for (let bid of ordersApplied) {
@@ -339,7 +419,7 @@ contract("PendingOrders", function (accounts) {
 
   it.skip("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
 
-    await addLiquidityToPrediction();
+    await addLiquidityToPrediction(50000);
 
     const amount = new BN("10");
     const expectedWhiteBuy = new BN("20"); // If whitePrice == 0.5
@@ -447,9 +527,9 @@ contract("PendingOrders", function (accounts) {
     return buyColorLog;
   }
 
-  const addLiquidityToPrediction = async () => {
+  const addLiquidityToPrediction = async (amount) => {
     const collateralAmountToBuy = ntob(100000);
-    const buyPayment = ntob(5);
+    const buyPayment = ntob(amount);
 
     const initialBlackOrWhitePrice = ntob(0.5);
 
@@ -460,7 +540,15 @@ contract("PendingOrders", function (accounts) {
     const eventCount = 1;
     const buyWhiteLog = await buyToken("white", initialBlackOrWhitePrice, buyPayment);
 
-    const whiteBought = ntob(9.970);
+    const fee = new bigDecimal((await deployedPredictionPool.FEE()).toString())
+      .divide(new bigDecimal(BONE.toString(10)), 18);
+
+    const feeAmount = new bigDecimal(buyPayment.toString(10))
+      .multiply(fee)
+
+    const cleanAmount = new bigDecimal(buyPayment.toString(10)).subtract(feeAmount)
+
+    const whiteBought = ntob(cleanAmount.divide(new bigDecimal(initialBlackOrWhitePrice.toString(10)), 18).getValue())
 
     expectEvent.inLogs(buyWhiteLog, 'BuyWhite', {
       user: deployerAddress,
@@ -474,7 +562,7 @@ contract("PendingOrders", function (accounts) {
 
     const buyBlackLog = await buyToken("black", initialBlackOrWhitePrice, buyPayment);
 
-    const blackBought = ntob(9.970);
+    const blackBought = whiteBought;
 
     expectEvent.inLogs(buyBlackLog, 'BuyBlack', {
       user: deployerAddress,
@@ -585,10 +673,12 @@ contract("PendingOrders", function (accounts) {
     const blackBoughtDuringEvent = await deployedPredictionPool._blackBought();
 
     const sumWhite = orders
+      .filter(el => el.cancel === false)
       .filter(el => el.isWhite === true)
       .reduce((accumulator, a) => accumulator + a.amount, 0);
 
     const sumBlack = orders
+      .filter(el => el.cancel === false)
       .filter(el => el.isWhite === false)
       .reduce((accumulator, a) => accumulator + a.amount, 0);
 
@@ -615,9 +705,7 @@ contract("PendingOrders", function (accounts) {
   }
 
   const sendCollateralTokenToUser = async (user, amount) => {
-    const collateralAmount = new BN(
-      new bigDecimal((amount * BONE).toString(10)).getValue()
-    );
+    const collateralAmount = ntob(amount)
 
     const collateralTokenUserBalanceBefore = await deployedCollateralToken.balanceOf(user);
 
@@ -644,10 +732,21 @@ contract("PendingOrders", function (accounts) {
     return withdrawCollateral;
   }
 
+  const cancelOrder = async (account, orderId) => {
+    const cancelOrder = await deployedPendingOrders.cancelOrder(
+      orderId,
+      { from: account }
+    );
+    const { logs: cancelOrderLog } = cancelOrder;
+    expectEvent.inLogs(cancelOrderLog, 'OrderCanceled', {
+      id: orderId
+    });
+    return cancelOrder;
+  }
+
   const runEvents = async(eventsArray, ordersApplied) => {
     for (let event of eventsArray) {
       console.log('\x1b[33m%s%s\x1b[0m', "Start event #", event.eventId.toString());
-      const pendingOrders = ordersApplied.filter(el => event.eventId.eq(el.eventId)) //.map(el => { event: event.eventId, el});
 
       const whitePricePpedictionBeforeEvent = await deployedPredictionPool._whitePrice()
       const blackPricePpedictionBeforeEvent = await deployedPredictionPool._blackPrice()
@@ -658,26 +757,40 @@ contract("PendingOrders", function (accounts) {
       const fee = new bigDecimal((await deployedPredictionPool.FEE()).toString())
         .divide(new bigDecimal(BONE.toString(10)), 18);
 
-      const pendingOrdersBeforeStart = pendingOrders.map((el) => {
-        const amountBDb = new bigDecimal(ntob(el.amount));
-        const f = amountBDb.multiply(fee);
-        const a = amountBDb.subtract(f);
-        const n1 = a.divide(el.isWhite ? whitePriceBefore : blackPriceBefore, 18).round();
-        return {
-          "id": el.id,
-          "account": el.account,
-          "isWhite": el.isWhite,
-          "withdrawAfterEvent": el.withdrawAfterEvent,
-          "eventId2": el.eventId.toString(),
-          "eventId": el.eventId,
-          "amountBefore": el.amount,
-          "feeBefore": f.getValue(),
-          "feeAfter": 0,
-          "tokens": n1.getValue(),
-          "amountAfter": 0,
-          "withdrawDone": false
-        };
-      })
+      ordersApplied
+        .filter(el => event.eventId.eq(el.eventId))
+        .map((el) => {
+          if (el.cancel === true) {
+            cancelOrder(el.account, el.id)
+          }
+        })
+
+      const pendingOrders = ordersApplied
+        .filter(el => event.eventId.eq(el.eventId))
+        .filter(el => el.cancel === false)
+
+      const pendingOrdersBeforeStart = pendingOrders
+        .map((el) => {
+          const amountBDb = new bigDecimal(ntob(el.amount));
+          const f = amountBDb.multiply(fee);
+          const a = amountBDb.subtract(f);
+          const n1 = a.divide(el.isWhite ? whitePriceBefore : blackPriceBefore, 18).round();
+          return {
+            "id": el.id,
+            "account": el.account,
+            "isWhite": el.isWhite,
+            "withdrawAfterEvent": el.withdrawAfterEvent,
+            "eventId2": el.eventId.toString(),
+            "eventId": el.eventId,
+            "amountBefore": el.amount,
+            "feeBefore": f.getValue(),
+            "feeAfter": 0,
+            "tokens": n1.getValue(),
+            "amountAfter": 0,
+            "cancel": el.cancel,
+            "withdrawDone": false
+          };
+        })
 
       await executeEventIteration(event.eventId, event.eventResult, pendingOrders);
       const duration = time.duration.minutes(1);
@@ -694,31 +807,35 @@ contract("PendingOrders", function (accounts) {
       const blackPriceAfter = new bigDecimal(blackPricePpedictionAfterEvent.toString(10))
         .divide(new bigDecimal(BONE.toString(10)), 18);
 
-      const pendingOrdersAfterStart = pendingOrdersBeforeStart.map((order) => {
-        const x = new bigDecimal(
-          order.tokens
-        ).multiply(order.isWhite ? whitePriceAfter : blackPriceAfter)
-        const aFeeBD = x.multiply(fee).round();
-        const collateralToSend = x.subtract(aFeeBD).round();
+      const pendingOrdersAfterStart = pendingOrdersBeforeStart
+        .filter(el => el.cancel === false)
+        .map((order) => {
+          const x = new bigDecimal(
+            order.tokens
+          ).multiply(order.isWhite ? whitePriceAfter : blackPriceAfter)
+          const aFeeBD = x.multiply(fee).round();
+          const collateralToSend = x.subtract(aFeeBD).round();
 
-        return {
-          "id": order.id,
-          "account": order.account,
-          "isWhite": order.isWhite,
-          "withdrawAfterEvent": order.withdrawAfterEvent,
-          "eventId2": order.eventId.toString(),
-          "eventId": order.eventId,
-          "amountBefore": order.amountBefore,
-          "feeBefore": order.feeBefore,
-          "feeAfter": aFeeBD.getValue(),
-          "tokens": order.tokens,
-          "amountAfter": collateralToSend.getValue(),
-          "amountAfter2": collateralToSend.divide(new bigDecimal(BONE.toString(10)), 18).getValue(),
-          "withdrawDone": order.withdrawDone,
-        };
-      })
+          return {
+            "id": order.id,
+            "account": order.account,
+            "isWhite": order.isWhite,
+            "withdrawAfterEvent": order.withdrawAfterEvent,
+            "eventId2": order.eventId.toString(),
+            "eventId": order.eventId,
+            "amountBefore": order.amountBefore,
+            "feeBefore": order.feeBefore,
+            "feeAfter": aFeeBD.getValue(),
+            "tokens": order.tokens,
+            "amountAfter": collateralToSend.getValue(),
+            "amountAfter2": collateralToSend.divide(new bigDecimal(BONE.toString(10)), 18).getValue(),
+            "withdrawDone": order.withdrawDone,
+          };
+        })
 
-      const x = ordersApplied.map((order) => {
+      const x = ordersApplied
+        .filter(el => el.cancel === false)
+        .map((order) => {
         let tmpOrder = pendingOrdersAfterStart.filter(el => order.id === el.id)
         if (tmpOrder.length > 0) {
           tmpOrder = tmpOrder.shift();
@@ -742,9 +859,11 @@ contract("PendingOrders", function (accounts) {
 
       if (thisIsLastEvent) {
         ordersToWithDraw = ordersApplied
+          .filter(el => el.cancel === false)
           .filter(el => el.withdrawDone === false)
       } else {
         ordersToWithDraw = ordersApplied
+          .filter(el => el.cancel === false)
           .filter(el => el.withdrawDone === false)
           .filter(el => event.eventId.eq(el.eventId))
           .filter(el => el.withdrawAfterEvent === true)
@@ -753,6 +872,7 @@ contract("PendingOrders", function (accounts) {
       let withdraw = [];
       if (ordersToWithDraw.length > 0) {
         withdraw = ordersApplied
+          .filter(el => el.cancel === false)
           .filter(el => event.eventId.gte(el.eventId))
           .filter(el => el.withdrawDone === false)
           .reduce((a, el) => {
@@ -760,6 +880,7 @@ contract("PendingOrders", function (accounts) {
             a[el.account].sum = new BN(el.amountAfter).add(a[el.account].sum)
 
             const isNeedWD = ordersApplied
+              .filter(el => el.cancel === false)
               .filter(order => order.account === el.account)
               .filter(order => event.eventId.eq(order.eventId))
               .filter(order => order.withdrawAfterEvent === true)
@@ -780,6 +901,7 @@ contract("PendingOrders", function (accounts) {
           withdraw.map(async (order) => {
             if (order.needWD) {
               ordersApplied
+                .filter(el => el.cancel === false)
                 .filter(el => el.withdrawDone === false)
                 .filter(el => order.account === el.account)
                 .filter(el => event.eventId.gte(el.eventId))
@@ -808,9 +930,11 @@ contract("PendingOrders", function (accounts) {
 
       const withdrawDoneCount = thisIsLastEvent
         ? ordersApplied
+          .filter(el => el.cancel === false)
           .filter(el => el.withdrawDone === true)
           .length
         : ordersApplied
+          .filter(el => el.cancel === false)
           .filter(el => el.withdrawDone === true)
           .filter(el => event.eventId.eq(el.eventId))
           .length
