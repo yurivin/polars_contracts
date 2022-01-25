@@ -93,7 +93,6 @@ module.exports = async(deployer, network, accounts) => {
             PendingOrders,
             deployedPredictionPool.address,
             deployedCollateralToken.address,
-            deployerAddress,
             deployedEventLifeCycle.address
         );
         const deployedPendingOrders = await PendingOrders.deployed();
