@@ -8,7 +8,6 @@ const {
 
 const chai = require('chai');
 const expect = require('chai').expect;
-// const assert = require('assert');
 
 const { deployContracts } = require('./utils.js');
 
@@ -67,14 +66,6 @@ contract("PredictionPool", (accounts) => {
     const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
 
     expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(collateralAmountToBuy);
-
-    // console.log('collateralTokenDeployerBalance :', collateralTokenDeployerBalance.toString());
-    // console.log('test deployerAddress           :', deployerAddress);
-    // console.log('test accounts                  :', accounts);
-
-    const approveValue = new BN("999999999999999999999999999999999999");
-
-    await deployedCollateralToken.approve(deployedPredictionPool.address, approveValue);
 
     const buyBlack = await deployedPredictionPool.buyBlack(
       initialBlackOrWhitePrice,

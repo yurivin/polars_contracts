@@ -518,14 +518,14 @@ contract("PendingOrders", function (accounts) {
       buyColor = await deployedPredictionPool.buyWhite(
         initialBlackOrWhitePrice,
         buyPayment,
-        // { from: deployerAddress }
+        { from: deployerAddress }
       );
 
     } else if (color === "black") {
       buyColor = await deployedPredictionPool.buyBlack(
         initialBlackOrWhitePrice,
         buyPayment,
-        // { from: deployerAddress }
+        { from: deployerAddress }
       );
     } else {
       throw new Error(`${color} not defined`)
@@ -545,10 +545,6 @@ contract("PendingOrders", function (accounts) {
     const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
 
     expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(collateralAmountToBuy);
-
-    // const approveValue = new BN("999999999999999999999999999999999999");
-
-    // await deployedCollateralToken.approve(deployedPredictionPool.address, approveValue);
 
     const eventCount = 1;
     const buyWhiteLog = await buyToken("white", initialBlackOrWhitePrice, buyPayment);
