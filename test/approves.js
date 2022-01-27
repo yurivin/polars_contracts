@@ -8,33 +8,42 @@ const {
 const chai = require('chai');
 const expect = require('chai').expect;
 
-const PredictionPool = artifacts.require("PredictionPool");
-const PredictionCollateralization = artifacts.require("PredictionCollateralization");
-const TokenTemplate = artifacts.require("TokenTemplate");
-const PendingOrders = artifacts.require("PendingOrders");
+const { deployContracts } = require('./utils.js');
 
 contract("Approves", (accounts) => {
   "use strict";
 
-  const deployerAddress = accounts[0];
+  const [ deployerAddress ] = accounts;
 
   const approveValue = new BN("999999999999999999999999999999999999");
 
   let deployedPredictionPool;
-  let deployedPredictionCollateralization;
-  let deployedCollateralToken;
+  let deployedEventLifeCycle;
   let deployedPendingOrders;
-  let whiteToken;
-  let blackToken;
+  let deployedCollateralToken;
+  let deployedWhiteToken;
+  let deployedBlackToken;
+  let deployedPredictionCollateralization;
 
   before(async () => {
-    deployedPredictionPool = await PredictionPool.deployed();
-    deployedPredictionCollateralization = await PredictionCollateralization.deployed();
-    deployedPendingOrders = await PendingOrders.deployed();
-    deployedCollateralToken = await TokenTemplate.deployed();
-    whiteToken = await TokenTemplate.at(await deployedPredictionCollateralization._whiteToken());
-    blackToken = await TokenTemplate.at(await deployedPredictionCollateralization._blackToken());
-  })
+
+  });
+
+  beforeEach(async () => {
+    const deployedContracts = await deployContracts(deployerAddress);
+
+    deployedPredictionPool = deployedContracts.deployedPredictionPool;
+    deployedPredictionCollateralization = deployedContracts.deployedPredictionCollateralization;
+    deployedEventLifeCycle = deployedContracts.deployedEventLifeCycle;
+    deployedPendingOrders = deployedContracts.deployedPendingOrders;
+    deployedCollateralToken = deployedContracts.deployedCollateralToken;
+    deployedWhiteToken = deployedContracts.deployedWhiteToken;
+    deployedBlackToken = deployedContracts.deployedBlackToken;
+  });
+
+  afterEach(async () => {
+
+  });
 
   it("should assert approveValue equal deployer's CollateralToken allowance count for PredictionCollateralization", async function () {
     return expect(
@@ -50,13 +59,13 @@ contract("Approves", (accounts) => {
 
   it("should assert approveValue equal deployer's whiteToken allowance count for PredictionCollateralization", async function () {
     return expect(
-      await whiteToken.allowance(deployerAddress, deployedPredictionCollateralization.address)
+      await deployedWhiteToken.allowance(deployerAddress, deployedPredictionCollateralization.address)
     ).to.be.bignumber.equal(approveValue);
   });
 
   it("should assert approveValue equal deployer's blackToken allowance count for PredictionCollateralization", async function () {
     return expect(
-      await blackToken.allowance(deployerAddress, deployedPredictionCollateralization.address)
+      await deployedBlackToken.allowance(deployerAddress, deployedPredictionCollateralization.address)
     ).to.be.bignumber.equal(approveValue);
   });
 

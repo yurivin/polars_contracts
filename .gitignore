@@ -16,3 +16,5 @@ coverageEnv
 core
 Compiling
 .vscode/settings.json
+.coverage_artifacts/*
+.coverage_contracts/*

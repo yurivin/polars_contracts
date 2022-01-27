@@ -8,35 +8,39 @@ const {
 
 const chai = require('chai');
 const expect = require('chai').expect;
+// const assert = require('assert');
 
-const PredictionPool = artifacts.require("PredictionPool");
-const PredictionCollateralization = artifacts.require("PredictionCollateralization");
-const TokenTemplate = artifacts.require("TokenTemplate");
+const { deployContracts } = require('./utils.js');
 
 contract("PredictionPool", (accounts) => {
   "use strict";
 
-  const deployerAddress = accounts[0];
+  const [ deployerAddress ] = accounts;
 
   let deployedPredictionPool;
   let deployedPredictionCollateralization;
   let deployedCollateralToken;
-  let whiteToken;
-  let blackToken;
+  let deployedWhiteToken;
+  let deployedBlackToken;
 
   let snapshotA;
 
   before(async () => {
-    deployedPredictionPool = await PredictionPool.deployed();
-    deployedPredictionCollateralization = await PredictionCollateralization.deployed();
-    deployedCollateralToken = await TokenTemplate.deployed();
-    whiteToken = await TokenTemplate.at(await deployedPredictionCollateralization._whiteToken());
-    blackToken = await TokenTemplate.at(await deployedPredictionCollateralization._blackToken());
-    snapshotA = await snapshot();
+
+  });
+
+  beforeEach(async () => {
+    const deployedContracts = await deployContracts(deployerAddress);
+
+    deployedPredictionPool = deployedContracts.deployedPredictionPool;
+    deployedPredictionCollateralization = deployedContracts.deployedPredictionCollateralization;
+    deployedCollateralToken = deployedContracts.deployedCollateralToken;
+    deployedWhiteToken = deployedContracts.deployedWhiteToken;
+    deployedBlackToken = deployedContracts.deployedBlackToken;
   });
 
   afterEach(async () => {
-      await snapshotA.restore()
+
   });
 
   it("should assert PredictionPool address equal PredictionCollateralization._poolAddress()", async function () {
@@ -64,6 +68,14 @@ contract("PredictionPool", (accounts) => {
 
     expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(collateralAmountToBuy);
 
+    // console.log('collateralTokenDeployerBalance :', collateralTokenDeployerBalance.toString());
+    // console.log('test deployerAddress           :', deployerAddress);
+    // console.log('test accounts                  :', accounts);
+
+    const approveValue = new BN("999999999999999999999999999999999999");
+
+    await deployedCollateralToken.approve(deployedPredictionPool.address, approveValue);
+
     const buyBlack = await deployedPredictionPool.buyBlack(
       initialBlackOrWhitePrice,
       buyPayment,
@@ -83,7 +95,7 @@ contract("PredictionPool", (accounts) => {
     });
 
     return expect(
-      await blackToken.balanceOf(deployerAddress)
+      await deployedBlackToken.balanceOf(deployerAddress)
     ).to.be.bignumber.equal(blackBought);
   });
 
@@ -116,7 +128,7 @@ contract("PredictionPool", (accounts) => {
     });
 
     return expect(
-      await whiteToken.balanceOf(deployerAddress)
+      await deployedWhiteToken.balanceOf(deployerAddress)
     ).to.be.bignumber.equal(whiteBought);
   });
 
@@ -151,7 +163,7 @@ contract("PredictionPool", (accounts) => {
 
     expect(newCollateralForBlack).to.be.bignumber.equal(addForBlackAmount.add(initialCollateralForBlack));
 
-    expect(newCollateralForWhite).to.be.bignumber.equal(addForWhiteAmount);
+    expect(newCollateralForWhite).to.be.bignumber.equal(addForWhiteAmount.add(initialCollateralForWhite));
 
   });
 });
