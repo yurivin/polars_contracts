@@ -12,24 +12,13 @@ const bigDecimal = require('js-big-decimal');
 const chai = require('chai');
 const expect = require('chai').expect;
 
-const BONE = 10**18;
-
-const PendingOrders = artifacts.require("PendingOrders");
-const EventLifeCycle = artifacts.require("EventLifeCycle");
-const PredictionPool = artifacts.require("PredictionPool");
-const PredictionCollateralization = artifacts.require("PredictionCollateralization");
-const TokenTemplate = artifacts.require("TokenTemplate");
-
-const ntob = (number) => {
-  const amountBD = new bigDecimal(number.toString(10))
-    .multiply(new bigDecimal(BONE.toString(10)))
-    .getValue();
-  return new BN(amountBD);
-}
+const { deployContracts, ntob, BONE } = require('./utils.js');
 
 const priceChangePart = ntob(0.05);
 
 contract("PendingOrders", function (accounts) {
+  "use strict";
+
   let deployedPredictionPool;
   let deployedEventLifeCycle;
   let deployedPendingOrders;
@@ -38,23 +27,30 @@ contract("PendingOrders", function (accounts) {
   let deployedBlackToken;
   let deployedPredictionCollateralization;
 
-  let snapshotA;
-
   const deployerAddress = accounts[0];
 
   before(async () => {
-    deployedPredictionPool = await PredictionPool.deployed();
-    deployedPredictionCollateralization = await PredictionCollateralization.deployed();
-    deployedEventLifeCycle = await EventLifeCycle.deployed();
-    deployedPendingOrders = await PendingOrders.deployed();
-    deployedCollateralToken = await TokenTemplate.deployed();
-    deployedWhiteToken = await TokenTemplate.at(await deployedPredictionCollateralization._whiteToken());
-    deployedBlackToken = await TokenTemplate.at(await deployedPredictionCollateralization._blackToken());
-    snapshotA = await snapshot();
+
+  });
+
+  beforeEach(async () => {
+    const deployedContracts = await deployContracts(deployerAddress);
+
+    deployedPredictionPool = deployedContracts.deployedPredictionPool;
+    deployedPredictionCollateralization = deployedContracts.deployedPredictionCollateralization;
+    deployedEventLifeCycle = deployedContracts.deployedEventLifeCycle;
+    deployedPendingOrders = deployedContracts.deployedPendingOrders;
+    deployedCollateralToken = deployedContracts.deployedCollateralToken;
+    deployedWhiteToken = deployedContracts.deployedWhiteToken;
+    deployedBlackToken = deployedContracts.deployedBlackToken;
   });
 
   afterEach(async () => {
-      await snapshotA.restore()
+
+  });
+
+  it('the deployer is the owner', async function () {
+    expect(await deployedPendingOrders.owner()).to.equal(deployerAddress);
   });
 
   it("should assert PendingOrders._eventContractAddress() equal EventLifeCycle address", async () => {
@@ -90,7 +86,8 @@ contract("PendingOrders", function (accounts) {
     const createOrder = await deployedPendingOrders.createOrder(
       amount,
       isWhite,
-      eventId
+      eventId,
+      { from: deployerAddress }
     );
 
     const { logs: createOrderLog } = createOrder;
@@ -497,6 +494,22 @@ contract("PendingOrders", function (accounts) {
     return expect(whiteBoughtBefore).to.be.bignumber.equal(whiteBoughtAfter);
   });
 
+  it("should assert orders count equal 0", async () => {
+    const ordersCount = await deployedPendingOrders._ordersCount();
+    return expect(ordersCount).to.be.bignumber.equal(new BN("0"));
+  });
+
+  it("should REVERT on 'Actual price is higher than acceptable by the user'", async () => {
+    await expectRevert(
+      deployedPredictionPool.buyWhite(
+        ntob(0.4),
+        ntob(5),
+        { from: deployerAddress }
+      ),
+      "Actual price is higher than acceptable by the user",
+    );
+  });
+
   // Utility
   const buyToken = async (color, initialBlackOrWhitePrice, buyPayment) => {
     let buyColor;
@@ -649,7 +662,8 @@ contract("PendingOrders", function (accounts) {
       "Test event type",
       "Test event series",
       "test event name ",
-      eventId
+      eventId,
+      { from: deployerAddress }
     );
     return eventTx;
   }
@@ -728,10 +742,10 @@ contract("PendingOrders", function (accounts) {
     return withdrawCollateral;
   }
 
-  const cancelOrder = async (account, orderId) => {
+  const cancelOrder = async (accountId, orderId) => {
     const cancelOrder = await deployedPendingOrders.cancelOrder(
       orderId,
-      { from: account }
+      { from: accounts[accountId] }
     );
     const { logs: cancelOrderLog } = cancelOrder;
     expectEvent.inLogs(cancelOrderLog, 'OrderCanceled', {
@@ -740,9 +754,9 @@ contract("PendingOrders", function (accounts) {
     return cancelOrder;
   }
 
-  const runEvents = async(eventsArray, ordersApplied) => {
+  const runEvents = async(eventsArray, ordersApplied, debug=0) => {
     for (let event of eventsArray) {
-      console.log('\x1b[33m%s%s\x1b[0m', "Start event #", event.eventId.toString());
+      if (debug) console.log('\x1b[33m%s%s\x1b[0m', "Start event #", event.eventId.toString());
 
       const whitePricePpedictionBeforeEvent = await deployedPredictionPool._whitePrice()
       const blackPricePpedictionBeforeEvent = await deployedPredictionPool._blackPrice()
@@ -792,11 +806,11 @@ contract("PendingOrders", function (accounts) {
       const duration = time.duration.minutes(1);
       await time.increase(duration);
 
-      console.log('\x1b[33m%s\x1b[0m', "========After event==========");
+      if (debug) console.log('\x1b[33m%s\x1b[0m', "========After event==========");
       const whitePricePpedictionAfterEvent = await deployedPredictionPool._whitePrice()
       const blackPricePpedictionAfterEvent = await deployedPredictionPool._blackPrice()
-      console.log("whitePriceA:", whitePricePpedictionAfterEvent.toString());
-      console.log("blackPriceA:", blackPricePpedictionAfterEvent.toString());
+      if (debug) console.log("whitePriceA:", whitePricePpedictionAfterEvent.toString());
+      if (debug) console.log("blackPriceA:", blackPricePpedictionAfterEvent.toString());
 
       const whitePriceAfter = new bigDecimal(whitePricePpedictionAfterEvent.toString(10))
         .divide(new bigDecimal(BONE.toString(10)), 18);
@@ -911,7 +925,7 @@ contract("PendingOrders", function (accounts) {
               if (!order.sum.eq(new BN(0))) {
                 const receipt = await withdrawAmount(accounts[order.account], order.sum.toString());
                 order.gas = receipt.receipt.gasUsed;
-                console.log('\x1b[36m%s\x1b[0m', `Withdraw for account ${order.account}, sum: ${order.sum.toString()}, needWD: ${order.needWD}, GasUsed: ${order.gas} }`);
+                if (debug) console.log('\x1b[36m%s\x1b[0m', `Withdraw for account ${order.account}, sum: ${order.sum.toString()}, needWD: ${order.needWD}, GasUsed: ${order.gas} }`);
               }
 
             }
@@ -920,7 +934,7 @@ contract("PendingOrders", function (accounts) {
         )
 
         withdraw.map((el) => {
-          console.log('\x1b[36m%s\x1b[0m', `{ account: ${el.account}, sum: ${el.sum.toString()}, needWD: ${el.needWD}, gas: ${el.gas} }`);
+          if (debug) console.log('\x1b[36m%s\x1b[0m', `{ account: ${el.account}, sum: ${el.sum.toString()}, needWD: ${el.needWD}, gas: ${el.gas} }`);
         })
       }
 
@@ -935,11 +949,11 @@ contract("PendingOrders", function (accounts) {
           .filter(el => event.eventId.eq(el.eventId))
           .length
 
-      console.log("withdrawDoneCount:", withdrawDoneCount);
-      console.log(
+      if (debug) console.log("withdrawDoneCount:", withdrawDoneCount);
+      if (debug) console.log(
         '\x1b[33m%s%s with %s\x1b[33m %s\x1b[0m', "End event #", event.eventId.toString(), "result:", event.eventResult.toString()
       );
-      console.log('\x1b[31m%s\x1b[0m', "===========================================================");
+      if (debug) console.log('\x1b[31m%s\x1b[0m', "===========================================================");
     } // <=== for (let event of eventsArray)
   }
 

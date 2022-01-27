@@ -29,9 +29,8 @@ const approveValue = new BN("999999999999999999999999999999999999");
 
 module.exports = async(deployer, network, accounts) => {
     const deployerAddress = accounts[0];
-    console.log(accounts);
 
-    if (network == "development" || network == "soliditycoverage" ) {
+    if (network == "bsc_testnet") {
         await deployer.deploy(
             TokenTemplate,
             collateralTokenName,

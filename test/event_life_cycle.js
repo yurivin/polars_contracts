@@ -10,29 +10,41 @@ const {
 const chai = require('chai');
 const expect = require('chai').expect;
 
-const EventLifeCycle = artifacts.require("EventLifeCycle");
-const PredictionPool = artifacts.require("PredictionPool");
+const { deployContracts } = require('./utils.js');
 
 const priceChangePart = new BN("50000000000000000");
 
 contract("EventLifeCycle", (accounts) => {
   "use strict";
 
-  const deployerAddress = accounts[0];
+  const [ deployerAddress ] = accounts;
 
   let deployedPredictionPool;
   let deployedEventLifeCycle;
-
-  let snapshotA;
+  let deployedPendingOrders;
+  let deployedCollateralToken;
+  let deployedWhiteToken;
+  let deployedBlackToken;
+  let deployedPredictionCollateralization;
 
   before(async () => {
-    deployedPredictionPool = await PredictionPool.deployed();
-    deployedEventLifeCycle = await EventLifeCycle.deployed();
-    snapshotA = await snapshot();
-  })
+
+  });
+
+  beforeEach(async () => {
+    const deployedContracts = await deployContracts(deployerAddress);
+
+    deployedPredictionPool = deployedContracts.deployedPredictionPool;
+    deployedPredictionCollateralization = deployedContracts.deployedPredictionCollateralization;
+    deployedEventLifeCycle = deployedContracts.deployedEventLifeCycle;
+    deployedPendingOrders = deployedContracts.deployedPendingOrders;
+    deployedCollateralToken = deployedContracts.deployedCollateralToken;
+    deployedWhiteToken = deployedContracts.deployedWhiteToken;
+    deployedBlackToken = deployedContracts.deployedBlackToken;
+  });
 
   afterEach(async () => {
-      await snapshotA.restore()
+
   });
 
   it("should assert EventLifeCycle address equal PredictionPool._eventContractAddress()", async () => {
