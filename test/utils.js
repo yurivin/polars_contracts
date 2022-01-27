@@ -16,6 +16,7 @@ const PredictionPool = artifacts.require('PredictionPool');
 const PredictionCollateralization = artifacts.require('PredictionCollateralization');
 const TokenTemplate = artifacts.require('TokenTemplate');
 const EventLifeCycle = artifacts.require('EventLifeCycle');
+const OracleSwapEventManager = artifacts.require("OracleSwapEventManager");
 
 const deployContracts = async (deployerAddress, debug=0) => {
   const collateralTokenDecimals = "18";
@@ -104,6 +105,14 @@ const deployContracts = async (deployerAddress, debug=0) => {
   await deployedCollateralToken.approve(deployedPendingOrders.address, approveValue);
   await deployedCollateralToken.approve(deployedPredictionPool.address, approveValue);
 
+  const deployedOracleSwapEventManager = await OracleSwapEventManager.new(
+    deployedEventLifeCycle.address,
+    deployedPredictionPool.address,
+    new BN("50000000000000000"),
+    new BN("1800"),
+    new BN("1800")
+  );
+
   if (debug) console.log("Collateral token                :", deployedCollateralToken.address);
   if (debug) console.log("PredictionCollateral            :", deployedPredictionCollateralization.address);
   if (debug) console.log("WhiteToken                      :", deployedWhiteToken.address);
@@ -113,7 +122,7 @@ const deployContracts = async (deployerAddress, debug=0) => {
   if (debug) console.log("PredictionPool                  :", (await deployedPredictionCollateralization._poolAddress()));
   if (debug) console.log("EventLifeCycle                  :", (await deployedEventLifeCycle.address));
   if (debug) console.log("PendingOrders                   :", (await deployedPendingOrders.address));
-
+  if (debug) console.log("OracleSwapEventManager          :", (await deployedOracleSwapEventManager.address));
   if (debug) console.log("deployedCollateralToken.owner() :", (await deployedCollateralToken.owner()));
   if (debug) console.log("deployedPendingOrders.owner()   :", (await deployedPendingOrders.owner()));
   if (debug) console.log("whiteToken.owner()              :", (await deployedWhiteToken.owner()));
@@ -127,7 +136,8 @@ const deployContracts = async (deployerAddress, debug=0) => {
     deployedEventLifeCycle,
     deployedPendingOrders,
     deployedWhiteToken,
-    deployedBlackToken
+    deployedBlackToken,
+    deployedOracleSwapEventManager
   }
 }
 

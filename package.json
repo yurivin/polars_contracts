@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/yurivin/polars_contracts#readme",
   "devDependencies": {
+    "@gnosis.pm/mock-contract": "github:SSharshunov/mock-contract",
     "@openzeppelin/test-helpers": "^0.5.15",
     "@truffle/hdwallet-provider": "^1.7.0",
     "eth-gas-reporter": "^0.2.22",
