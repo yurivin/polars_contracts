@@ -23,7 +23,14 @@ npm install -g dotenv
 npm install
 ```
 
+Make a copy of file `env.json.example` named `.env.json`
+
 Run tests
+```
+truffle test --stacktrace-extra --network=development
+```
+
+Run coverage
 ```
 truffle test --stacktrace-extra --network=development
 ```

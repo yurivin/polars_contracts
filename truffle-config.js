@@ -20,7 +20,7 @@
 
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
-const { PRIVATE_KEY, BSC_SCAN_API_KEY, SEED_ADDRESS_BSC } = require('./env.json');
+const { PRIVATE_KEY, BSC_SCAN_API_KEY, SEED_ADDRESS_BSC, SEED_ADDRESS_KOVAN, SEED_ADDRESS_RINKEBY, SEED_ADDRESS_HECO, mnemonic } = require('./.env.json');
 //
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
@@ -50,12 +50,38 @@ module.exports = {
      network_id: "*",       // Any network (default: none)
     },
     bsc_testnet: {
-     provider: () => new HDWalletProvider(PRIVATE_KEY, SEED_ADDRESS_BSC),
+     provider: () => new HDWalletProvider(
+      mnemonic, SEED_ADDRESS_BSC,
+     ),
      network_id: 97,
      timeoutBlocks: 200,
      confirmations: 5,
      production: true    // Treats this network as if it was a public net. (default: false)
-    }
+    },
+    rinkeby: {
+      provider: () => new HDWalletProvider(
+        mnemonic, SEED_ADDRESS_RINKEBY,
+      ),
+      network_id: 4,
+      gasPrice: 10e9,
+      skipDryRun: true,
+    },
+    kovan: {
+      provider: () => new HDWalletProvider(
+        mnemonic, SEED_ADDRESS_KOVAN,
+      ),
+      network_id: 42,
+      gasPrice: 10e9,
+      skipDryRun: true,
+    },
+    heco: {
+      provider: () => new HDWalletProvider(
+        mnemonic, SEED_ADDRESS_HECO,
+      ),
+      network_id: 256,
+      gasPrice: 10e9,
+      skipDryRun: true,
+    },
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
