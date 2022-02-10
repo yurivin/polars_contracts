@@ -691,13 +691,14 @@ contract PredictionPool is Eventable, DSMath {
             wmul(feeAmount, _governanceFee)
         );
 
-        // update BW addition fee collected
+        // update BW addition fee collected. For better price
+        // stability we add fees to opposite collateral of the transaction
         if (isWhite) {
-            _collateralForWhite = _collateralForWhite.add(
+            _collateralForBlack = _collateralForBlack.add(
                 wmul(feeAmount, _bwAdditionFee)
             );
         } else {
-            _collateralForBlack = _collateralForBlack.add(
+            _collateralForWhite = _collateralForWhite.add(
                 wmul(feeAmount, _bwAdditionFee)
             );
         }
