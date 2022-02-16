@@ -542,7 +542,7 @@ contract PredictionPool is Eventable, DSMath {
                 _blackPrice,
                 minPrice,
                 tokensAmount,
-                true
+                false
             );
         _blackBought = _blackBought.sub(tokensAmount);
         _collateralForBlack = _collateralForBlack.sub(collateralAmountWithFee);
@@ -562,7 +562,7 @@ contract PredictionPool is Eventable, DSMath {
         (
             uint256 collateralAmountWithFee,
             uint256 collateralToSend
-        ) = genericSell(_whiteToken, _whitePrice, minPrice, tokensAmount, false);
+        ) = genericSell(_whiteToken, _whitePrice, minPrice, tokensAmount, true);
         _whiteBought = _whiteBought.sub(tokensAmount);
         _collateralForWhite = _collateralForWhite.sub(collateralAmountWithFee);
         _whiteSoldThisCycle = _whiteSoldThisCycle.add(tokensAmount);
