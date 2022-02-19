@@ -749,7 +749,7 @@ contract("DEV: OracleSwapEventManager", function (accounts) {
       assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
 
       expectEvent.inLogs(logs, 'AppEnded', {
-        nowTime: timestamp,
+        // nowTime: timestamp,
         eventEndTimeExpected: timestampBefore.add(duration).add(duration),
         result: new BN("0")
       });
@@ -915,7 +915,7 @@ contract("DEV: OracleSwapEventManager", function (accounts) {
       assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
 
       expectEvent.inLogs(logs, 'AppEnded', {
-        nowTime: timestamp,
+        // nowTime: timestamp,
         eventEndTimeExpected: timestampBefore.add(duration).add(duration),
         result: new BN("-1")
       });
@@ -946,7 +946,6 @@ contract("DEV: OracleSwapEventManager", function (accounts) {
         eventName: instanceConfig.eventName,
         eventId: new BN("2")
       });
-
 
       await time.increase(duration);
 

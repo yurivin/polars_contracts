@@ -17,6 +17,7 @@ const PredictionCollateralization = artifacts.require('PredictionCollateralizati
 const TokenTemplate = artifacts.require('TokenTemplate');
 const EventLifeCycle = artifacts.require('EventLifeCycle');
 const OracleSwapEventManager = artifacts.require("OracleSwapEventManager");
+const OracleChainlinkEventManager = artifacts.require("OracleChainLinkEventManager");
 
 const deployContracts = async (deployerAddress, debug=0) => {
   const collateralTokenDecimals = "18";
@@ -113,6 +114,14 @@ const deployContracts = async (deployerAddress, debug=0) => {
     new BN("1800")
   );
 
+  const deployedOracleChainlinkEventManager = await OracleChainlinkEventManager.new(
+    deployedEventLifeCycle.address,
+    deployedPredictionPool.address,
+    new BN("50000000000000000"),
+    new BN("1800"),
+    new BN("1800")
+  );
+
   if (debug) console.log("Collateral token                :", deployedCollateralToken.address);
   if (debug) console.log("PredictionCollateral            :", deployedPredictionCollateralization.address);
   if (debug) console.log("WhiteToken                      :", deployedWhiteToken.address);
@@ -123,6 +132,7 @@ const deployContracts = async (deployerAddress, debug=0) => {
   if (debug) console.log("EventLifeCycle                  :", (await deployedEventLifeCycle.address));
   if (debug) console.log("PendingOrders                   :", (await deployedPendingOrders.address));
   if (debug) console.log("OracleSwapEventManager          :", (await deployedOracleSwapEventManager.address));
+  if (debug) console.log("OracleChainlinkEventManager     :", (await deployedOracleChainlinkEventManager.address));
   if (debug) console.log("deployedCollateralToken.owner() :", (await deployedCollateralToken.owner()));
   if (debug) console.log("deployedPendingOrders.owner()   :", (await deployedPendingOrders.owner()));
   if (debug) console.log("whiteToken.owner()              :", (await deployedWhiteToken.owner()));
@@ -137,7 +147,8 @@ const deployContracts = async (deployerAddress, debug=0) => {
     deployedPendingOrders,
     deployedWhiteToken,
     deployedBlackToken,
-    deployedOracleSwapEventManager
+    deployedOracleSwapEventManager,
+    deployedOracleChainlinkEventManager
   }
 }
 

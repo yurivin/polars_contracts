@@ -30,9 +30,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
   let deployedPredictionCollateralization;
   let deployedOracleChainlinkEventManager;
 
-  let pancakePairContract;
-  let aTokenContract;
-  let bTokenContract;
+  let priceFeedContract;
 
   let snapshotA;
 
@@ -45,6 +43,8 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
   const tokenPairSymB = "USDT";
   const tokenPairNameA = "Binance Native Token";
   const tokenPairNameB = "USD Peg Token";
+
+  const lastEventIdInEventLC = new BN("0");
 
   const instanceConfig = {
     priceChangePart: new BN("50000000000000000"),    // 5%
@@ -73,36 +73,23 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
     deployedBlackToken = deployedContracts.deployedBlackToken;
     deployedOracleChainlinkEventManager = deployedContracts.deployedOracleChainlinkEventManager;
 
-    pancakePairContract = await MockContract.new()
-    aTokenContract = await MockContract.new()
-    bTokenContract = await MockContract.new()
-
-    const aReserve = new BN('1');
-    const bReserve = new BN('500');
+    priceFeedContract = await MockContract.new()
 
     const timestamp = await time.latest();
 
-    const getReserves = web3.eth.abi.encodeFunctionSignature('getReserves()')
-    const erc20name = web3.eth.abi.encodeFunctionSignature('name()')
-    const erc20sym = web3.eth.abi.encodeFunctionSignature('symbol()')
-    const token0 = web3.eth.abi.encodeFunctionSignature('token0()')
-    const token1 = web3.eth.abi.encodeFunctionSignature('token1()')
-    const retSwap3 = web3.eth.abi.encodeParameters(['uint112','uint112','uint32'], [aReserve, bReserve, timestamp]);
-    await pancakePairContract.givenMethodReturn(getReserves, retSwap3)
-    await pancakePairContract.givenMethodReturnAddress(token0, aTokenContract.address)
-    await pancakePairContract.givenMethodReturnAddress(token1, bTokenContract.address)
+    const retSwap = web3.eth.abi.encodeParameters(['uint80','int256','int256','int256','uint80'], ['32', '42000', timestamp, timestamp, '32']);
+    const retSwap2 = web3.eth.abi.encodeParameters(['uint80','int256','int256','int256','uint80'], ['32', '42000', timestamp, timestamp, '32']);
+    const retDescription = web3.eth.abi.encodeParameters(['string'], ['BNB / USDT']);
 
-    const aTokenNameRet = web3.eth.abi.encodeParameters(['string'], [tokenPairNameA]);
-    const bTokenNameRet = web3.eth.abi.encodeParameters(['string'], [tokenPairNameB]);
-    const aTokenSymRet = web3.eth.abi.encodeParameters(['string'], [tokenPairSymA]);
-    const bTokenSymRet = web3.eth.abi.encodeParameters(['string'], [tokenPairSymB]);
-    await aTokenContract.givenMethodReturn(erc20name, aTokenNameRet)
-    await bTokenContract.givenMethodReturn(erc20name, bTokenNameRet)
-    await aTokenContract.givenMethodReturn(erc20sym, aTokenSymRet)
-    await bTokenContract.givenMethodReturn(erc20sym, bTokenSymRet)
+    const latestRoundData = web3.eth.abi.encodeFunctionSignature('latestRoundData()')
+    const getRoundData = web3.eth.abi.encodeFunctionSignature('getRoundData(uint80)')
+    const description = web3.eth.abi.encodeFunctionSignature('description()')
+    await priceFeedContract.givenMethodReturn(latestRoundData, retSwap)
+    await priceFeedContract.givenMethodReturn(getRoundData, retSwap2)
+    await priceFeedContract.givenMethodReturn(description, retDescription)
 
-    await deployedOracleChainlinkEventManager.addDex(
-        pancakePairContract.address, _primaryToken
+    await deployedOracleChainlinkEventManager.addPriceFeed(
+      priceFeedContract.address, "BNB", "USDT"
     )
   });
 
@@ -113,8 +100,8 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
   describe("Constructor", () => {
     it('must return values equal given parameters', async () => {
       const config = await deployedOracleChainlinkEventManager._config.call();
-      expect(config._upTeam).to.be.equals(instanceConfig.upTeam);
-      expect(config._downTeam).to.be.equals(instanceConfig.downTeam);
+      expect(config._whiteTeam).to.be.equals(instanceConfig.whiteTeam);
+      expect(config._blackTeam).to.be.equals(instanceConfig.blackTeam);
       expect(config._eventType).to.be.equals(instanceConfig.eventType);
       expect(config._eventSeries).to.be.equals(instanceConfig.eventSeries);
       expect(config._eventStartTimeOutExpected).to.be.bignumber.equal(instanceConfig.eventStartTimeOutExpected);
@@ -166,19 +153,8 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
   });
 
   describe("prepareEvent", () => {
+
     describe("REVERT CASES:", () => {
-
-      // it.only('revert on PredictionPool now closed', async () => {
-      //   // const _eventStarted = web3.eth.abi.encodeFunctionSignature('_eventStarted()')
-      //   // await predictionPoolContract.givenMethodReturnBool(_eventStarted, true)
-
-      //   await expectRevert(
-      //     deployedOracleChainlinkEventManager.prepareEvent(
-      //       { from: eventRunnerAccount }
-      //     ), "PP closed"
-      //   );
-      // });
-
       it('revert on already prepared event', async () => {
         await deployedEventLifeCycle.addOracleAddress(
           deployedOracleChainlinkEventManager.address
@@ -202,7 +178,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
       );
 
       const result = await deployedOracleChainlinkEventManager.prepareEvent(
-          { from: eventRunnerAccount }
+        { from: eventRunnerAccount }
       );
 
       const timestamp = await time.latest();
@@ -223,7 +199,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         eventType: instanceConfig.eventType,
         eventSeries: instanceConfig.eventSeries,
         eventName: instanceConfig.eventName,
-        eventId: new BN("1")
+        eventId: lastEventIdInEventLC.add(new BN("1"))
       });
     });
 
@@ -243,23 +219,23 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         { from: eventRunnerAccount }
       );
 
-      // const _eventStarted = web3.eth.abi.encodeFunctionSignature('_eventStarted()')
-      // await predictionPoolContract.givenMethodReturnBool(_eventStarted, true)
-
       await time.increase(duration);
 
+      const prevTimestamp = await time.latest();
+
+      const retSwap = web3.eth.abi.encodeParameters(
+        ['uint80','int256','int256','int256','uint80'], ['32', '42000', prevTimestamp, prevTimestamp, '32']);
+      const retSwap2 = web3.eth.abi.encodeParameters(
+        ['uint80','int256','int256','int256','uint80'], ['32', '42000', prevTimestamp, prevTimestamp, '32']);
+
+      const latestRoundData = web3.eth.abi.encodeFunctionSignature('latestRoundData()')
+      const getRoundData = web3.eth.abi.encodeFunctionSignature('getRoundData(uint80)')
+      await priceFeedContract.givenMethodReturn(latestRoundData, retSwap)
+      await priceFeedContract.givenMethodReturn(getRoundData, retSwap2)
+
       await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
-      await time.increase(time.duration.seconds(5));
-
-      // const prevTimestamp = await time.latest();
-
-      await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-
-      // await predictionPoolContract.givenMethodReturnBool(_eventStarted, false)
 
       const result = await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
@@ -283,7 +259,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         eventType: instanceConfig.eventType,
         eventSeries: instanceConfig.eventSeries,
         eventName: instanceConfig.eventName,
-        eventId: new BN("2")
+        eventId: lastEventIdInEventLC.add(new BN("2"))
       });
     });
 
@@ -327,7 +303,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         eventType: instanceConfig.eventType,
         eventSeries: instanceConfig.eventSeries,
         eventName: instanceConfig.eventName,
-        eventId: new BN("2")
+        eventId: lastEventIdInEventLC.add(new BN("2"))
       });
     });
 
@@ -347,23 +323,13 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         { from: eventRunnerAccount }
       );
 
-      // const _eventStarted = web3.eth.abi.encodeFunctionSignature('_eventStarted()')
-      // await predictionPoolContract.givenMethodReturnBool(_eventStarted, true)
-
       await time.increase(durationFirstIteration);
 
-      await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-      await time.increase(time.duration.seconds(5));
-
-      // const prevTimestamp = await time.latest();
+      const prevTimestamp = await time.latest();
 
       await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
-
-      // await predictionPoolContract.givenMethodReturnBool(_eventStarted, false)
 
       await time.increase(time.duration.seconds(10));
 
@@ -400,7 +366,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         eventType: instanceConfig.eventType,
         eventSeries: instanceConfig.eventSeries,
         eventName: instanceConfig.eventName,
-        eventId: new BN("3")
+        eventId: lastEventIdInEventLC.add(new BN("3"))
       });
     });
   });
@@ -408,33 +374,24 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
   describe("startEvent", () => {
     describe("REVERT CASES:", () => {
       it('revert on not prepared event', async () => {
-
-        // await time.increase(time.duration.seconds(10));
-
         await expectRevert(
-          deployedOracleChainlinkEventManager.startEvent(
-            { from: eventRunnerAccount }
-          ), "Not prepared event"
+          deployedOracleChainlinkEventManager.startEvent({ from: eventRunnerAccount }), "Not prepared event"
         );
       });
 
-      it('revert on not prepared event (10 seconds)', async () => { // ???
+      it('revert on not prepared event', async () => {
         await time.increase(time.duration.seconds(10));
 
         await expectRevert(
-          deployedOracleChainlinkEventManager.startEvent(
-            { from: eventRunnerAccount }
-          ), "Not prepared event"
+          deployedOracleChainlinkEventManager.startEvent({ from: eventRunnerAccount }), "Not prepared event"
         );
       });
 
-      it('revert on not prepared event (30 minutes)', async () => { // ???
+      it('revert on not prepared event', async () => {
         await time.increase(time.duration.minutes(30));
 
         await expectRevert(
-          deployedOracleChainlinkEventManager.startEvent(
-            { from: eventRunnerAccount }
-          ), "Not prepared event"
+          deployedOracleChainlinkEventManager.startEvent({ from: eventRunnerAccount }), "Not prepared event"
         );
       });
 
@@ -450,17 +407,10 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         const duration = time.duration.minutes(30);
         await time.increase(duration);
 
-        await deployedOracleChainlinkEventManager.startEvent(
-          { from: eventRunnerAccount }
-        );
-
-        // const _eventStarted = web3.eth.abi.encodeFunctionSignature('_eventStarted()')
-        // await predictionPoolContract.givenMethodReturnBool(_eventStarted, true)
+        await deployedOracleChainlinkEventManager.startEvent({ from: eventRunnerAccount });
 
         await expectRevert(
-          deployedOracleChainlinkEventManager.startEvent(
-            { from: eventRunnerAccount }
-          ), "Event already started"
+          deployedOracleChainlinkEventManager.startEvent({ from: eventRunnerAccount }), "Event already started"
         );
       });
 
@@ -475,9 +425,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
 
         await time.increase(time.duration.minutes(28));
         await expectRevert(
-          deployedOracleChainlinkEventManager.startEvent(
-            { from: eventRunnerAccount }
-          ), 'Too early start',
+          deployedOracleChainlinkEventManager.startEvent({ from: eventRunnerAccount }), 'Too early start',
         );
       });
 
@@ -494,9 +442,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         await time.increase(duration);
 
         await expectRevert(
-          deployedOracleChainlinkEventManager.startEvent(
-            { from: eventRunnerAccount }
-          ), "Too late to start",
+          deployedOracleChainlinkEventManager.startEvent({ from: eventRunnerAccount }), "Too late to start",
         );
       });
 
@@ -513,9 +459,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         await time.increase(duration);
 
         await expectRevert(
-          deployedOracleChainlinkEventManager.startEvent(
-            { from: eventRunnerAccount }
-          ), "Too late to start",
+          deployedOracleChainlinkEventManager.startEvent({ from: eventRunnerAccount }), "Too late to start",
         );
       });
     });
@@ -565,10 +509,6 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         deployedOracleChainlinkEventManager.address
       );
 
-      await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleChainlinkEventManager.address
-      );
-
       await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
@@ -583,6 +523,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
       );
 
       const startRoundData = await deployedOracleChainlinkEventManager._startRoundData.call();
+
       /* Need getter ?
       const _gameEvent = await deployedOracleChainlinkEventManager._gameEvent.call();
       expect(_gameEvent.eventName).to.equal(instanceConfig.eventName + " " + startRoundData.price.toString());
@@ -608,39 +549,11 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
     describe("REVERT CASES:", () => {
       it('revert on not prepared event, PredictionPool now opened', async () => {
         await expectRevert(
-          deployedOracleChainlinkEventManager.finalizeEvent(
-            { from: eventRunnerAccount }
-          ), "Event not started"
-        );
-      });
-
-      it('revert on not prepared event, PredictionPool now closed', async () => {
-        await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleChainlinkEventManager.address
-        );
-
-        await expectRevert(
-          deployedOracleChainlinkEventManager.finalizeEvent(
-            { from: eventRunnerAccount }
-          ), "Event not started"
+          deployedOracleChainlinkEventManager.finalizeEvent({ from: eventRunnerAccount }), "Event not started"
         );
       });
 
       it('revert on event not started, PredictionPool now opened', async () => {
-        await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleChainlinkEventManager.address
-        );
-
-        await deployedOracleChainlinkEventManager.prepareEvent(
-          { from: eventRunnerAccount }
-        );
-
-        await expectRevert(
-            deployedOracleChainlinkEventManager.finalizeEvent({ from: eventRunnerAccount }), "Event not started"
-        );
-      });
-
-      it('revert on event not started, PredictionPool now closed', async () => {
         await deployedEventLifeCycle.addOracleAddress(
           deployedOracleChainlinkEventManager.address
         );
@@ -692,13 +605,19 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         await deployedOracleChainlinkEventManager.startEvent(
           { from: eventRunnerAccount }
         );
+
         await time.increase(duration);
 
         const prevTimestamp = await time.latest();
 
-        await deployedOracleChainlinkEventManager.finalizeEvent(
-          { from: eventRunnerAccount }
-        );
+        const retSwap = web3.eth.abi.encodeParameters(
+          ['uint80','int256','int256','int256','uint80'], ['32', '42000', prevTimestamp, prevTimestamp, '32']);
+        const retSwap2 = web3.eth.abi.encodeParameters(
+          ['uint80','int256','int256','int256','uint80'], ['32', '42000', prevTimestamp, prevTimestamp, '32']);
+        const latestRoundData = web3.eth.abi.encodeFunctionSignature('latestRoundData()')
+        const getRoundData = web3.eth.abi.encodeFunctionSignature('getRoundData(uint80)')
+        await priceFeedContract.givenMethodReturn(latestRoundData, retSwap)
+        await priceFeedContract.givenMethodReturn(getRoundData, retSwap2)
 
         await deployedOracleChainlinkEventManager.finalizeEvent(
           { from: eventRunnerAccount }
@@ -706,7 +625,6 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
 
         await expectRevert(
           deployedOracleChainlinkEventManager.finalizeEvent({ from: eventRunnerAccount }), 'Event not started',
-          // deployedOracleChainlinkEventManager.finalizeEvent({ from: eventRunnerAccount }), 'Event already finalized',
         );
       });
     });
@@ -733,13 +651,14 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
 
       const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
-      await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-
-      await time.increase(time.duration.seconds(5));
-
       const timestamp = await time.latest();
+
+      const retSwap = web3.eth.abi.encodeParameters(['uint80','int256','int256','int256','uint80'], ['32', '42000', timestamp, timestamp, '32']);
+      const retSwap2 = web3.eth.abi.encodeParameters(['uint80','int256','int256','int256','uint80'], ['32', '42000', timestamp, timestamp, '32']);
+      const latestRoundData = web3.eth.abi.encodeFunctionSignature('latestRoundData()')
+      const getRoundData = web3.eth.abi.encodeFunctionSignature('getRoundData(uint80)')
+      await priceFeedContract.givenMethodReturn(latestRoundData, retSwap)
+      await priceFeedContract.givenMethodReturn(getRoundData, retSwap2)
 
       const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
@@ -749,7 +668,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
       assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
 
       expectEvent.inLogs(logs, 'AppEnded', {
-        nowTime: timestamp,
+        // nowTime: timestamp,
         eventEndTimeExpected: timestampBefore.add(duration).add(duration),
         result: new BN("0")
       });
@@ -760,8 +679,6 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         deployedOracleChainlinkEventManager.address
       );
 
-      const getReserves = web3.eth.abi.encodeFunctionSignature('getReserves()')
-
       await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
@@ -779,19 +696,14 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
 
       const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
-      const aReserve = new BN('1');
-      const bReserve = new BN('550');
-
-      const retSwap3 = web3.eth.abi.encodeParameters(['uint112','uint112','uint32'], [aReserve, bReserve, await time.latest()]);
-      await pancakePairContract.givenMethodReturn(getReserves, retSwap3);
-
-      await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-
-      await time.increase(time.duration.seconds(5));
-
       const timestamp = await time.latest();
+
+      const retSwap = web3.eth.abi.encodeParameters(['uint80','int256','int256','int256','uint80'], ['32', '42500', timestamp, timestamp, '32']);
+      const retSwap2 = web3.eth.abi.encodeParameters(['uint80','int256','int256','int256','uint80'], ['32', '42500', timestamp, timestamp, '32']);
+      const latestRoundData = web3.eth.abi.encodeFunctionSignature('latestRoundData()')
+      const getRoundData = web3.eth.abi.encodeFunctionSignature('getRoundData(uint80)')
+      await priceFeedContract.givenMethodReturn(latestRoundData, retSwap)
+      await priceFeedContract.givenMethodReturn(getRoundData, retSwap2)
 
       const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
@@ -801,7 +713,7 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
       assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
 
       expectEvent.inLogs(logs, 'AppEnded', {
-        nowTime: timestamp,
+        // nowTime: timestamp,
         eventEndTimeExpected: timestampBefore.add(duration).add(duration),
         result: new BN("1")
       });
@@ -812,18 +724,11 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
         deployedOracleChainlinkEventManager.address
       );
 
-      const getReserves = web3.eth.abi.encodeFunctionSignature('getReserves()')
-
       await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
       const timestampBefore = await time.latest();
-
-      const aReserve = new BN('1');
-      const bReserve = new BN('500');
-      const retSwap3 = web3.eth.abi.encodeParameters(['uint112','uint112','uint32'], [aReserve, bReserve, timestampBefore]);
-      await pancakePairContract.givenMethodReturn(getReserves, retSwap3)
 
       const duration = time.duration.minutes(30);
       await time.increase(duration);
@@ -836,19 +741,14 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
 
       const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
-      const aReserveAfretSellBTC = new BN('1');
-      const bReserveAfretSellBTC = new BN('450');
-      const retSwapAfterSellBTC = web3.eth.abi.encodeParameters(
-        ['uint112','uint112','uint32'], [aReserveAfretSellBTC, bReserveAfretSellBTC, await time.latest()]
-      );
-      await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTC)
-
-      await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-      await time.increase(time.duration.seconds(5));
-
       const timestamp = await time.latest();
+
+      const retSwap = web3.eth.abi.encodeParameters(['uint80','int256','int256','int256','uint80'], ['32', '39000', timestamp, timestamp, '32']);
+      const retSwap2 = web3.eth.abi.encodeParameters(['uint80','int256','int256','int256','uint80'], ['32', '39000', timestamp, timestamp, '32']);
+      const latestRoundData = web3.eth.abi.encodeFunctionSignature('latestRoundData()')
+      const getRoundData = web3.eth.abi.encodeFunctionSignature('getRoundData(uint80)')
+      await priceFeedContract.givenMethodReturn(latestRoundData, retSwap)
+      await priceFeedContract.givenMethodReturn(getRoundData, retSwap2)
 
       const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
@@ -858,312 +758,9 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
       assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
 
       expectEvent.inLogs(logs, 'AppEnded', {
-        nowTime: timestamp,
+        // nowTime: timestamp,
         eventEndTimeExpected: timestampBefore.add(duration).add(duration),
         result: new BN("-1")
-      });
-    });
-
-    it('it end event normally with result (-1) and result (-1)', async () => {
-      await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleChainlinkEventManager.address
-      );
-
-      const getReserves = web3.eth.abi.encodeFunctionSignature('getReserves()')
-
-      await deployedOracleChainlinkEventManager.prepareEvent(
-        { from: eventRunnerAccount }
-      );
-
-      const timestampBefore = await time.latest();
-
-      const aReserve = new BN('1');
-      const bReserve = new BN('500');
-      const retSwap3 = web3.eth.abi.encodeParameters(['uint112','uint112','uint32'], [aReserve, bReserve, timestampBefore]);
-      await pancakePairContract.givenMethodReturn(getReserves, retSwap3)
-
-      const duration = time.duration.minutes(30);
-      await time.increase(duration);
-
-      await deployedOracleChainlinkEventManager.startEvent(
-        { from: eventRunnerAccount }
-      );
-
-      await time.increase(duration);
-
-      const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
-
-      const aReserveAfretSellBTC = new BN('1');
-      const bReserveAfretSellBTC = new BN('490');
-      const retSwapAfterSellBTC = web3.eth.abi.encodeParameters(
-        ['uint112','uint112','uint32'], [aReserveAfretSellBTC, bReserveAfretSellBTC, await time.latest()]
-      );
-      await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTC)
-
-      await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-      await time.increase(time.duration.seconds(5));
-
-      const timestamp = await time.latest();
-
-      const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-
-      const eventCount = 2;
-      assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
-
-      expectEvent.inLogs(logs, 'AppEnded', {
-        nowTime: timestamp,
-        eventEndTimeExpected: timestampBefore.add(duration).add(duration),
-        result: new BN("-1")
-      });
-
-      const { logs: secondEventPrepareLog } = await deployedOracleChainlinkEventManager.prepareEvent(
-        { from: eventRunnerAccount }
-      );
-
-      const timestampBeforeSecondEvent = await time.latest();
-
-      const eventCountSecondEvent = 1;
-      assert.equal(
-        secondEventPrepareLog.length,
-        eventCountSecondEvent,
-        `triggers must be ${eventCountSecondEvent} event`
-      );
-
-      expectEvent.inLogs(secondEventPrepareLog, 'PrepareEvent', {
-        createdAt: timestampBeforeSecondEvent,
-        priceChangePercent: instanceConfig.priceChangePart,
-        eventStartTimeExpected: instanceConfig.eventStartTimeOutExpected.add(timestamp),
-        eventEndTimeExpected: instanceConfig.eventEndTimeOutExpected.add(
-          instanceConfig.eventStartTimeOutExpected).add(timestamp),
-        blackTeam: instanceConfig.upTeam,
-        whiteTeam: instanceConfig.downTeam,
-        eventType: instanceConfig.eventType,
-        eventSeries: instanceConfig.eventSeries,
-        eventName: instanceConfig.eventName,
-        eventId: new BN("2")
-      });
-
-
-      await time.increase(duration);
-
-      await deployedOracleChainlinkEventManager.startEvent(
-        { from: eventRunnerAccount }
-      );
-
-      await time.increase(duration);
-
-      const aReserveAfretSellBTCSecondEvent = new BN('1');
-      const bReserveAfretSellBTCSecondEvent = new BN('520');
-      const retSwapAfterSellBTCSecondEvent = web3.eth.abi.encodeParameters(
-        ['uint112','uint112','uint32'], [aReserveAfretSellBTCSecondEvent, bReserveAfretSellBTCSecondEvent, await time.latest()]
-      );
-      await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTCSecondEvent)
-
-      await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-      await time.increase(time.duration.seconds(5));
-
-      const timestampSecondEvent = await time.latest();
-
-      const { logs: logsFinalizeSecondEvent } = await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-
-      assert.equal(logsFinalizeSecondEvent.length, eventCount, `triggers must be ${eventCount} event`);
-
-      expectEvent.inLogs(logsFinalizeSecondEvent, 'AppEnded', {
-        // nowTime: timestampSecondEvent,
-        // eventEndTimeExpected: timestampBefore.add(duration).add(duration),
-        result: new BN("-1")
-      });
-    });
-
-    it('it end event normally with result (1) and result (1)', async () => {
-      await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleChainlinkEventManager.address
-      );
-
-      const getReserves = web3.eth.abi.encodeFunctionSignature('getReserves()')
-
-      await deployedOracleChainlinkEventManager.prepareEvent(
-        { from: eventRunnerAccount }
-      );
-
-      const timestampBefore = await time.latest();
-
-      const aReserve = new BN('1');
-      const bReserve = new BN('500');
-      const retSwap3 = web3.eth.abi.encodeParameters(['uint112','uint112','uint32'], [aReserve, bReserve, await time.latest()]);
-      await pancakePairContract.givenMethodReturn(getReserves, retSwap3)
-
-      const duration = time.duration.minutes(30);
-      await time.increase(duration);
-
-      await deployedOracleChainlinkEventManager.startEvent(
-        { from: eventRunnerAccount }
-      );
-
-      await time.increase(duration);
-
-      const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
-
-      const aReserveAfretSellBTC = new BN('1');
-      const bReserveAfretSellBTC = new BN('490');
-      const retSwapAfterSellBTC = web3.eth.abi.encodeParameters(
-        ['uint112','uint112','uint32'], [aReserveAfretSellBTC, bReserveAfretSellBTC, await time.latest()]
-      );
-      await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTC)
-
-      await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-      await time.increase(time.duration.seconds(5));
-
-      const timestamp = await time.latest();
-
-      const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-
-      const eventCount = 2;
-      assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
-
-      expectEvent.inLogs(logs, 'AppEnded', {
-        nowTime: timestamp,
-        eventEndTimeExpected: timestampBefore.add(duration).add(duration),
-        result: new BN("-1")
-      });
-
-      const { logs: secondEventPrepareLog } = await deployedOracleChainlinkEventManager.prepareEvent(
-        { from: eventRunnerAccount }
-      );
-
-      const timestampBeforeSecondEvent = await time.latest();
-
-      const eventCountSecondEvent = 1;
-
-      assert.equal(
-        secondEventPrepareLog.length,
-        eventCountSecondEvent,
-        `triggers must be ${eventCountSecondEvent} event`
-      );
-
-      expectEvent.inLogs(secondEventPrepareLog, 'PrepareEvent', {
-        createdAt: timestampBeforeSecondEvent,
-        priceChangePercent: instanceConfig.priceChangePart,
-        eventStartTimeExpected: instanceConfig.eventStartTimeOutExpected.add(timestamp),
-        eventEndTimeExpected: instanceConfig.eventEndTimeOutExpected.add(
-            instanceConfig.eventStartTimeOutExpected).add(timestamp),
-        blackTeam: instanceConfig.upTeam,
-        whiteTeam: instanceConfig.downTeam,
-        eventType: instanceConfig.eventType,
-        eventSeries: instanceConfig.eventSeries,
-        eventName: instanceConfig.eventName,
-        eventId: new BN("2")
-      });
-
-      await time.increase(duration);
-
-      await deployedOracleChainlinkEventManager.startEvent(
-        { from: eventRunnerAccount }
-      );
-
-      await time.increase(duration);
-
-
-      const aReserveAfretSellBTCSecondEvent = new BN('1');
-      const bReserveAfretSellBTCSecondEvent = new BN('450');
-      const retSwapAfterSellBTCSecondEvent = web3.eth.abi.encodeParameters(
-        ['uint112','uint112','uint32'], [aReserveAfretSellBTCSecondEvent, bReserveAfretSellBTCSecondEvent, await time.latest()]
-      );
-      await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTCSecondEvent)
-
-      await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-      await time.increase(time.duration.seconds(5));
-
-      const timestampSecondEvent = await time.latest();
-
-      const { logs: logsFinalizeSecondEvent } = await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-
-      assert.equal(logsFinalizeSecondEvent.length, eventCount, `triggers must be ${eventCount} event`);
-
-      expectEvent.inLogs(logsFinalizeSecondEvent, 'AppEnded', {
-        // nowTime: timestampSecondEvent,
-        // eventEndTimeExpected: timestampBefore.add(duration).add(duration),
-        result: new BN("1")
-      });
-    });
-
-    it('it end event normally with result (0) on try flash loan attack', async () => {
-      await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleChainlinkEventManager.address
-      );
-
-      const getReserves = web3.eth.abi.encodeFunctionSignature('getReserves()')
-
-      await deployedOracleChainlinkEventManager.prepareEvent(
-        { from: eventRunnerAccount }
-      );
-
-      const timestampBefore = await time.latest();
-
-      const aReserve = new BN('1');
-      const bReserve = new BN('500');
-      const retSwap3 = web3.eth.abi.encodeParameters(['uint112','uint112','uint32'], [aReserve, bReserve, timestampBefore]);
-      await pancakePairContract.givenMethodReturn(getReserves, retSwap3)
-
-      const duration = time.duration.minutes(30);
-      await time.increase(duration);
-
-      await deployedOracleChainlinkEventManager.startEvent(
-        { from: eventRunnerAccount }
-      );
-
-      await time.increase(duration);
-
-      const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
-
-      const aReserveAfretSellBTC = new BN('1');
-      const bReserveAfretSellBTC = new BN('500');
-      const retSwapAfterSellBTC = web3.eth.abi.encodeParameters(
-        ['uint112','uint112','uint32'], [aReserveAfretSellBTC, bReserveAfretSellBTC, await time.latest()]
-      );
-      await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTC)
-
-      await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-      await time.increase(time.duration.seconds(5));
-
-      const aReserveAfretSellBTC2 = new BN('1');
-      const bReserveAfretSellBTC2 = new BN('500');
-      const retSwapAfterSellBTC2 = web3.eth.abi.encodeParameters(
-        ['uint112','uint112','uint32'], [aReserveAfretSellBTC2, bReserveAfretSellBTC2, await time.latest()]
-      );
-      await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTC2)
-
-      const timestamp = await time.latest();
-
-      const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
-        { from: eventRunnerAccount }
-      );
-
-      const eventCount = 2;
-      assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
-
-      expectEvent.inLogs(logs, 'AppEnded', {
-        nowTime: timestamp,
-        eventEndTimeExpected: timestampBefore.add(duration).add(duration),
-        result: new BN("0")
       });
     });
   });
@@ -1174,11 +771,6 @@ contract("DEV: OracleChainlinkEventManager", function (accounts) {
 
   it("should assert OracleSwapEventManager._predictionPool() equal PredictionPool address", async () => {
     return assert.equal(await deployedOracleChainlinkEventManager._predictionPool(), deployedPredictionPool.address);
-  });
-
-  it("should assert OracleSwapEventManager._predictionPool() equal PredictionPool address", async () => {
-    assert.equal(await deployedOracleChainlinkEventManager._primaryToken(), _primaryToken);
-    return assert.equal(await deployedOracleChainlinkEventManager._pair(), pancakePairContract.address);
   });
 
 });

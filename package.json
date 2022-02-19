@@ -10,7 +10,7 @@
     "test:dev": "NETWORK=development truffle test --stacktrace-extra --network development -g 'DEV:'",
     "test:live": "truffle test --stacktrace-extra --network development -g 'LIVE:'",
     "test:live:rinkeby": "NETWORK=rinkeby truffle test --stacktrace-extra --network rinkeby -g 'LIVE:'",
-    "coverage": "truffle run coverage",
+    "coverage": "truffle run coverage --file=\"test/local/*.js\"",
     "deploy:tokens:rinkeby": "truffle migrate --network rinkeby --f 2 --to 2",
     "deploy:prediction:rinkeby": "truffle migrate --network rinkeby --f 3 --to 3",
     "deploy:elc:rinkeby": "truffle migrate --network rinkeby --f 4 --to 4",
