@@ -30,7 +30,7 @@ const deployContracts = async (deployerAddress, debug=0) => {
   const blackName = "Polars Black";
   const blackSymbol = "BLACK";
 
-  const approveValue = new BN("999999999999999999999999999999999999");
+  const approveValue = constants.MAX_UINT256;
 
   const deployedCollateralToken = await TokenTemplate.new(
     collateralTokenName,

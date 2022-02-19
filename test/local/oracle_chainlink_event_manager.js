@@ -14,11 +14,11 @@ const MockContract = artifacts.require("./MockContract.sol");
 const chai = require('chai');
 const expect = require('chai').expect;
 
-const { deployContracts, ntob, BONE } = require('./utils.js');
+const { deployContracts, ntob, BONE } = require('./../utils.js');
 
 const priceChangePart = ntob(0.05);
 
-contract("OracleSwapEventManager", function (accounts) {
+contract("DEV: OracleChainlinkEventManager", function (accounts) {
   "use strict";
 
   let deployedPredictionPool;
@@ -28,7 +28,7 @@ contract("OracleSwapEventManager", function (accounts) {
   let deployedWhiteToken;
   let deployedBlackToken;
   let deployedPredictionCollateralization;
-  let deployedOracleSwapEventManager;
+  let deployedOracleChainlinkEventManager;
 
   let pancakePairContract;
   let aTokenContract;
@@ -71,7 +71,7 @@ contract("OracleSwapEventManager", function (accounts) {
     deployedCollateralToken = deployedContracts.deployedCollateralToken;
     deployedWhiteToken = deployedContracts.deployedWhiteToken;
     deployedBlackToken = deployedContracts.deployedBlackToken;
-    deployedOracleSwapEventManager = deployedContracts.deployedOracleSwapEventManager;
+    deployedOracleChainlinkEventManager = deployedContracts.deployedOracleChainlinkEventManager;
 
     pancakePairContract = await MockContract.new()
     aTokenContract = await MockContract.new()
@@ -101,7 +101,7 @@ contract("OracleSwapEventManager", function (accounts) {
     await aTokenContract.givenMethodReturn(erc20sym, aTokenSymRet)
     await bTokenContract.givenMethodReturn(erc20sym, bTokenSymRet)
 
-    await deployedOracleSwapEventManager.addDex(
+    await deployedOracleChainlinkEventManager.addDex(
         pancakePairContract.address, _primaryToken
     )
   });
@@ -112,7 +112,7 @@ contract("OracleSwapEventManager", function (accounts) {
 
   describe("Constructor", () => {
     it('must return values equal given parameters', async () => {
-      const config = await deployedOracleSwapEventManager._config.call();
+      const config = await deployedOracleChainlinkEventManager._config.call();
       expect(config._upTeam).to.be.equals(instanceConfig.upTeam);
       expect(config._downTeam).to.be.equals(instanceConfig.downTeam);
       expect(config._eventType).to.be.equals(instanceConfig.eventType);
@@ -127,7 +127,7 @@ contract("OracleSwapEventManager", function (accounts) {
   describe("SetUp", () => {
     it('revert on Caller not Oracle', async () => {
       await expectRevert(
-        deployedOracleSwapEventManager.prepareEvent(
+        deployedOracleChainlinkEventManager.prepareEvent(
           { from: eventRunnerAccount }
         ), "Caller should be Oracle"
       );
@@ -135,10 +135,10 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('don`t revert in ELC "Caller not Oracle"', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
-      const result = await deployedOracleSwapEventManager.prepareEvent(
+      const result = await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -173,7 +173,7 @@ contract("OracleSwapEventManager", function (accounts) {
       //   // await predictionPoolContract.givenMethodReturnBool(_eventStarted, true)
 
       //   await expectRevert(
-      //     deployedOracleSwapEventManager.prepareEvent(
+      //     deployedOracleChainlinkEventManager.prepareEvent(
       //       { from: eventRunnerAccount }
       //     ), "PP closed"
       //   );
@@ -181,15 +181,15 @@ contract("OracleSwapEventManager", function (accounts) {
 
       it('revert on already prepared event', async () => {
         await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleSwapEventManager.address
+          deployedOracleChainlinkEventManager.address
         );
 
-        await deployedOracleSwapEventManager.prepareEvent(
+        await deployedOracleChainlinkEventManager.prepareEvent(
           { from: eventRunnerAccount }
         );
 
         await expectRevert(
-          deployedOracleSwapEventManager.prepareEvent(
+          deployedOracleChainlinkEventManager.prepareEvent(
             { from: eventRunnerAccount }
           ), "Already prepared event"
         );
@@ -198,10 +198,10 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('it must normally prepare event with 1 log', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
-      const result = await deployedOracleSwapEventManager.prepareEvent(
+      const result = await deployedOracleChainlinkEventManager.prepareEvent(
           { from: eventRunnerAccount }
       );
 
@@ -229,17 +229,17 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('it must normally prepare event with 1 log after finalazed previous event', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
       const duration = time.duration.minutes(30);
       await time.increase(duration);
 
-      await deployedOracleSwapEventManager.startEvent(
+      await deployedOracleChainlinkEventManager.startEvent(
         { from: eventRunnerAccount }
       );
 
@@ -248,20 +248,20 @@ contract("OracleSwapEventManager", function (accounts) {
 
       await time.increase(duration);
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
       await time.increase(time.duration.seconds(5));
 
       // const prevTimestamp = await time.latest();
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
       // await predictionPoolContract.givenMethodReturnBool(_eventStarted, false)
 
-      const result = await deployedOracleSwapEventManager.prepareEvent(
+      const result = await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -289,10 +289,10 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('it must normally prepare event with 1 log after delete event on too late start', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -300,12 +300,12 @@ contract("OracleSwapEventManager", function (accounts) {
       await time.increase(duration);
 
       await expectRevert(
-        deployedOracleSwapEventManager.startEvent({ from: eventRunnerAccount }), "Too late to start"
+        deployedOracleChainlinkEventManager.startEvent({ from: eventRunnerAccount }), "Too late to start"
       );
 
       await time.increase(time.duration.seconds(10));
 
-      const result = await deployedOracleSwapEventManager.prepareEvent(
+      const result = await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -333,17 +333,17 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('it must normally prepare event with 1 log after delete event on too late start after some good iterations', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
       const durationFirstIteration = time.duration.minutes(30);
       await time.increase(durationFirstIteration);
 
-      await deployedOracleSwapEventManager.startEvent(
+      await deployedOracleChainlinkEventManager.startEvent(
         { from: eventRunnerAccount }
       );
 
@@ -352,14 +352,14 @@ contract("OracleSwapEventManager", function (accounts) {
 
       await time.increase(durationFirstIteration);
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
       await time.increase(time.duration.seconds(5));
 
       // const prevTimestamp = await time.latest();
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
@@ -367,7 +367,7 @@ contract("OracleSwapEventManager", function (accounts) {
 
       await time.increase(time.duration.seconds(10));
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -375,10 +375,10 @@ contract("OracleSwapEventManager", function (accounts) {
       await time.increase(duration);
 
       await expectRevert(
-        deployedOracleSwapEventManager.startEvent({ from: eventRunnerAccount }), "Too late to start"
+        deployedOracleChainlinkEventManager.startEvent({ from: eventRunnerAccount }), "Too late to start"
       );
 
-      const result = await deployedOracleSwapEventManager.prepareEvent(
+      const result = await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -412,7 +412,7 @@ contract("OracleSwapEventManager", function (accounts) {
         // await time.increase(time.duration.seconds(10));
 
         await expectRevert(
-          deployedOracleSwapEventManager.startEvent(
+          deployedOracleChainlinkEventManager.startEvent(
             { from: eventRunnerAccount }
           ), "Not prepared event"
         );
@@ -422,7 +422,7 @@ contract("OracleSwapEventManager", function (accounts) {
         await time.increase(time.duration.seconds(10));
 
         await expectRevert(
-          deployedOracleSwapEventManager.startEvent(
+          deployedOracleChainlinkEventManager.startEvent(
             { from: eventRunnerAccount }
           ), "Not prepared event"
         );
@@ -432,7 +432,7 @@ contract("OracleSwapEventManager", function (accounts) {
         await time.increase(time.duration.minutes(30));
 
         await expectRevert(
-          deployedOracleSwapEventManager.startEvent(
+          deployedOracleChainlinkEventManager.startEvent(
             { from: eventRunnerAccount }
           ), "Not prepared event"
         );
@@ -440,17 +440,17 @@ contract("OracleSwapEventManager", function (accounts) {
 
       it('revert on event already started', async () => {
         await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleSwapEventManager.address
+          deployedOracleChainlinkEventManager.address
         );
 
-        await deployedOracleSwapEventManager.prepareEvent(
+        await deployedOracleChainlinkEventManager.prepareEvent(
           { from: eventRunnerAccount }
         );
 
         const duration = time.duration.minutes(30);
         await time.increase(duration);
 
-        await deployedOracleSwapEventManager.startEvent(
+        await deployedOracleChainlinkEventManager.startEvent(
           { from: eventRunnerAccount }
         );
 
@@ -458,7 +458,7 @@ contract("OracleSwapEventManager", function (accounts) {
         // await predictionPoolContract.givenMethodReturnBool(_eventStarted, true)
 
         await expectRevert(
-          deployedOracleSwapEventManager.startEvent(
+          deployedOracleChainlinkEventManager.startEvent(
             { from: eventRunnerAccount }
           ), "Event already started"
         );
@@ -466,16 +466,16 @@ contract("OracleSwapEventManager", function (accounts) {
 
       it('revert on early start', async () => {
         await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleSwapEventManager.address
+          deployedOracleChainlinkEventManager.address
         );
 
-        const result = await deployedOracleSwapEventManager.prepareEvent(
+        const result = await deployedOracleChainlinkEventManager.prepareEvent(
           { from: eventRunnerAccount }
         );
 
         await time.increase(time.duration.minutes(28));
         await expectRevert(
-          deployedOracleSwapEventManager.startEvent(
+          deployedOracleChainlinkEventManager.startEvent(
             { from: eventRunnerAccount }
           ), 'Too early start',
         );
@@ -483,10 +483,10 @@ contract("OracleSwapEventManager", function (accounts) {
 
       it('revert on too late', async () => {
         await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleSwapEventManager.address
+          deployedOracleChainlinkEventManager.address
         );
 
-        await deployedOracleSwapEventManager.prepareEvent(
+        await deployedOracleChainlinkEventManager.prepareEvent(
           { from: eventRunnerAccount }
         );
 
@@ -494,7 +494,7 @@ contract("OracleSwapEventManager", function (accounts) {
         await time.increase(duration);
 
         await expectRevert(
-          deployedOracleSwapEventManager.startEvent(
+          deployedOracleChainlinkEventManager.startEvent(
             { from: eventRunnerAccount }
           ), "Too late to start",
         );
@@ -502,10 +502,10 @@ contract("OracleSwapEventManager", function (accounts) {
 
       it('revert on too late', async () => {
         await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleSwapEventManager.address
+          deployedOracleChainlinkEventManager.address
         );
 
-        await deployedOracleSwapEventManager.prepareEvent(
+        await deployedOracleChainlinkEventManager.prepareEvent(
           { from: eventRunnerAccount }
         );
 
@@ -513,7 +513,7 @@ contract("OracleSwapEventManager", function (accounts) {
         await time.increase(duration);
 
         await expectRevert(
-          deployedOracleSwapEventManager.startEvent(
+          deployedOracleChainlinkEventManager.startEvent(
             { from: eventRunnerAccount }
           ), "Too late to start",
         );
@@ -522,10 +522,10 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('it start event normally', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -534,21 +534,21 @@ contract("OracleSwapEventManager", function (accounts) {
       const duration = time.duration.minutes(30);
       await time.increase(duration);
 
-      const { logs } = await deployedOracleSwapEventManager.startEvent(
+      const { logs } = await deployedOracleChainlinkEventManager.startEvent(
         { from: eventRunnerAccount }
       );
 
-      const startRoundData = await deployedOracleSwapEventManager._startRoundData.call();
+      const startRoundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
       /* Need getter ?
-      const _gameEvent = await deployedOracleSwapEventManager._gameEvent.call();
+      const _gameEvent = await deployedOracleChainlinkEventManager._gameEvent.call();
       expect(_gameEvent.eventName).to.equal(instanceConfig.eventName + " " + startRoundData.price.toString());
       */
 
       const eventCount = 2;
       assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
 
-      const roundData = await deployedOracleSwapEventManager._startRoundData.call();
+      const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
       const timestamp = await time.latest();
 
@@ -562,14 +562,14 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('it add event data and start event normally', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -578,20 +578,20 @@ contract("OracleSwapEventManager", function (accounts) {
       const duration = time.duration.minutes(30);
       await time.increase(duration);
 
-      const { logs } = await deployedOracleSwapEventManager.addAndStartEvent(
+      const { logs } = await deployedOracleChainlinkEventManager.addAndStartEvent(
         { from: eventRunnerAccount }
       );
 
-      const startRoundData = await deployedOracleSwapEventManager._startRoundData.call();
+      const startRoundData = await deployedOracleChainlinkEventManager._startRoundData.call();
       /* Need getter ?
-      const _gameEvent = await deployedOracleSwapEventManager._gameEvent.call();
+      const _gameEvent = await deployedOracleChainlinkEventManager._gameEvent.call();
       expect(_gameEvent.eventName).to.equal(instanceConfig.eventName + " " + startRoundData.price.toString());
       */
 
       const eventCount = 2;
       assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
 
-      const roundData = await deployedOracleSwapEventManager._startRoundData.call();
+      const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
       const timestamp = await time.latest();
 
@@ -608,7 +608,7 @@ contract("OracleSwapEventManager", function (accounts) {
     describe("REVERT CASES:", () => {
       it('revert on not prepared event, PredictionPool now opened', async () => {
         await expectRevert(
-          deployedOracleSwapEventManager.finalizeEvent(
+          deployedOracleChainlinkEventManager.finalizeEvent(
             { from: eventRunnerAccount }
           ), "Event not started"
         );
@@ -616,11 +616,11 @@ contract("OracleSwapEventManager", function (accounts) {
 
       it('revert on not prepared event, PredictionPool now closed', async () => {
         await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleSwapEventManager.address
+          deployedOracleChainlinkEventManager.address
         );
 
         await expectRevert(
-          deployedOracleSwapEventManager.finalizeEvent(
+          deployedOracleChainlinkEventManager.finalizeEvent(
             { from: eventRunnerAccount }
           ), "Event not started"
         );
@@ -628,95 +628,95 @@ contract("OracleSwapEventManager", function (accounts) {
 
       it('revert on event not started, PredictionPool now opened', async () => {
         await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleSwapEventManager.address
+          deployedOracleChainlinkEventManager.address
         );
 
-        await deployedOracleSwapEventManager.prepareEvent(
+        await deployedOracleChainlinkEventManager.prepareEvent(
           { from: eventRunnerAccount }
         );
 
         await expectRevert(
-            deployedOracleSwapEventManager.finalizeEvent({ from: eventRunnerAccount }), "Event not started"
+            deployedOracleChainlinkEventManager.finalizeEvent({ from: eventRunnerAccount }), "Event not started"
         );
       });
 
       it('revert on event not started, PredictionPool now closed', async () => {
         await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleSwapEventManager.address
+          deployedOracleChainlinkEventManager.address
         );
 
-        await deployedOracleSwapEventManager.prepareEvent(
+        await deployedOracleChainlinkEventManager.prepareEvent(
           { from: eventRunnerAccount }
         );
 
         await expectRevert(
-          deployedOracleSwapEventManager.finalizeEvent({ from: eventRunnerAccount }), "Event not started"
+          deployedOracleChainlinkEventManager.finalizeEvent({ from: eventRunnerAccount }), "Event not started"
         );
       });
 
       it('revert on early end', async () => {
         await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleSwapEventManager.address
+          deployedOracleChainlinkEventManager.address
         );
 
         const duration = time.duration.minutes(30);
 
-        await deployedOracleSwapEventManager.prepareEvent(
+        await deployedOracleChainlinkEventManager.prepareEvent(
           { from: eventRunnerAccount }
         );
 
         await time.increase(duration);
 
-        await deployedOracleSwapEventManager.startEvent(
+        await deployedOracleChainlinkEventManager.startEvent(
           { from: eventRunnerAccount }
         )
 
         await time.increase(time.duration.minutes(28));
         await expectRevert(
-          deployedOracleSwapEventManager.finalizeEvent({ from: eventRunnerAccount }), 'Too early end',
+          deployedOracleChainlinkEventManager.finalizeEvent({ from: eventRunnerAccount }), 'Too early end',
         );
       });
 
       it('revert on already finalazed', async () => {
         await deployedEventLifeCycle.addOracleAddress(
-          deployedOracleSwapEventManager.address
+          deployedOracleChainlinkEventManager.address
         );
 
-        await deployedOracleSwapEventManager.prepareEvent(
+        await deployedOracleChainlinkEventManager.prepareEvent(
           { from: eventRunnerAccount }
         );
 
         const duration = time.duration.minutes(30);
         await time.increase(duration);
 
-        await deployedOracleSwapEventManager.startEvent(
+        await deployedOracleChainlinkEventManager.startEvent(
           { from: eventRunnerAccount }
         );
         await time.increase(duration);
 
         const prevTimestamp = await time.latest();
 
-        await deployedOracleSwapEventManager.finalizeEvent(
+        await deployedOracleChainlinkEventManager.finalizeEvent(
           { from: eventRunnerAccount }
         );
 
-        await deployedOracleSwapEventManager.finalizeEvent(
+        await deployedOracleChainlinkEventManager.finalizeEvent(
           { from: eventRunnerAccount }
         );
 
         await expectRevert(
-          deployedOracleSwapEventManager.finalizeEvent({ from: eventRunnerAccount }), 'Event not started',
-          // deployedOracleSwapEventManager.finalizeEvent({ from: eventRunnerAccount }), 'Event already finalized',
+          deployedOracleChainlinkEventManager.finalizeEvent({ from: eventRunnerAccount }), 'Event not started',
+          // deployedOracleChainlinkEventManager.finalizeEvent({ from: eventRunnerAccount }), 'Event already finalized',
         );
       });
     });
 
     it('it end event normally with result (0)', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -725,15 +725,15 @@ contract("OracleSwapEventManager", function (accounts) {
       const duration = time.duration.minutes(30);
       await time.increase(duration);
 
-      await deployedOracleSwapEventManager.startEvent(
+      await deployedOracleChainlinkEventManager.startEvent(
         { from: eventRunnerAccount }
       );
 
       await time.increase(duration);
 
-      const roundData = await deployedOracleSwapEventManager._startRoundData.call();
+      const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
@@ -741,7 +741,7 @@ contract("OracleSwapEventManager", function (accounts) {
 
       const timestamp = await time.latest();
 
-      const { logs } = await deployedOracleSwapEventManager.finalizeEvent(
+      const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
@@ -757,12 +757,12 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('it end event normally with result (1)', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
       const getReserves = web3.eth.abi.encodeFunctionSignature('getReserves()')
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -771,13 +771,13 @@ contract("OracleSwapEventManager", function (accounts) {
       const duration = time.duration.minutes(30);
       await time.increase(duration);
 
-      await deployedOracleSwapEventManager.startEvent(
+      await deployedOracleChainlinkEventManager.startEvent(
         { from: eventRunnerAccount }
       );
 
       await time.increase(duration);
 
-      const roundData = await deployedOracleSwapEventManager._startRoundData.call();
+      const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
       const aReserve = new BN('1');
       const bReserve = new BN('550');
@@ -785,7 +785,7 @@ contract("OracleSwapEventManager", function (accounts) {
       const retSwap3 = web3.eth.abi.encodeParameters(['uint112','uint112','uint32'], [aReserve, bReserve, await time.latest()]);
       await pancakePairContract.givenMethodReturn(getReserves, retSwap3);
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
@@ -793,7 +793,7 @@ contract("OracleSwapEventManager", function (accounts) {
 
       const timestamp = await time.latest();
 
-      const { logs } = await deployedOracleSwapEventManager.finalizeEvent(
+      const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
@@ -809,12 +809,12 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('it end event normally with result (-1)', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
       const getReserves = web3.eth.abi.encodeFunctionSignature('getReserves()')
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -828,13 +828,13 @@ contract("OracleSwapEventManager", function (accounts) {
       const duration = time.duration.minutes(30);
       await time.increase(duration);
 
-      await deployedOracleSwapEventManager.startEvent(
+      await deployedOracleChainlinkEventManager.startEvent(
         { from: eventRunnerAccount }
       );
 
       await time.increase(duration);
 
-      const roundData = await deployedOracleSwapEventManager._startRoundData.call();
+      const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
       const aReserveAfretSellBTC = new BN('1');
       const bReserveAfretSellBTC = new BN('450');
@@ -843,14 +843,14 @@ contract("OracleSwapEventManager", function (accounts) {
       );
       await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTC)
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
       await time.increase(time.duration.seconds(5));
 
       const timestamp = await time.latest();
 
-      const { logs } = await deployedOracleSwapEventManager.finalizeEvent(
+      const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
@@ -866,12 +866,12 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('it end event normally with result (-1) and result (-1)', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
       const getReserves = web3.eth.abi.encodeFunctionSignature('getReserves()')
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -885,13 +885,13 @@ contract("OracleSwapEventManager", function (accounts) {
       const duration = time.duration.minutes(30);
       await time.increase(duration);
 
-      await deployedOracleSwapEventManager.startEvent(
+      await deployedOracleChainlinkEventManager.startEvent(
         { from: eventRunnerAccount }
       );
 
       await time.increase(duration);
 
-      const roundData = await deployedOracleSwapEventManager._startRoundData.call();
+      const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
       const aReserveAfretSellBTC = new BN('1');
       const bReserveAfretSellBTC = new BN('490');
@@ -900,14 +900,14 @@ contract("OracleSwapEventManager", function (accounts) {
       );
       await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTC)
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
       await time.increase(time.duration.seconds(5));
 
       const timestamp = await time.latest();
 
-      const { logs } = await deployedOracleSwapEventManager.finalizeEvent(
+      const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
@@ -920,7 +920,7 @@ contract("OracleSwapEventManager", function (accounts) {
         result: new BN("-1")
       });
 
-      const { logs: secondEventPrepareLog } = await deployedOracleSwapEventManager.prepareEvent(
+      const { logs: secondEventPrepareLog } = await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -950,7 +950,7 @@ contract("OracleSwapEventManager", function (accounts) {
 
       await time.increase(duration);
 
-      await deployedOracleSwapEventManager.startEvent(
+      await deployedOracleChainlinkEventManager.startEvent(
         { from: eventRunnerAccount }
       );
 
@@ -963,14 +963,14 @@ contract("OracleSwapEventManager", function (accounts) {
       );
       await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTCSecondEvent)
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
       await time.increase(time.duration.seconds(5));
 
       const timestampSecondEvent = await time.latest();
 
-      const { logs: logsFinalizeSecondEvent } = await deployedOracleSwapEventManager.finalizeEvent(
+      const { logs: logsFinalizeSecondEvent } = await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
@@ -985,12 +985,12 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('it end event normally with result (1) and result (1)', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
       const getReserves = web3.eth.abi.encodeFunctionSignature('getReserves()')
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -1004,13 +1004,13 @@ contract("OracleSwapEventManager", function (accounts) {
       const duration = time.duration.minutes(30);
       await time.increase(duration);
 
-      await deployedOracleSwapEventManager.startEvent(
+      await deployedOracleChainlinkEventManager.startEvent(
         { from: eventRunnerAccount }
       );
 
       await time.increase(duration);
 
-      const roundData = await deployedOracleSwapEventManager._startRoundData.call();
+      const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
       const aReserveAfretSellBTC = new BN('1');
       const bReserveAfretSellBTC = new BN('490');
@@ -1019,14 +1019,14 @@ contract("OracleSwapEventManager", function (accounts) {
       );
       await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTC)
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
       await time.increase(time.duration.seconds(5));
 
       const timestamp = await time.latest();
 
-      const { logs } = await deployedOracleSwapEventManager.finalizeEvent(
+      const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
@@ -1039,7 +1039,7 @@ contract("OracleSwapEventManager", function (accounts) {
         result: new BN("-1")
       });
 
-      const { logs: secondEventPrepareLog } = await deployedOracleSwapEventManager.prepareEvent(
+      const { logs: secondEventPrepareLog } = await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -1069,7 +1069,7 @@ contract("OracleSwapEventManager", function (accounts) {
 
       await time.increase(duration);
 
-      await deployedOracleSwapEventManager.startEvent(
+      await deployedOracleChainlinkEventManager.startEvent(
         { from: eventRunnerAccount }
       );
 
@@ -1083,14 +1083,14 @@ contract("OracleSwapEventManager", function (accounts) {
       );
       await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTCSecondEvent)
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
       await time.increase(time.duration.seconds(5));
 
       const timestampSecondEvent = await time.latest();
 
-      const { logs: logsFinalizeSecondEvent } = await deployedOracleSwapEventManager.finalizeEvent(
+      const { logs: logsFinalizeSecondEvent } = await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
@@ -1105,12 +1105,12 @@ contract("OracleSwapEventManager", function (accounts) {
 
     it('it end event normally with result (0) on try flash loan attack', async () => {
       await deployedEventLifeCycle.addOracleAddress(
-        deployedOracleSwapEventManager.address
+        deployedOracleChainlinkEventManager.address
       );
 
       const getReserves = web3.eth.abi.encodeFunctionSignature('getReserves()')
 
-      await deployedOracleSwapEventManager.prepareEvent(
+      await deployedOracleChainlinkEventManager.prepareEvent(
         { from: eventRunnerAccount }
       );
 
@@ -1124,13 +1124,13 @@ contract("OracleSwapEventManager", function (accounts) {
       const duration = time.duration.minutes(30);
       await time.increase(duration);
 
-      await deployedOracleSwapEventManager.startEvent(
+      await deployedOracleChainlinkEventManager.startEvent(
         { from: eventRunnerAccount }
       );
 
       await time.increase(duration);
 
-      const roundData = await deployedOracleSwapEventManager._startRoundData.call();
+      const roundData = await deployedOracleChainlinkEventManager._startRoundData.call();
 
       const aReserveAfretSellBTC = new BN('1');
       const bReserveAfretSellBTC = new BN('500');
@@ -1139,7 +1139,7 @@ contract("OracleSwapEventManager", function (accounts) {
       );
       await pancakePairContract.givenMethodReturn(getReserves, retSwapAfterSellBTC)
 
-      await deployedOracleSwapEventManager.finalizeEvent(
+      await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
       await time.increase(time.duration.seconds(5));
@@ -1153,7 +1153,7 @@ contract("OracleSwapEventManager", function (accounts) {
 
       const timestamp = await time.latest();
 
-      const { logs } = await deployedOracleSwapEventManager.finalizeEvent(
+      const { logs } = await deployedOracleChainlinkEventManager.finalizeEvent(
         { from: eventRunnerAccount }
       );
 
@@ -1169,16 +1169,16 @@ contract("OracleSwapEventManager", function (accounts) {
   });
 
   it("should assert OracleSwapEventManager._eventLifeCycle() equal EventLifeCycle address", async () => {
-    return assert.equal(await deployedOracleSwapEventManager._eventLifeCycle(), deployedEventLifeCycle.address);
+    return assert.equal(await deployedOracleChainlinkEventManager._eventLifeCycle(), deployedEventLifeCycle.address);
   });
 
   it("should assert OracleSwapEventManager._predictionPool() equal PredictionPool address", async () => {
-    return assert.equal(await deployedOracleSwapEventManager._predictionPool(), deployedPredictionPool.address);
+    return assert.equal(await deployedOracleChainlinkEventManager._predictionPool(), deployedPredictionPool.address);
   });
 
   it("should assert OracleSwapEventManager._predictionPool() equal PredictionPool address", async () => {
-    assert.equal(await deployedOracleSwapEventManager._primaryToken(), _primaryToken);
-    return assert.equal(await deployedOracleSwapEventManager._pair(), pancakePairContract.address);
+    assert.equal(await deployedOracleChainlinkEventManager._primaryToken(), _primaryToken);
+    return assert.equal(await deployedOracleChainlinkEventManager._pair(), pancakePairContract.address);
   });
 
 });

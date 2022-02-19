@@ -6,8 +6,16 @@
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test --stacktrace-extra",
-    "coverage": "truffle run coverage"
+    "test": "NETWORK=development truffle test --stacktrace-extra",
+    "test:dev": "NETWORK=development truffle test --stacktrace-extra --network development -g 'DEV:'",
+    "test:live": "truffle test --stacktrace-extra --network development -g 'LIVE:'",
+    "test:live:rinkeby": "NETWORK=rinkeby truffle test --stacktrace-extra --network rinkeby -g 'LIVE:'",
+    "coverage": "truffle run coverage",
+    "deploy:tokens:rinkeby": "truffle migrate --network rinkeby --f 2 --to 2",
+    "deploy:prediction:rinkeby": "truffle migrate --network rinkeby --f 3 --to 3",
+    "deploy:elc:rinkeby": "truffle migrate --network rinkeby --f 4 --to 4",
+    "deploy:pending:rinkeby": "truffle migrate --network rinkeby --f 5 --to 5",
+    "deploy:dex:rinkeby": "truffle migrate --network rinkeby --f 6 --to 6"
   },
   "repository": {
     "type": "git",

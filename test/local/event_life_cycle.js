@@ -10,11 +10,11 @@ const {
 const chai = require('chai');
 const expect = require('chai').expect;
 
-const { deployContracts } = require('./utils.js');
+const { deployContracts } = require('./../utils.js');
 
 const priceChangePart = new BN("50000000000000000");
 
-contract("EventLifeCycle", (accounts) => {
+contract("DEV: EventLifeCycle", (accounts) => {
   "use strict";
 
   const [ deployerAddress ] = accounts;

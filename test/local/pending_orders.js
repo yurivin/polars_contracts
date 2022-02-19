@@ -12,11 +12,11 @@ const bigDecimal = require('js-big-decimal');
 const chai = require('chai');
 const expect = require('chai').expect;
 
-const { deployContracts, ntob, BONE } = require('./utils.js');
+const { deployContracts, ntob, BONE } = require('./../utils.js');
 
 const priceChangePart = ntob(0.05);
 
-contract("PendingOrders", function (accounts) {
+contract("DEV: PendingOrders", function (accounts) {
   "use strict";
 
   let deployedPredictionPool;

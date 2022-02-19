@@ -9,9 +9,9 @@ const {
 const chai = require('chai');
 const expect = require('chai').expect;
 
-const { deployContracts } = require('./utils.js');
+const { deployContracts } = require('./../utils.js');
 
-contract("PredictionPool", (accounts) => {
+contract("DEV: PredictionPool", (accounts) => {
   "use strict";
 
   const [ deployerAddress ] = accounts;
