@@ -10,12 +10,14 @@
     "test:dev": "NETWORK=development truffle test --stacktrace-extra --network development -g 'DEV:'",
     "test:live": "truffle test --stacktrace-extra --network development -g 'LIVE:'",
     "test:live:rinkeby": "NETWORK=rinkeby truffle test --stacktrace-extra --network rinkeby -g 'LIVE:'",
+    "test:live:link:rinkeby": "NETWORK=rinkeby truffle test test/live/link_oracles_live.js --stacktrace-extra --network rinkeby",
     "coverage": "truffle run coverage --file=\"test/local/*.js\"",
     "deploy:tokens:rinkeby": "truffle migrate --network rinkeby --f 2 --to 2",
     "deploy:prediction:rinkeby": "truffle migrate --network rinkeby --f 3 --to 3",
     "deploy:elc:rinkeby": "truffle migrate --network rinkeby --f 4 --to 4",
     "deploy:pending:rinkeby": "truffle migrate --network rinkeby --f 5 --to 5",
-    "deploy:dex:rinkeby": "truffle migrate --network rinkeby --f 6 --to 6"
+    "deploy:dex:rinkeby": "truffle migrate --network rinkeby --f 6 --to 6",
+    "deploy:chainlink:rinkeby": "truffle migrate --network rinkeby --f 7 --to 7"
   },
   "repository": {
     "type": "git",

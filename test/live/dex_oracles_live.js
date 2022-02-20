@@ -30,11 +30,11 @@ const network = process.env.NETWORK ? process.env.NETWORK : "development"
 
 if (network !== "development") {
 
-const deployDirectory = `${__dirname}/../deployed`;
+const deployDirectory = `${__dirname}/../../deployed`;
 const deployTestTokensFileName = path.join(deployDirectory, `1_${network}_test_tokens_addresses.json`);
 const deployMainContractsFileName = path.join(deployDirectory, `2_${network}_main_contracts_addresses.json`);
 
-const dexConstants = require(`${__dirname}/../DexConstants.json`)
+const UtilConstants = require(`${__dirname}/../../UtilConstants.json`)
 
 let tokens;
 
@@ -62,12 +62,12 @@ let contractsAddresses;
   try {
     contractsAddresses = require(deployMainContractsFileName);
 
-    if (!tokens.collateralToken) throw 'CollateralUndefined';
-    if (!tokens.stUsd) throw 'stUsdUndefined';
-    if (!tokens.stBNB) throw 'stBNBUndefined';
-    if (await web3.eth.getCode(tokens.collateralToken) === "0x") throw 'CollateralNotContract';
-    if (await web3.eth.getCode(tokens.stUsd) === "0x") throw 'stUsdNotContract';
-    if (await web3.eth.getCode(tokens.stBNB) === "0x") throw 'stBNBNotContract';
+    // if (!tokens.collateralToken) throw 'CollateralUndefined';
+    // if (!tokens.stUsd) throw 'stUsdUndefined';
+    // if (!tokens.stBNB) throw 'stBNBUndefined';
+    // if (await web3.eth.getCode(tokens.collateralToken) === "0x") throw 'CollateralNotContract';
+    // if (await web3.eth.getCode(tokens.stUsd) === "0x") throw 'stUsdNotContract';
+    // if (await web3.eth.getCode(tokens.stBNB) === "0x") throw 'stBNBNotContract';
 
     if (!contractsAddresses.predictionPool || (await web3.eth.getCode(contractsAddresses.predictionPool) === "0x")) throw 'PredictionContractsError';
     if (!contractsAddresses.eventLifeCycle || (await web3.eth.getCode(contractsAddresses.eventLifeCycle) === "0x")) throw 'ElcContractsError';
@@ -107,7 +107,7 @@ contract("LIVE: Run tests on testnet fork", (accounts) => {
 
     pancakePairContract = await IPancakePair.at(await deployedOracleSwapEventManager._pair());
 
-    dexRouter = await IPancakeRouter01.at(dexConstants[network]);
+    dexRouter = await IPancakeRouter01.at(UtilConstants[network].dexRouter);
 
     const token0 = await pancakePairContract.token0();
     const token1 = await pancakePairContract.token1();

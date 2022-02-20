@@ -16,7 +16,7 @@ const {
   constants,    // Common constants, like the zero address and largest integers
 } = require('@openzeppelin/test-helpers');
 
-const dexConstants = require(`${__dirname}/../DexConstants.json`)
+const UtilConstants = require(`${__dirname}/../UtilConstants.json`)
 
 const approveValue = constants.MAX_UINT256;
 
@@ -68,7 +68,7 @@ module.exports = async(deployer, network, accounts) => {
 
         if (!contractsAddresses.pairAddress || (await web3.eth.getCode(contractsAddresses.pairAddress) === "0x")) {
 
-            const dexRouter = await IPancakeRouter01.at(dexConstants[network]);
+            const dexRouter = await IPancakeRouter01.at(UtilConstants[network].dexRouter);
 
             const dexFactoryAddress = await dexRouter.factory()
 
