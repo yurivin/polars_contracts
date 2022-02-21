@@ -20,6 +20,8 @@ const UtilConstants = require(`${__dirname}/../UtilConstants.json`)
 
 const approveValue = constants.MAX_UINT256;
 
+const debug = 0;
+
 module.exports = async(deployer, network, accounts) => {
     const deployerAddress = accounts[0];
 
@@ -96,12 +98,12 @@ module.exports = async(deployer, network, accounts) => {
 
             const token0 = await dexPair.token0();
             const token1 = await dexPair.token1();
-            console.log("dexPairAddressBefore:    ", dexPairAddressBefore);
-            console.log("dexPairAddress:          ", dexPairAddress);
-            console.log("token0:                  ", token0);
-            console.log("usd:                     ", deployedSTUsdToken.address);
-            console.log("token1:                  ", token1);
-            console.log("bnb:                     ", deployedSTBNBToken.address);
+            if (debug) console.log("dexPairAddressBefore:    ", dexPairAddressBefore);
+            if (debug) console.log("dexPairAddress:          ", dexPairAddress);
+            if (debug) console.log("token0:                  ", token0);
+            if (debug) console.log("usd:                     ", deployedSTUsdToken.address);
+            if (debug) console.log("token1:                  ", token1);
+            if (debug) console.log("bnb:                     ", deployedSTBNBToken.address);
 
 
             const amountADesired = new BN("103153246713754825714339456");
@@ -131,23 +133,23 @@ module.exports = async(deployer, network, accounts) => {
             );
 
             const reserves = await dexPair.getReserves()
-            console.log("reserve0:                ", reserves.reserve0.toString())
-            console.log("reserve1:                ", reserves.reserve1.toString())
-            console.log("blockTimestampLast:      ", reserves.blockTimestampLast.toString())
+            if (debug) console.log("reserve0:                ", reserves.reserve0.toString())
+            if (debug) console.log("reserve1:                ", reserves.reserve1.toString())
+            if (debug) console.log("blockTimestampLast:      ", reserves.blockTimestampLast.toString())
 
 
 
             if (deployedSTUsdToken.address == token0 && deployedSTBNBToken.address == token1) {
-                console.log("price:                   ", reserves.reserve0.div(reserves.reserve1).toString());
+                if (debug) console.log("price:                   ", reserves.reserve0.div(reserves.reserve1).toString());
                 _primaryToken = 1;
             } else {
-                console.log("price:                   ", reserves.reserve1.div(reserves.reserve0).toString())
+                if (debug) console.log("price:                   ", reserves.reserve1.div(reserves.reserve0).toString())
                 _primaryToken = 0;
             }
 
-            console.log("pairAddress:             " + dexPair.address);
-            console.log("token0:                  " + token0);
-            console.log("token1:                  " + token1);
+            console.log("pairAddress:             ", dexPair.address);
+            if (debug) console.log("token0:                  ", token0);
+            if (debug) console.log("token1:                  ", token1);
 
         }
 
