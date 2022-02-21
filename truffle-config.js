@@ -25,6 +25,13 @@ const { PRIVATE_KEY, BSC_SCAN_API_KEY, SEED_ADDRESS_BSC, SEED_ADDRESS_KOVAN, SEE
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
 
+function getProvider(rpc) {
+  return function() {
+    const provider = new web3.providers.WebsocketProvider(rpc);
+    return new HDWalletProvider(process.env.DEPLOYMENT_KEY, provider);
+  };
+}
+
 module.exports = {
   /**
    * Networks define how you connect to your ethereum client and let you set the
@@ -44,35 +51,67 @@ module.exports = {
     // options below to some value.
     //
     development: {
-     // provider: () => new HDWalletProvider(PRIVATE_KEY, "http://localhost:8545"), //new HDWalletProvider(mnemonic, `https://data-seed-prebsc-1-s1.binance.org:8545`),
+     // provider: () => new HDWalletProvider(PRIVATE_KEY, "http://localhost:8545"),
+     // provider: () => new HDWalletProvider(mnemonic, `https://data-seed-prebsc-1-s1.binance.org:8545`),
      host: "127.0.0.1",     // Localhost (default: none)
      port: 8545,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
+    },
+    coverage: {
+     host: 'localhost',
+     network_id: '*',
+     port: 8555,
+     gas: 0xfffffffffff,
+     gasPrice: 0x01,
+    },
+    bsc_testnet_fork: {
+     provider: () => new HDWalletProvider(
+      mnemonic, 'http://localhost:8545',
+     ),
+     network_id: 97,
+     timeoutBlocks: 200,
+     confirmations: 1,
+     skipDryRun: true,
     },
     bsc_testnet: {
      provider: () => new HDWalletProvider(
       mnemonic, SEED_ADDRESS_BSC,
      ),
      network_id: 97,
+     port: 8545,
      timeoutBlocks: 200,
      confirmations: 5,
      production: true    // Treats this network as if it was a public net. (default: false)
     },
+    rinkeby_fork: {
+     provider: () => new HDWalletProvider(
+      mnemonic, 'http://localhost:8545',
+     ),
+     gasPrice: 1e9, // 1 gwei
+     gasLimit: 8 * 1e6, // 8,000,000
+     network_id: 4,
+     skipDryRun: true,
+    },
     rinkeby: {
-      provider: () => new HDWalletProvider(
-        mnemonic, SEED_ADDRESS_RINKEBY,
-      ),
-      network_id: 4,
-      gasPrice: 10e9,
-      skipDryRun: true,
+     provider: () => new HDWalletProvider(
+      mnemonic, SEED_ADDRESS_RINKEBY,
+     ),
+     gasPrice: 10e9, // 10 gwei
+     timeoutBlocks: 200,
+     gasLimit: 8 * 1e6, // 8,000,000
+     network_id: 4,
+     confirmations: 1,
+     skipDryRun: true,
+     production: true
     },
     kovan: {
-      provider: () => new HDWalletProvider(
-        mnemonic, SEED_ADDRESS_KOVAN,
-      ),
-      network_id: 42,
-      gasPrice: 10e9,
-      skipDryRun: true,
+     provider: () => new HDWalletProvider(
+      mnemonic, SEED_ADDRESS_KOVAN,
+     ),
+     network_id: 42,
+     gasPrice: 1e9, // 1 gwei
+     gasLimit: 8 * 1e6, // 8,000,000
+     skipDryRun: true,
     },
     heco: {
       provider: () => new HDWalletProvider(

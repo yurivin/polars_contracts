@@ -5,5 +5,12 @@
         "jobId": "1c359230d1a24b3394efa0616c9db76e",
         "oracle": "0x578E6E1a454B3CE650C4806b322E6D6080A245E7",
         "fee": "0.1"
+    },
+    "rinkeby_fork": {
+        "dexRouter": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+        "linkToken": "0x01be23585060835e02b77ef475b0cc51aa1e0709",
+        "jobId": "1c359230d1a24b3394efa0616c9db76e",
+        "oracle": "0x578E6E1a454B3CE650C4806b322E6D6080A245E7",
+        "fee": "0.1"
     }
 }

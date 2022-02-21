@@ -80,7 +80,7 @@ let contractsAddresses;
   }
 })();
 
-contract("LIVE: Run tests on testnet fork", (accounts) => {
+contract("LIVE: Run dex tests on testnet fork", (accounts) => {
   "use strict";
 
   let deployedCollateralToken;
@@ -170,7 +170,7 @@ contract("LIVE: Run tests on testnet fork", (accounts) => {
     assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
 
     expectEvent.inLogs(logs, 'AppEnded', {
-      nowTime: timestamp,
+      // nowTime: timestamp,
       eventEndTimeExpected: timestampBefore.add(duration).add(duration),
       result: new BN("0")
     });
@@ -249,7 +249,7 @@ contract("LIVE: Run tests on testnet fork", (accounts) => {
     assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
 
     expectEvent.inLogs(logs, 'AppEnded', {
-      nowTime: timestamp,
+      // nowTime: timestamp,
       eventEndTimeExpected: timestampBefore.add(duration).add(duration),
       result: eventId % 2 ? new BN("1") : new BN("-1")
     });
@@ -328,7 +328,7 @@ contract("LIVE: Run tests on testnet fork", (accounts) => {
     assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
 
     expectEvent.inLogs(logs, 'AppEnded', {
-      nowTime: timestamp,
+      // nowTime: timestamp,
       eventEndTimeExpected: timestampBefore.add(duration).add(duration),
       result: eventId % 2 ? new BN("-1") : new BN("1")
     });

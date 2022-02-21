@@ -54,7 +54,7 @@ let contractsAddresses;
   }
 })();
 
-contract("LIVE: Run tests on testnet fork", (accounts) => {
+contract("LIVE: Run link tests on testnet fork", (accounts) => {
   "use strict";
 
   let deployedLinkToken;
@@ -81,6 +81,12 @@ contract("LIVE: Run tests on testnet fork", (accounts) => {
     if (debug) console.log("lastPrice:", web3.utils.fromWei(lastPrice))
 
     if (debug) console.log("contract link balance:", (await deployedLinkToken.balanceOf(deployedChainlinkAPIConsumer.address)).toString())
+
+    await deployedOraclePayableChainLinkEventManager.addPriceConsumer(
+      deployedChainlinkAPIConsumer.address,   // address priceConsumerAddress,
+      "BNB",                                  // string memory token0,
+      "USDT",                                 // string memory token1
+    )
   });
 
   it('it should send link to contract', async () => {
@@ -141,7 +147,7 @@ contract("LIVE: Run tests on testnet fork", (accounts) => {
     assert.equal(logs.length, eventCount, `triggers must be ${eventCount} event`);
 
     expectEvent.inLogs(logs, 'AppEnded', {
-      nowTime: timestamp,
+      // nowTime: timestamp,
       eventEndTimeExpected: timestampBefore.add(duration).add(duration),
       result: new BN("0")
     });
