@@ -1,5 +1,5 @@
 const TokenTemplate = artifacts.require("TokenTemplate");
-const IPancakeRouter01 = artifacts.require("IPancakeRouter01");
+const IPancakeRouter = artifacts.require("IPancakeRouter");
 const IPancakeFactory = artifacts.require("IPancakeFactory");
 const IPancakePair = artifacts.require("IPancakePair");
 

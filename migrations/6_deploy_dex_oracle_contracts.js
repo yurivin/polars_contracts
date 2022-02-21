@@ -3,7 +3,7 @@ const EventLifeCycle = artifacts.require("EventLifeCycle");
 const PredictionPool = artifacts.require("PredictionPool");
 const OracleSwapEventManager = artifacts.require("OracleSwapEventManager");
 
-const IPancakeRouter01 = artifacts.require("IPancakeRouter01");
+const IPancakeRouter = artifacts.require("IPancakeRouter");
 const IPancakeFactory = artifacts.require("IPancakeFactory");
 const IPancakePair = artifacts.require("IPancakePair");
 
@@ -70,7 +70,7 @@ module.exports = async(deployer, network, accounts) => {
 
         if (!contractsAddresses.pairAddress || (await web3.eth.getCode(contractsAddresses.pairAddress) === "0x")) {
 
-            const dexRouter = await IPancakeRouter01.at(UtilConstants[network].dexRouter);
+            const dexRouter = await IPancakeRouter.at(UtilConstants[network].dexRouter);
 
             const dexFactoryAddress = await dexRouter.factory()
 

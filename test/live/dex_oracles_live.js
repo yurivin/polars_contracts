@@ -23,7 +23,7 @@ const EventLifeCycle = artifacts.require('EventLifeCycle');
 const TokenTemplate = artifacts.require('TokenTemplate');
 const OracleSwapEventManager = artifacts.require('OracleSwapEventManager');
 
-const IPancakeRouter01 = artifacts.require("IPancakeRouter01");
+const IPancakeRouter = artifacts.require("IPancakeRouter");
 const IPancakePair = artifacts.require("IPancakePair");
 
 const network = process.env.NETWORK ? process.env.NETWORK : "development"
@@ -107,7 +107,7 @@ contract("LIVE: Run dex tests on testnet fork", (accounts) => {
 
     pancakePairContract = await IPancakePair.at(await deployedOracleSwapEventManager._pair());
 
-    dexRouter = await IPancakeRouter01.at(UtilConstants[network].dexRouter);
+    dexRouter = await IPancakeRouter.at(UtilConstants[network].dexRouter);
 
     const token0 = await pancakePairContract.token0();
     const token1 = await pancakePairContract.token1();

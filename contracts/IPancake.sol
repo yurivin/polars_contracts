@@ -13,7 +13,7 @@ interface IPancakeFactory {
         returns (address pair);
 }
 
-interface IPancakeRouter01 {
+interface IPancakeRouter {
     function addLiquidity(
         address tokenA,
         address tokenB,
