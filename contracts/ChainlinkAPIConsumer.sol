@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.4;
 
-import "@chainlink/contracts/src/v0.7/ChainlinkClient.sol";
-// import "./ERC20Detailed.sol";
+import "./Common/chainlink/v0.7/ChainlinkClient.sol";
 import "./Common/IERC20.sol";
 import "./Common/Ownable.sol";
 
