@@ -27,7 +27,7 @@ Make a copy of file `env.json.example` named `.env.json`.
 Remove if exists ```deployed``` folder from root for clean installation.
 
 ## Deploy
-Read more in [Deploy.md](docs/Deploy.md)
+Read more in [Deploy.md](./docs/Deploy.md)
 
 ## Run tests
 ### On local ganache instance:
