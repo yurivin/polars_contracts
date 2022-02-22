@@ -27,12 +27,7 @@ Make a copy of file `env.json.example` named `.env.json`.
 Remove if exists ```deployed``` folder from root for clean installation.
 
 ## Deploy
-```
-npm run deploy:tokens:rinkeby     // Tokens for work on Rinkeby
-npm run deploy:prediction:rinkeby // Prediction contracts on Rinkeby
-npm run deploy:elc:rinkeby        // EventLifeCycle contract on Rinkeby
-npm run deploy:pending:rinkeby    // PendingOrders contract on Rinkeby
-```
+Read more in [Deploy.md](docs/Deploy.md)
 
 ## Run tests
 ### On local ganache instance:
