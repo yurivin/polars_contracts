@@ -13,7 +13,7 @@ import "./Common/Ownable.sol";
 contract ChainlinkAPIConsumer is ChainlinkClient, Ownable {
     using Chainlink for Chainlink.Request;
 
-    mapping(address => bool) public _oracleAddresses;
+    mapping(address => bool) public _runnerAddresses;
 
     uint256 public lastPrice;
     uint256 public lastTime;
@@ -22,9 +22,11 @@ contract ChainlinkAPIConsumer is ChainlinkClient, Ownable {
     bytes32 private jobId;
     uint256 private fee;
 
+    string public url;
+
     event LatestData(uint256 lastPrice, uint256 lastTime);
-    event OracleAddressAdded(address oracle);
-    event OracleAddressExcluded(address oracle);
+    event RunnerAddressAdded(address oracle);
+    event RunnerAddressExcluded(address oracle);
 
     constructor(
         address _oracle,
@@ -37,9 +39,9 @@ contract ChainlinkAPIConsumer is ChainlinkClient, Ownable {
         fee = _fee;
     }
 
-    modifier onlyOracle() {
+    modifier onlyRunner() {
         require(
-            _oracleAddresses[msg.sender] == true,
+            _runnerAddresses[msg.sender] == true,
             "Caller should be Oracle"
         );
         _;
@@ -51,7 +53,7 @@ contract ChainlinkAPIConsumer is ChainlinkClient, Ownable {
      */
     function requestPriceData(string calldata ticker)
         public
-        onlyOracle
+        onlyRunner
         returns (bytes32 requestId)
     {
         Chainlink.Request memory request = buildChainlinkRequest(
@@ -60,8 +62,8 @@ contract ChainlinkAPIConsumer is ChainlinkClient, Ownable {
             this.fulfill.selector
         );
 
-        string
-            memory url = "https://api.binance.com/api/v3/ticker/price?symbol=";
+        // string
+        //     memory url = "https://api.binance.com/api/v3/ticker/price?symbol=";
 
         string memory requestUrl = string(abi.encodePacked(url, ticker));
 
@@ -112,21 +114,40 @@ contract ChainlinkAPIConsumer is ChainlinkClient, Ownable {
         return (int256(lastPrice), lastTime);
     }
 
-    function addOracleAddress(address oracleAddress) public onlyOwner {
+    function addRunnerAddress(address runnerAddress) public onlyOwner {
         require(
-            oracleAddress != address(0),
-            "New oracle address should be not null"
+            runnerAddress != address(0),
+            "New runner address should be not null"
         );
-        _oracleAddresses[oracleAddress] = true;
-        emit OracleAddressAdded(oracleAddress);
+        _runnerAddresses[runnerAddress] = true;
+        emit RunnerAddressAdded(runnerAddress);
     }
 
-    function excludeOracleAddress(address oracleAddress) public onlyOwner {
+    function excludeRunnerAddress(address runnerAddress) public onlyOwner {
         require(
-            oracleAddress != address(0),
-            "Oracle address should be not null"
+            runnerAddress != address(0),
+            "Runner address should be not null"
         );
-        delete _oracleAddresses[oracleAddress];
-        emit OracleAddressExcluded(oracleAddress);
+        delete _runnerAddresses[runnerAddress];
+        emit RunnerAddressExcluded(runnerAddress);
+    }
+
+    function setRequestUrl(string calldata _url) public onlyOwner {
+        bytes memory tempUrl = bytes(_url);
+        require(tempUrl.length != 0, "Url address should be not null");
+        url = _url;
+    }
+
+    function setNode(
+        address _oracle,
+        bytes32 _jobId,
+        uint256 _fee
+    ) public onlyOwner {
+        require(_oracle != address(0), "Oracle address should be not null");
+        require(_jobId.length != 0, "Job Id should be not null");
+
+        oracle = _oracle;
+        jobId = _jobId;
+        fee = _fee;
     }
 }

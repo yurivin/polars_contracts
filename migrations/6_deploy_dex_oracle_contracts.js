@@ -151,6 +151,20 @@ module.exports = async(deployer, network, accounts) => {
             if (debug) console.log("token0:                  ", token0);
             if (debug) console.log("token1:                  ", token1);
 
+            contractsAddresses.pairAddress = dexPair.address;
+            fs.writeFileSync(deployMainContractsFileName, JSON.stringify(contractsAddresses, null, 2));
+
+        } else {
+            dexPair = await IPancakePair.at(contractsAddresses.pairAddress);
+            const token0 = await dexPair.token0();
+            const token1 = await dexPair.token1();
+            if (deployedSTUsdToken.address == token0 && deployedSTBNBToken.address == token1) {
+                if (debug) console.log("price:                   ", reserves.reserve0.div(reserves.reserve1).toString());
+                _primaryToken = 1;
+            } else {
+                if (debug) console.log("price:                   ", reserves.reserve1.div(reserves.reserve0).toString())
+                _primaryToken = 0;
+            }
         }
 
         if (!contractsAddresses.oracleSwapEventManager || (await web3.eth.getCode(contractsAddresses.oracleSwapEventManager) === "0x")) {

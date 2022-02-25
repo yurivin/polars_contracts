@@ -20,7 +20,17 @@
 
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
-const { PRIVATE_KEY, BSC_SCAN_API_KEY, SEED_ADDRESS_BSC, SEED_ADDRESS_KOVAN, SEED_ADDRESS_RINKEBY, SEED_ADDRESS_HECO, mnemonic } = require('./.env.json');
+const {
+  PRIVATE_KEY,
+  ETHER_SCAN_API_KEY,
+  BSC_SCAN_API_KEY,
+  SEED_ADDRESS_BSC,
+  SEED_ADDRESS_KOVAN,
+  SEED_ADDRESS_RINKEBY,
+  SEED_ADDRESS_HECO,
+  mnemonic
+} = require('./.env.json');
+
 //
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
@@ -96,9 +106,9 @@ module.exports = {
      provider: () => new HDWalletProvider(
       mnemonic, SEED_ADDRESS_RINKEBY,
      ),
-     gasPrice: 10e9, // 10 gwei
+     // gasPrice: 5e9, // 5 gwei
      timeoutBlocks: 200,
-     gasLimit: 8 * 1e6, // 8,000,000
+     // gasLimit: 8 * 1e6, // 8,000,000
      network_id: 4,
      confirmations: 1,
      skipDryRun: true,
@@ -154,15 +164,24 @@ module.exports = {
   ],
 
   api_keys: {
-    bscscan: BSC_SCAN_API_KEY
+    bscscan: BSC_SCAN_API_KEY,
+    etherscan: ETHER_SCAN_API_KEY,
+    // optimistic_etherscan: 'MY_API_KEY',
+    // arbiscan: 'MY_API_KEY',
+    // bscscan: 'MY_API_KEY',
+    // snowtrace: 'MY_API_KEY',
+    // polygonscan: 'MY_API_KEY',
+    // ftmscan: 'MY_API_KEY',
+    // hecoinfo: 'MY_API_KEY',
+    // moonscan: 'MY_API_KEY'
   },
 
   // Set default mocha options here, use special reporters etc.
   mocha: {
     // timeout: 100000
     useColors: true,
-    reporter: 'eth-gas-reporter',
-    reporterOptions : { excludeContracts: ['Migrations'] }
+    // reporter: 'eth-gas-reporter',
+    // reporterOptions : { excludeContracts: ['Migrations'] }
   },
 
   // Configure your compilers
