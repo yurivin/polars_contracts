@@ -145,6 +145,14 @@ contract PendingOrders is DSMath, Ownable {
         emit OrderCreated(_ordersCount, _amount);
     }
 
+    function ordersOfUser(address user)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        return _ordersOfUser[user];
+    }
+
     function cancelOrder(uint256 orderId) external {
         Order memory order = _orders[orderId];
         require(msg.sender == order.orderer, "NOT YOUR ORDER");
