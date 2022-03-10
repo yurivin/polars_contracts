@@ -6,6 +6,13 @@
         "oracle": "0xe0a5E791d84c0F37fBAfa24638F22e196A8262CA",
         "fee": "0.1"
     },
+    "bsc_testnet": {
+        "dexRouter": "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3",
+        "linkToken": "0x84b9B910527Ad5C03A9Ca831909E21e236EA7b06",
+        "jobId": "a8a8c6207aef4891bc7c619b010305a9",
+        "oracle": "0xe0a5E791d84c0F37fBAfa24638F22e196A8262CA",
+        "fee": "0.1"
+    },
     "rinkeby_fork": {
         "dexRouter": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
         "linkToken": "0x01be23585060835e02b77ef475b0cc51aa1e0709",

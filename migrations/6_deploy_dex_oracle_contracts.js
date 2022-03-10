@@ -79,26 +79,59 @@ module.exports = async(deployer, network, accounts) => {
             console.log("factoryAddress:          ", dexFactory.address);
 
 
-            const dexPairAddressBefore = await dexFactory.getPair(
+            let dexPairAddress = await dexFactory.getPair(
                 deployedSTUsdToken.address, // address tokenA,
                 deployedSTBNBToken.address, // address tokenB
             )
-            console.log("dexPairAddressBefore:    ", dexPairAddressBefore);
+            console.log("dexPairAddress:    ", dexPairAddress);
 
-            await dexFactory.createPair(
-                deployedSTUsdToken.address, // address tokenA,
-                deployedSTBNBToken.address, // address tokenB
-            )
-            const dexPairAddress = await dexFactory.getPair(
-                deployedSTUsdToken.address, // address tokenA,
-                deployedSTBNBToken.address, // address tokenB
-            )
+            if (dexPairAddress === constants.ZERO_ADDRESS) {
+
+                await dexFactory.createPair(
+                    deployedSTUsdToken.address, // address tokenA,
+                    deployedSTBNBToken.address, // address tokenB
+                )
+
+                const amountADesired = new BN("103153246713754825714339456");
+                const amountBDesired = new BN("270231134191430226258662");
+
+                // const amountAMin = amountADesired.mul(new BN("0.992"));
+                // const amountBMin = amountADesired.mul(new BN("0.992"));
+
+                const amountAMin = new BN("102328020740044787108624740");
+                const amountBMin = new BN("268069285117898784448592");
+
+                const deadline = (await time.latest()).add(new BN("3000"));
+
+                await deployedSTUsdToken.approve(dexRouter.address, approveValue);
+
+                await deployedSTBNBToken.approve(dexRouter.address, approveValue);
+
+                await dexRouter.addLiquidity(
+                    deployedSTUsdToken.address, // address tokenA,
+                    deployedSTBNBToken.address, // address tokenB,
+                    amountADesired,             // uint256 amountADesired,
+                    amountBDesired,             // uint256 amountBDesired,
+                    amountAMin,                 // uint256 amountAMin,
+                    amountBMin,                 // uint256 amountBMin,
+                    deployerAddress,            // address to,
+                    deadline                    // uint256 deadline
+                );
+
+                // const
+                dexPairAddress = await dexFactory.getPair(
+                    deployedSTUsdToken.address, // address tokenA,
+                    deployedSTBNBToken.address, // address tokenB
+                )
+            } else {
+                console.log("Pair exist");
+            }
 
             dexPair = await IPancakePair.at(dexPairAddress);
 
             const token0 = await dexPair.token0();
             const token1 = await dexPair.token1();
-            if (debug) console.log("dexPairAddressBefore:    ", dexPairAddressBefore);
+            if (debug) console.log("dexPairAddress:    ", dexPairAddress);
             if (debug) console.log("dexPairAddress:          ", dexPairAddress);
             if (debug) console.log("token0:                  ", token0);
             if (debug) console.log("usd:                     ", deployedSTUsdToken.address);
@@ -106,31 +139,7 @@ module.exports = async(deployer, network, accounts) => {
             if (debug) console.log("bnb:                     ", deployedSTBNBToken.address);
 
 
-            const amountADesired = new BN("103153246713754825714339456");
-            const amountBDesired = new BN("270231134191430226258662");
 
-            // const amountAMin = amountADesired.mul(new BN("0.992"));
-            // const amountBMin = amountADesired.mul(new BN("0.992"));
-
-            const amountAMin = new BN("102328020740044787108624740");
-            const amountBMin = new BN("268069285117898784448592");
-
-            const deadline = (await time.latest()).add(new BN("300"));
-
-            await deployedSTUsdToken.approve(dexRouter.address, approveValue);
-
-            await deployedSTBNBToken.approve(dexRouter.address, approveValue);
-
-            await dexRouter.addLiquidity(
-                deployedSTUsdToken.address, // address tokenA,
-                deployedSTBNBToken.address, // address tokenB,
-                amountADesired,             // uint256 amountADesired,
-                amountBDesired,             // uint256 amountBDesired,
-                amountAMin,                 // uint256 amountAMin,
-                amountBMin,                 // uint256 amountBMin,
-                deployerAddress,            // address to,
-                deadline                    // uint256 deadline
-            );
 
             const reserves = await dexPair.getReserves()
             if (debug) console.log("reserve0:                ", reserves.reserve0.toString())

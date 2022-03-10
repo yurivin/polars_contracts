@@ -51,8 +51,8 @@ module.exports = async(deployer, network, accounts) => {
         if (!stUsd || (await web3.eth.getCode(stUsd) === "0x")) {
             await deployer.deploy(
                 TokenTemplate,
-                "STest USDT111",
-                "USDT111",
+                "STest USDT",
+                "USDT",
                 18,
                 deployerAddress,
                 "1000000000000000000000000000000000"

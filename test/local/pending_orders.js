@@ -262,7 +262,7 @@ contract("DEV: PendingOrders", function (accounts) {
     await runEvents(someEventsArray, ordersApplied);
   });
 
-  it.only("test suite for check _ordersOfUser of pending orders (8 orders)", async () => {
+  it("test suite for check _ordersOfUser of pending orders (8 orders)", async () => {
 
     await addLiquidityToPrediction(50000);
     const userColTotal = 100000;
