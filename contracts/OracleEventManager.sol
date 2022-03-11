@@ -81,6 +81,9 @@ contract OracleEventManager is Ownable {
         uint256 startedAt,
         string eventName
     );
+
+    event ConfigChanged(string optionName, uint256 newValue);
+
     event AppEnded(uint256 nowTime, uint256 eventEndTimeExpected, int8 result);
 
     function uint2str(uint256 _i)
@@ -204,7 +207,6 @@ contract OracleEventManager is Ownable {
             _predictionPool._eventStarted() == false,
             "Event already started"
         );
-        require(_gameEvent.startedAt == 0, "Event already started");
 
         GameEvent memory gameEvent = _gameEvent;
 
@@ -289,5 +291,42 @@ contract OracleEventManager is Ownable {
 
         _config._eventName = _config._eventSeries;
         _gameEvent = gameEvent;
+    }
+
+    function editPriceChangePart(uint256 newPriceChangePart) public onlyOwner {
+        require(
+            newPriceChangePart != 0,
+            "New price change part should be not null"
+        );
+        _config._priceChangePart = newPriceChangePart;
+
+        emit ConfigChanged("PriceChangePart", newPriceChangePart);
+    }
+
+    function editStartTimeOut(uint256 eventStartTimeOutExpected)
+        public
+        onlyOwner
+    {
+        require(
+            (eventStartTimeOutExpected != 0) &&
+                (eventStartTimeOutExpected < 60),
+            "New start timeout should be not null or least than 1 minute"
+        );
+        _config._eventStartTimeOutExpected = eventStartTimeOutExpected;
+
+        emit ConfigChanged(
+            "EventStartTimeOutExpected",
+            eventStartTimeOutExpected
+        );
+    }
+
+    function editEndTimeOut(uint256 eventEndTimeOutExpected) public onlyOwner {
+        require(
+            (eventEndTimeOutExpected != 0) && (eventEndTimeOutExpected < 60),
+            "New end timeout should be not null or least than 1 minute"
+        );
+        _config._eventEndTimeOutExpected = eventEndTimeOutExpected;
+
+        emit ConfigChanged("EventEndTimeOutExpected", eventEndTimeOutExpected);
     }
 }
