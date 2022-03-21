@@ -32,6 +32,7 @@
     "deploy:dex:bsc_testnet": "truffle migrate --network bsc_testnet --f 6 --to 6",
     "verify:dex:bsc_testnet": "truffle run verify OracleSwapEventManager --network bsc_testnet",
     "deploy:chainlink:rinkeby": "truffle migrate --network rinkeby --f 7 --to 7",
+    "verify:chainlinkem:rinkeby": "truffle run verify OraclePayableChainLinkEventManager --network rinkeby",
     "verify:chainlink:rinkeby": "truffle run verify ChainlinkAPIConsumer --network rinkeby"
   },
   "repository": {

@@ -51,7 +51,8 @@ module.exports = async(deployer, network, accounts) => {
                 ChainlinkAPIConsumer,
                 UtilConstants[network].oracle,                        // address _oracle
                 web3.utils.asciiToHex(UtilConstants[network].jobId),  // bytes32 _jobId
-                web3.utils.toWei(UtilConstants[network].fee)          // uint256 _fee
+                web3.utils.toWei(UtilConstants[network].fee),         // uint256 _fee
+                "0x0000000000000000000000000000000000000000"          // address _link
             );
 
             deployedChainlinkAPIConsumer = await ChainlinkAPIConsumer.deployed();

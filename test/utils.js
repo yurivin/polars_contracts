@@ -18,6 +18,7 @@ const TokenTemplate = artifacts.require('TokenTemplate');
 const EventLifeCycle = artifacts.require('EventLifeCycle');
 const OracleSwapEventManager = artifacts.require("OracleSwapEventManager");
 const OracleChainlinkEventManager = artifacts.require("OracleChainLinkEventManager");
+const OraclePayableChainLinkEventManager = artifacts.require("OraclePayableChainLinkEventManager");
 
 const deployContracts = async (deployerAddress, debug=0) => {
   const collateralTokenDecimals = "18";
@@ -122,21 +123,30 @@ const deployContracts = async (deployerAddress, debug=0) => {
     new BN("1800")
   );
 
-  if (debug) console.log("Collateral token                :", deployedCollateralToken.address);
-  if (debug) console.log("PredictionCollateral            :", deployedPredictionCollateralization.address);
-  if (debug) console.log("WhiteToken                      :", deployedWhiteToken.address);
-  if (debug) console.log("BlackToken                      :", deployedBlackToken.address);
-  if (debug) console.log("PredictionPool                  :", deployedPredictionPool.address);
-  if (debug) console.log("Gov address                     :", (await deployedPredictionCollateralization._governanceAddress()));
-  if (debug) console.log("PredictionPool                  :", (await deployedPredictionCollateralization._poolAddress()));
-  if (debug) console.log("EventLifeCycle                  :", (await deployedEventLifeCycle.address));
-  if (debug) console.log("PendingOrders                   :", (await deployedPendingOrders.address));
-  if (debug) console.log("OracleSwapEventManager          :", (await deployedOracleSwapEventManager.address));
-  if (debug) console.log("OracleChainlinkEventManager     :", (await deployedOracleChainlinkEventManager.address));
-  if (debug) console.log("deployedCollateralToken.owner() :", (await deployedCollateralToken.owner()));
-  if (debug) console.log("deployedPendingOrders.owner()   :", (await deployedPendingOrders.owner()));
-  if (debug) console.log("whiteToken.owner()              :", (await deployedWhiteToken.owner()));
-  if (debug) console.log("blackToken.owner()              :", (await deployedBlackToken.owner()));
+  const deployedOraclePayableChainLinkEventManager = await OraclePayableChainLinkEventManager.new(
+    deployedEventLifeCycle.address,
+    deployedPredictionPool.address,
+    new BN("50000000000000000"),
+    new BN("1800"),
+    new BN("1800")
+  );
+
+  if (debug) console.log("Collateral token                    :", deployedCollateralToken.address);
+  if (debug) console.log("PredictionCollateral                :", deployedPredictionCollateralization.address);
+  if (debug) console.log("WhiteToken                          :", deployedWhiteToken.address);
+  if (debug) console.log("BlackToken                          :", deployedBlackToken.address);
+  if (debug) console.log("PredictionPool                      :", deployedPredictionPool.address);
+  if (debug) console.log("Gov address                         :", (await deployedPredictionCollateralization._governanceAddress()));
+  if (debug) console.log("PredictionPool                      :", (await deployedPredictionCollateralization._poolAddress()));
+  if (debug) console.log("EventLifeCycle                      :", (await deployedEventLifeCycle.address));
+  if (debug) console.log("PendingOrders                       :", (await deployedPendingOrders.address));
+  if (debug) console.log("OracleSwapEventManager              :", (await deployedOracleSwapEventManager.address));
+  if (debug) console.log("OracleChainlinkEventManager         :", (await deployedOracleChainlinkEventManager.address));
+  if (debug) console.log("OraclePayableChainLinkEventManager  :", (await deployedOraclePayableChainLinkEventManager.address));
+  if (debug) console.log("deployedCollateralToken.owner()     :", (await deployedCollateralToken.owner()));
+  if (debug) console.log("deployedPendingOrders.owner()       :", (await deployedPendingOrders.owner()));
+  if (debug) console.log("whiteToken.owner()                  :", (await deployedWhiteToken.owner()));
+  if (debug) console.log("blackToken.owner()                  :", (await deployedBlackToken.owner()));
 
 
   return {
@@ -148,7 +158,8 @@ const deployContracts = async (deployerAddress, debug=0) => {
     deployedWhiteToken,
     deployedBlackToken,
     deployedOracleSwapEventManager,
-    deployedOracleChainlinkEventManager
+    deployedOracleChainlinkEventManager,
+    deployedOraclePayableChainLinkEventManager
   }
 }
 

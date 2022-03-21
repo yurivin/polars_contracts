@@ -31,9 +31,14 @@ contract ChainlinkAPIConsumer is ChainlinkClient, Ownable {
     constructor(
         address _oracle,
         bytes32 _jobId,
-        uint256 _fee
+        uint256 _fee,
+        address _link
     ) {
-        setPublicChainlinkToken();
+        if (_link == address(0)) {
+            setPublicChainlinkToken();
+        } else {
+            setChainlinkToken(_link);
+        }
         oracle = _oracle;
         jobId = _jobId;
         fee = _fee;
@@ -42,7 +47,7 @@ contract ChainlinkAPIConsumer is ChainlinkClient, Ownable {
     modifier onlyRunner() {
         require(
             _runnerAddresses[msg.sender] == true,
-            "Caller should be Oracle"
+            "Caller should be Runner"
         );
         _;
     }

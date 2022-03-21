@@ -70,6 +70,7 @@ contract OraclePayableChainLinkEventManager is OracleEventManager {
             )
         );
         _startRoundData.price = price;
+        _startRoundData.providerTimeStamp = providerTimeStamp;
     }
 
     function getExternalEventEndData() internal override {
@@ -80,6 +81,7 @@ contract OraclePayableChainLinkEventManager is OracleEventManager {
 
         emit LatestRound(price, providerTimeStamp);
         _endRoundData.price = price;
+        _endRoundData.providerTimeStamp = providerTimeStamp;
     }
 
     function calculateEventResult()
@@ -95,6 +97,27 @@ contract OraclePayableChainLinkEventManager is OracleEventManager {
         if (_startRoundData.price > _endRoundData.price) {
             gameResult = -1;
         }
+    }
+
+    event ChainlinkRequested(bytes32 indexed id);
+
+    function requestPriceFromConsumer() public returns (bytes32 requestId) {
+        /* Need to test in future
+        GameEvent memory gameEvent = _gameEvent;
+        require(
+            block.timestamp >
+                gameEvent.eventStartTimeExpected - (_checkPeriod / 2),
+            "Too early request"
+        );
+        require(
+            (gameEvent.createdAt < block.timestamp) &&
+                (block.timestamp <=
+                    gameEvent.eventStartTimeExpected),
+            "Too late to request"
+        );
+        */
+        requestId = _consumer.requestPriceData("BNBUSDT");
+        return requestId;
     }
 
     function addPriceConsumer(

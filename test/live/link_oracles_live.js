@@ -115,6 +115,26 @@ contract("LIVE: Run link tests on testnet fork", (accounts) => {
     );
   });
 
+  it('it should requestPriceData and get lastPrice', async () => {
+    const dataBefore = await deployedChainlinkAPIConsumer.latestRoundData()
+    console.log("dataBefore:", dataBefore[0].toString(), dataBefore[1].toString())
+    const x = await deployedChainlinkAPIConsumer.requestPriceData(
+      "BNBUSDT"
+    );
+
+    console.log("x: ", x)
+
+
+    function timeout(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    await timeout(15000);
+
+    const dataAfter = await deployedChainlinkAPIConsumer.latestRoundData()
+    console.log("dataAfter: ", dataAfter[0].toString(), dataAfter[1].toString())
+  });
+
   it('it end event normally with result (0)', async () => {
     await deployedEventLifeCycle.addOracleAddress(
       deployedOraclePayableChainLinkEventManager.address
