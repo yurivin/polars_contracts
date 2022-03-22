@@ -125,6 +125,17 @@ contract OracleEventManager is Ownable {
             uint256 eventEndTimeExpected = eventStartTimeExpected +
                 config._eventEndTimeOutExpected;
 
+            string _blackTeam;
+            string _whiteTeam;
+
+            if (_lastEventId % 2 == 0) {
+                _blackTeam = config._upTeam;
+                _whiteTeam = config._downTeam;
+            } else {
+                _blackTeam = config._downTeam;
+                _whiteTeam = config._upTeam;
+            }
+
             gameEvent = GameEvent({
                 createdAt: block.timestamp,
                 startedAt: 0,
@@ -132,12 +143,8 @@ contract OracleEventManager is Ownable {
                 priceChangePart: config._priceChangePart, // timestamp
                 eventStartTimeExpected: eventStartTimeExpected, // in seconds since 1970
                 eventEndTimeExpected: eventEndTimeExpected, // in seconds since 1970
-                blackTeam: (_lastEventId % 2 == 0)
-                    ? config._upTeam
-                    : config._downTeam,
-                whiteTeam: (_lastEventId % 2 == 0)
-                    ? config._downTeam
-                    : config._upTeam,
+                blackTeam: _blackTeam,
+                whiteTeam: _whiteTeam,
                 eventType: config._eventType,
                 eventSeries: config._eventSeries,
                 eventName: config._eventName,
