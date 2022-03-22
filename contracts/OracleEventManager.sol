@@ -5,8 +5,11 @@ pragma solidity ^0.7.4;
 import "./Common/Ownable.sol";
 import "./IEventLifeCycle.sol";
 import "./IPredictionPool.sol";
+import "./SafeMath.sol";
 
 contract OracleEventManager is Ownable {
+    using SafeMath for uint256;
+
     constructor(
         address eventLifeCycleAddress,
         address predictionPoolAddress,
@@ -117,13 +120,15 @@ contract OracleEventManager is Ownable {
 
         if (
             (block.timestamp >
-                gameEvent.eventStartTimeExpected + (_checkPeriod / 2)) ||
+                gameEvent.eventStartTimeExpected.add(_checkPeriod.div(2))) ||
             (gameEvent.createdAt == 0)
         ) {
-            uint256 eventStartTimeExpected = block.timestamp +
-                config._eventStartTimeOutExpected;
-            uint256 eventEndTimeExpected = eventStartTimeExpected +
-                config._eventEndTimeOutExpected;
+            uint256 eventStartTimeExpected = block.timestamp.add(
+                config._eventStartTimeOutExpected
+            );
+            uint256 eventEndTimeExpected = eventStartTimeExpected.add(
+                config._eventEndTimeOutExpected
+            );
 
             string _blackTeam;
             string _whiteTeam;
@@ -178,7 +183,7 @@ contract OracleEventManager is Ownable {
             );
             // ===================== FIX: Позже можно удалить, добавлено для тестов ================================
 
-            _lastEventId = _lastEventId + 1;
+            _lastEventId = _lastEventId.add(1);
             _gameEvent = gameEvent;
         } else {
             revert("Already prepared event");
@@ -219,13 +224,14 @@ contract OracleEventManager is Ownable {
 
         require(
             block.timestamp >
-                gameEvent.eventStartTimeExpected - (_checkPeriod / 2),
+                gameEvent.eventStartTimeExpected.sub(_checkPeriod.div(2)),
             "Too early start"
         );
+
         require(
             (gameEvent.createdAt < block.timestamp) &&
                 (block.timestamp <
-                    gameEvent.eventStartTimeExpected + (_checkPeriod / 2)),
+                    gameEvent.eventStartTimeExpected.add(_checkPeriod.div(2))),
             "Too late to start"
         );
 
