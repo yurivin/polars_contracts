@@ -66,7 +66,7 @@ contract OraclePayableChainLinkEventManager is OracleEventManager {
             abi.encodePacked(
                 _config._eventSeries,
                 " ",
-                uint2str(uint256(price))
+                toString(uint256(price))
             )
         );
         _startRoundData.price = price;
