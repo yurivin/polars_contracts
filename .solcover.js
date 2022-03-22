@@ -14,6 +14,9 @@ module.exports = {
     'iPredictionCollateralization.sol',
     'IPredictionPool.sol',
     'SafeERC20.sol',
-    'SafeMath.sol'
+    'SafeMath.sol',
+    'IEventLifeCycle.sol',
+    'IPancake.sol',
+    'Imports.sol'
   ]
 };

@@ -23,12 +23,49 @@ npm install -g dotenv
 npm install
 ```
 
-Run tests
+Make a copy of file `env.json.example` named `.env.json`.
+
+## Deploy
+Read more in [Deploy.md](./docs/Deploy.md)
+
+## Run tests
+### On local ganache instance:
+Start ganache-cli with some account count
 ```
-truffle test --stacktrace-extra --network=development
+ganache-cli -a 10  // 10 accounts by default
+```
+If you want, you can use ganache in fork mode:
+```
+ganache-cli -a 10 -m "admit topple burger tomorrow protect pill jaguar tell congress direct finish path" --fork https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161  // 10 accounts by default, same mnemonic and seed address of rinkeby testnet
 ```
 
-or
+Start dev tests
+```
+truffle test --stacktrace-extra --network development -g "DEV:"  // grep tests with "DEV" suffix
+```
+or run
+```
+npm run test:dev // equivalent
+```
+
+## Start live tests
+Start tests can only after deployed on same network
+```
+ganache-cli -m "admit topple burger tomorrow protect pill jaguar tell congress direct finish path" --fork https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161
+```
+```
+npm run test:live:rinkeby
+```
+
+## Run coverage
+```
+truffle run coverage
+```
+or run
+```
+npm run coverage // equivalent
+```
+
 ## Run tests in docker
 ```
 docker-compose up --exit-code-from truffle
@@ -41,7 +78,7 @@ Install
 npm install -g solhint-plugin-prettier
 ```
 
-Run from the project root dir
+Run from the project root directory
 ```
 solhint contracts/*.sol
 ```

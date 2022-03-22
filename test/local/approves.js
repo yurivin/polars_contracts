@@ -8,14 +8,14 @@ const {
 const chai = require('chai');
 const expect = require('chai').expect;
 
-const { deployContracts } = require('./utils.js');
+const { deployContracts } = require('./../utils.js');
 
-contract("Approves", (accounts) => {
+contract("DEV: Approves", (accounts) => {
   "use strict";
 
   const [ deployerAddress ] = accounts;
 
-  const approveValue = new BN("999999999999999999999999999999999999");
+  const approveValue = constants.MAX_UINT256;
 
   let deployedPredictionPool;
   let deployedEventLifeCycle;

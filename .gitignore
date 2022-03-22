@@ -7,7 +7,7 @@ contracts/bin/
 build/
 coverage/
 .idea/
-.env
+.env*
 
 # Coverage directory used by tools like istanbul
 coverage
@@ -18,3 +18,6 @@ Compiling
 .vscode/settings.json
 .coverage_artifacts/*
 .coverage_contracts/*
+
+deployed/
+tmp/

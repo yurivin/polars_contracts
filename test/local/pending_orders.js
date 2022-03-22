@@ -12,11 +12,11 @@ const bigDecimal = require('js-big-decimal');
 const chai = require('chai');
 const expect = require('chai').expect;
 
-const { deployContracts, ntob, BONE } = require('./utils.js');
+const { deployContracts, ntob, BONE } = require('./../utils.js');
 
 const priceChangePart = ntob(0.05);
 
-contract("PendingOrders", function (accounts) {
+contract("DEV: PendingOrders", function (accounts) {
   "use strict";
 
   let deployedPredictionPool;
@@ -260,6 +260,48 @@ contract("PendingOrders", function (accounts) {
     expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
 
     await runEvents(someEventsArray, ordersApplied);
+  });
+
+  it("test suite for check _ordersOfUser of pending orders (8 orders)", async () => {
+
+    await addLiquidityToPrediction(50000);
+    const userColTotal = 100000;
+
+    for (const i of [...Array(accounts.length).keys()]) {
+      if (i > 0) { await sendCollateralTokenToUser(accounts[i], userColTotal) }
+    }
+
+    let ordersApplied = [
+      { account: 1, isWhite: true,  eventId: new BN("101"), amount: 100,  withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: false, eventId: new BN("104"), amount: 1253, withdrawAfterEvent: true,  cancel: false },
+      { account: 1, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false, cancel: false },
+      { account: 1, isWhite: true,  eventId: new BN("106"), amount: 273,  withdrawAfterEvent: true,  cancel: false },
+      { account: 2, isWhite: true,  eventId: new BN("101"), amount: 332,  withdrawAfterEvent: false, cancel: false },
+      { account: 2, isWhite: false, eventId: new BN("105"), amount: 14,   withdrawAfterEvent: false, cancel: false },
+      { account: 4, isWhite: true,  eventId: new BN("104"), amount: 1253, withdrawAfterEvent: false, cancel: false },
+      { account: 2, isWhite: false, eventId: new BN("103"), amount: 14,   withdrawAfterEvent: true,  cancel: false },
+    ];
+
+    for (let bid of ordersApplied) {
+      bid.id = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]); // runner = 0
+      bid.withdrawDone = false;
+    }
+
+    const groupByCategory = ordersApplied.reduce((group, order) => {
+      const { account } = order;
+      group[accounts[account]] = group[accounts[account]] ?? 0;
+      group[accounts[account]]++;
+      return group;
+    }, {});
+
+    await Promise.all(
+      accounts.map(async (account) => {
+        const _ordersOfUser = await deployedPendingOrders.ordersOfUser(account);
+        expect(new BN(_ordersOfUser.length)).to.be.bignumber.equal(new BN(groupByCategory[account]));
+      })
+    )
+    const ordersCount = await deployedPendingOrders._ordersCount();
+    expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
   });
 
   it("test suite for multiple pending orders (7 orders)", async () => {
