@@ -18,9 +18,9 @@ contract ChainlinkAPIConsumer is ChainlinkClient, Ownable {
     uint256 public lastPrice;
     uint256 public lastTime;
 
-    address private oracle;
-    bytes32 private jobId;
-    uint256 private fee;
+    address public oracle;
+    bytes32 public jobId;
+    uint256 public fee;
 
     string public url;
 
