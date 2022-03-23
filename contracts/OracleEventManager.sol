@@ -130,8 +130,8 @@ contract OracleEventManager is Ownable {
                 config._eventEndTimeOutExpected
             );
 
-            string _blackTeam;
-            string _whiteTeam;
+            string memory _blackTeam;
+            string memory _whiteTeam;
 
             if (_lastEventId % 2 == 0) {
                 _blackTeam = config._upTeam;
@@ -338,5 +338,73 @@ contract OracleEventManager is Ownable {
         _config._eventEndTimeOutExpected = eventEndTimeOutExpected;
 
         emit ConfigChanged("EventEndTimeOutExpected", eventEndTimeOutExpected);
+    }
+
+    function allowPrepare() public view returns (bool) {
+        if (_predictionPool._eventStarted() == true) {
+            return false;
+        }
+
+        GameEvent memory gameEvent = _gameEvent;
+
+        uint256 x = gameEvent.eventStartTimeExpected.add(_checkPeriod.div(2));
+
+        if ((block.timestamp > x) || (gameEvent.createdAt == 0)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function allowStart() public view returns (bool) {
+        if (_predictionPool._eventStarted() == true) {
+            return false;
+        }
+
+        uint256 nowTime = block.timestamp;
+
+        GameEvent memory gameEvent = _gameEvent;
+
+        uint256 x = gameEvent.eventStartTimeExpected.sub(_checkPeriod.div(2));
+        uint256 y = gameEvent.eventStartTimeExpected.add(_checkPeriod.div(2));
+
+        if (
+            (gameEvent.startedAt != 0) ||
+            (gameEvent.eventStartTimeExpected == 0) ||
+            (nowTime <= x)
+        ) {
+            return false;
+        }
+
+        if ((gameEvent.createdAt < nowTime) && (nowTime < y)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function allowFinalize() public view returns (bool) {
+        if (_predictionPool._eventStarted() == false) {
+            return false;
+        }
+
+        GameEvent memory gameEvent = _gameEvent;
+
+        if (gameEvent.startedAt == 0) {
+            return false;
+        }
+
+        if (
+            (gameEvent.startedAt != 0) &&
+            (block.timestamp >= gameEvent.eventEndTimeExpected)
+        ) {
+            if (gameEvent.endedAt == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 }
