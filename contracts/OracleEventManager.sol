@@ -346,23 +346,25 @@ contract OracleEventManager is Ownable {
         emit ConfigChanged("EventEndTimeOutExpected", eventEndTimeOutExpected);
     }
 
-    function allowPrepare() public view returns (bool) {
+    function canPrepare() public view returns (bool) {
         if (_predictionPool._eventStarted() == true) {
             return false;
         }
 
         GameEvent memory gameEvent = _gameEvent;
 
-        uint256 x = gameEvent.eventStartTimeExpected.add(_checkPeriod.div(2));
-
-        if ((block.timestamp > x) || (gameEvent.createdAt == 0)) {
+        if (
+            (block.timestamp >
+                gameEvent.eventStartTimeExpected.add(_checkPeriod.div(2))) ||
+            (gameEvent.createdAt == 0)
+        ) {
             return true;
         } else {
             return false;
         }
     }
 
-    function allowStart() public view returns (bool) {
+    function canStart() public view returns (bool) {
         if (_predictionPool._eventStarted() == true) {
             return false;
         }
@@ -371,25 +373,27 @@ contract OracleEventManager is Ownable {
 
         GameEvent memory gameEvent = _gameEvent;
 
-        uint256 x = gameEvent.eventStartTimeExpected.sub(_checkPeriod.div(2));
-        uint256 y = gameEvent.eventStartTimeExpected.add(_checkPeriod.div(2));
-
         if (
             (gameEvent.startedAt != 0) ||
             (gameEvent.eventStartTimeExpected == 0) ||
-            (nowTime <= x)
+            (nowTime <=
+                gameEvent.eventStartTimeExpected.sub(_checkPeriod.div(2)))
         ) {
             return false;
         }
 
-        if ((gameEvent.createdAt < nowTime) && (nowTime < y)) {
+        if (
+            (gameEvent.createdAt < nowTime) &&
+            (nowTime <
+                gameEvent.eventStartTimeExpected.add(_checkPeriod.div(2)))
+        ) {
             return true;
         } else {
             return false;
         }
     }
 
-    function allowFinalize() public view returns (bool) {
+    function canFinalize() public view returns (bool) {
         if (_predictionPool._eventStarted() == false) {
             return false;
         }
