@@ -177,7 +177,7 @@ contract PredictionPool is Eventable, DSMath {
         _;
     }
 
-    modifier onlyOrderer() {
+    modifier onlyOrdererModifier() {
         if(_onlyOrderer) {
             require(
                 _ordererAddress == msg.sender,
@@ -478,7 +478,7 @@ contract PredictionPool is Eventable, DSMath {
         external
         noEvent
         notPoolShutdown
-        onlyOrderer
+        onlyOrdererModifier
     {
         require(tokenId == 0 || tokenId == 1, "TokenId should be 0 or 1");
 
@@ -546,7 +546,7 @@ contract PredictionPool is Eventable, DSMath {
     function sellBlack(uint256 tokensAmount, uint256 minPrice)
         external
         noEvent
-        onlyOrderer
+        onlyOrdererModifier
     {
         require(
             _blackBought > tokensAmount.add(MIN_HOLD),
@@ -572,7 +572,7 @@ contract PredictionPool is Eventable, DSMath {
     function sellWhite(uint256 tokensAmount, uint256 minPrice)
         external
         noEvent
-        onlyOrderer
+        onlyOrdererModifier
     {
         require(
             _whiteBought > tokensAmount.add(MIN_HOLD),
@@ -632,7 +632,7 @@ contract PredictionPool is Eventable, DSMath {
         external
         noEvent
         notPoolShutdown
-        onlyOrderer
+        onlyOrdererModifier
     {
         (uint256 tokenAmount, uint256 collateralToBuy) = genericBuy(
             maxPrice,
@@ -651,7 +651,7 @@ contract PredictionPool is Eventable, DSMath {
         external
         noEvent
         notPoolShutdown
-        onlyOrderer
+        onlyOrdererModifier
     {
         (uint256 tokenAmount, uint256 collateralToBuy) = genericBuy(
             maxPrice,
