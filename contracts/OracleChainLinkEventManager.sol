@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
 pragma solidity ^0.7.4;
+pragma abicoder v2;
 
 import "./OracleEventManager.sol";
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";

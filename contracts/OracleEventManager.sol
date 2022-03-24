@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
 pragma solidity ^0.7.4;
+pragma abicoder v2;
 
 import "./Common/Ownable.sol";
 import "./IEventLifeCycle.sol";
@@ -89,6 +90,11 @@ contract OracleEventManager is Ownable {
 
     event AppEnded(uint256 nowTime, uint256 eventEndTimeExpected, int8 result);
 
+    function getGameEvent() external view returns (GameEvent memory) {
+        GameEvent memory gameEvent = _gameEvent;
+        return gameEvent;
+    }
+
     function toString(uint256 value) internal pure returns (string memory) {
         // Inspired by OraclizeAPI's implementation - MIT licence
         // https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
@@ -130,8 +136,8 @@ contract OracleEventManager is Ownable {
                 config._eventEndTimeOutExpected
             );
 
-            string _blackTeam;
-            string _whiteTeam;
+            string memory _blackTeam;
+            string memory _whiteTeam;
 
             if (_lastEventId % 2 == 0) {
                 _blackTeam = config._upTeam;
@@ -338,5 +344,73 @@ contract OracleEventManager is Ownable {
         _config._eventEndTimeOutExpected = eventEndTimeOutExpected;
 
         emit ConfigChanged("EventEndTimeOutExpected", eventEndTimeOutExpected);
+    }
+
+    function allowPrepare() public view returns (bool) {
+        if (_predictionPool._eventStarted() == true) {
+            return false;
+        }
+
+        GameEvent memory gameEvent = _gameEvent;
+
+        uint256 x = gameEvent.eventStartTimeExpected.add(_checkPeriod.div(2));
+
+        if ((block.timestamp > x) || (gameEvent.createdAt == 0)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function allowStart() public view returns (bool) {
+        if (_predictionPool._eventStarted() == true) {
+            return false;
+        }
+
+        uint256 nowTime = block.timestamp;
+
+        GameEvent memory gameEvent = _gameEvent;
+
+        uint256 x = gameEvent.eventStartTimeExpected.sub(_checkPeriod.div(2));
+        uint256 y = gameEvent.eventStartTimeExpected.add(_checkPeriod.div(2));
+
+        if (
+            (gameEvent.startedAt != 0) ||
+            (gameEvent.eventStartTimeExpected == 0) ||
+            (nowTime <= x)
+        ) {
+            return false;
+        }
+
+        if ((gameEvent.createdAt < nowTime) && (nowTime < y)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function allowFinalize() public view returns (bool) {
+        if (_predictionPool._eventStarted() == false) {
+            return false;
+        }
+
+        GameEvent memory gameEvent = _gameEvent;
+
+        if (gameEvent.startedAt == 0) {
+            return false;
+        }
+
+        if (
+            (gameEvent.startedAt != 0) &&
+            (block.timestamp >= gameEvent.eventEndTimeExpected)
+        ) {
+            if (gameEvent.endedAt == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 }
