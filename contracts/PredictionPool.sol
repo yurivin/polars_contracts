@@ -6,8 +6,9 @@ import "./Eventable.sol";
 import "./iPredictionCollateralization.sol";
 import "./DSMath.sol";
 import "./SafeMath.sol";
+import "./PoolToken.sol";
 
-contract PredictionPool is Eventable, DSMath {
+contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
     using SafeMath for uint256;
 
     bool public _eventStarted = false;
@@ -28,6 +29,8 @@ contract PredictionPool is Eventable, DSMath {
     event BuyWhite(address user, uint256 amount, uint256 price);
     event SellBlack(address user, uint256 amount, uint256 price);
     event SellWhite(address user, uint256 amount, uint256 price);
+    event AddLiquidity(address user, uint amount);
+    event WithdrawLiquidity(address user, uint amount);
 
     IERC20 public _whiteToken;
     IERC20 public _blackToken;
@@ -803,5 +806,76 @@ contract PredictionPool is Eventable, DSMath {
 
     function setOnlyOrderer(bool only) external onlyGovernance {
         _onlyOrderer = only;
-    } 
+    }
+
+    function addLiquidity(uint tokensAmount)
+    public {
+        require (_collateralToken.allowance(msg.sender, address(this)) >= tokensAmount, "Not enough tokens are delegated");
+        require (_collateralToken.balanceOf(msg.sender) >= tokensAmount, "Not enough tokens on the user balance");
+
+        uint wPrice = _whitePrice;
+        uint bPrice = _blackPrice;
+        uint sPrice = wPrice.add(bPrice);
+        uint bwAmount = wdiv(tokensAmount, sPrice);
+        uint forWhite = wmul(bwAmount, wPrice);
+        uint forBlack = wmul(bwAmount, bPrice);
+
+        _collateralForWhite = _collateralForWhite.add(forWhite);
+        _collateralForBlack = _collateralForBlack.add(forBlack);
+
+        _mint(msg.sender, bwAmount);
+
+        emit AddLiquidity(msg.sender, tokensAmount);
+
+        _thisCollateralization.buySeparately(
+            address(this),
+            bwAmount,
+            address(_whiteToken),
+            forWhite,
+            address(_collateralToken)
+        );
+
+        _thisCollateralization.buySeparately(
+            address(this),
+            bwAmount,
+            address(_blackToken),
+            forBlack,
+            address(_collateralToken)
+        );
+    }
+
+    function withdrawLiquidity(uint poolTokensAmount) public {
+        require (allowance[msg.sender][address(this)] >= poolTokensAmount, "Not enough pool tokens are delegated");
+        require (balanceOf[msg.sender] >= poolTokensAmount, "Not enough tokens on the user balance");
+
+        uint wPrice = _whitePrice;
+        uint bPrice = _blackPrice;
+        uint sPrice = wPrice.add(bPrice);
+        uint forWhite = wmul(poolTokensAmount, wPrice);
+        uint forBlack = wmul(poolTokensAmount, bPrice);
+
+        _collateralForWhite = _collateralForWhite.sub(forWhite);
+        _collateralForBlack = _collateralForBlack.sub(forBlack);
+
+        uint collateralToSend = wmul(poolTokensAmount, sPrice);
+
+        require(_collateralToken.balanceOf(address(_thisCollateralization)) >= collateralToSend, "Not enough collateral in the contract");
+
+        _burn(msg.sender, poolTokensAmount);
+        emit WithdrawLiquidity(msg.sender, collateralToSend);
+
+        _thisCollateralization.buyBackSeparately(
+            address(this),
+            poolTokensAmount,
+            address(_whiteToken),
+            forWhite
+        );
+
+        _thisCollateralization.buyBackSeparately(
+            address(this),
+            poolTokensAmount,
+            address(_blackToken),
+            forBlack
+        );
+    }
 }
