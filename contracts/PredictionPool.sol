@@ -12,10 +12,12 @@ contract PredictionPool is Eventable, DSMath {
 
     bool public _eventStarted = false;
     bool public _poolShutdown = false;
+    bool public _onlyOrderer = false;
 
     address public _governanceAddress;
     address public _eventContractAddress;
     address public _governanceWalletAddress;
+    address public _ordererAddress;
 
     /*
     Founders wallets
@@ -118,7 +120,9 @@ contract PredictionPool is Eventable, DSMath {
     function init(
         address governanceWalletAddress,
         address eventContractAddress,
-        address controllerWalletAddress
+        address controllerWalletAddress,
+        address ordererAddress,
+        bool onlyOrderer
     ) external {
         require(!inited, "Pool already initiated");
         require(
@@ -129,12 +133,15 @@ contract PredictionPool is Eventable, DSMath {
             governanceWalletAddress != address(0),
             "governanceWalletAddress should not be null"
         );
-        eventContractAddress = eventContractAddress == address(0)
+        _eventContractAddress = eventContractAddress == address(0)
             ? msg.sender
             : eventContractAddress;
 
         _governanceWalletAddress = governanceWalletAddress;
         _controllerWalletAddress = controllerWalletAddress;
+        _onlyOrderer = onlyOrderer;
+        _ordererAddress = ordererAddress;
+
         inited = true;
     }
 
@@ -167,6 +174,16 @@ contract PredictionPool is Eventable, DSMath {
             _poolShutdown == false,
             "Pool is shutting down. This function does not work"
         );
+        _;
+    }
+
+    modifier onlyOrderer() {
+        if(_onlyOrderer) {
+            require(
+                _ordererAddress == msg.sender,
+                "Pool is shutting down. This function does not work"
+            );
+        }
         _;
     }
 
@@ -461,6 +478,7 @@ contract PredictionPool is Eventable, DSMath {
         external
         noEvent
         notPoolShutdown
+        onlyOrderer
     {
         require(tokenId == 0 || tokenId == 1, "TokenId should be 0 or 1");
 
@@ -528,6 +546,7 @@ contract PredictionPool is Eventable, DSMath {
     function sellBlack(uint256 tokensAmount, uint256 minPrice)
         external
         noEvent
+        onlyOrderer
     {
         require(
             _blackBought > tokensAmount.add(MIN_HOLD),
@@ -553,6 +572,7 @@ contract PredictionPool is Eventable, DSMath {
     function sellWhite(uint256 tokensAmount, uint256 minPrice)
         external
         noEvent
+        onlyOrderer
     {
         require(
             _whiteBought > tokensAmount.add(MIN_HOLD),
@@ -612,6 +632,7 @@ contract PredictionPool is Eventable, DSMath {
         external
         noEvent
         notPoolShutdown
+        onlyOrderer
     {
         (uint256 tokenAmount, uint256 collateralToBuy) = genericBuy(
             maxPrice,
@@ -630,6 +651,7 @@ contract PredictionPool is Eventable, DSMath {
         external
         noEvent
         notPoolShutdown
+        onlyOrderer
     {
         (uint256 tokenAmount, uint256 collateralToBuy) = genericBuy(
             maxPrice,
@@ -774,4 +796,12 @@ contract PredictionPool is Eventable, DSMath {
     _controllerFee = controllerFee;
     _bwAdditionFee = bwAdditionFee;
     }
+
+    function changeOrderer(address newOrderer) external onlyGovernance {
+        _ordererAddress = newOrderer;
+    }
+
+    function setOnlyOrderer(bool only) external onlyGovernance {
+        _onlyOrderer = only;
+    } 
 }
