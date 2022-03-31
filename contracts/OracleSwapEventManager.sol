@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
 pragma solidity ^0.7.4;
-pragma abicoder v2;
 
 import "./OracleEventManager.sol";
 // import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";

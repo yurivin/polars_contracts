@@ -137,7 +137,7 @@ contract("DEV: OraclePayableChainLinkEventManager", function (accounts) {
     });
   });
 
-  describe.skip("SetUp", () => {
+  describe("SetUp", () => {
     it('revert on Caller not Oracle', async () => {
       await expectRevert(
         deployedOraclePayableChainLinkEventManager.prepareEvent(
@@ -178,7 +178,7 @@ contract("DEV: OraclePayableChainLinkEventManager", function (accounts) {
     });
   });
 
-  describe.skip("prepareEvent", () => {
+  describe("prepareEvent", () => {
 
     describe("REVERT CASES:", () => {
       it('revert on already prepared event', async () => {
@@ -397,7 +397,7 @@ contract("DEV: OraclePayableChainLinkEventManager", function (accounts) {
     });
   });
 
-  describe.skip("startEvent", () => {
+  describe("startEvent", () => {
     describe("REVERT CASES:", () => {
       it('revert on not prepared event', async () => {
         await expectRevert(
@@ -571,7 +571,7 @@ contract("DEV: OraclePayableChainLinkEventManager", function (accounts) {
     });
   });
 
-  describe.skip("finalizeEvent", () => {
+  describe("finalizeEvent", () => {
     describe("REVERT CASES:", () => {
       it('revert on not prepared event, PredictionPool now opened', async () => {
         await expectRevert(
@@ -788,7 +788,7 @@ contract("DEV: OraclePayableChainLinkEventManager", function (accounts) {
       });
     });
 
-    it('it end event normally with result (-1)', async () => {
+    it.skip('it end event normally with result (-1)', async () => {
       await deployedEventLifeCycle.addOracleAddress(
         deployedOraclePayableChainLinkEventManager.address
       );
