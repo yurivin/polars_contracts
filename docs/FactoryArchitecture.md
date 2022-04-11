@@ -10,5 +10,5 @@ Architecture of Smart contracts aimed to manage deployement and UI access to fun
 3. Extensibility - possibility to add newly created functional contract types into suite.
 
 
-
+![](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/yurivin/polars_contracts/main/docs/FactoryClassDiagram.puml?token=GHSAT0AAAAAABKBW2XRX2YWS4NHHSCKRR5AYSKYOUA)
 
