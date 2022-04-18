@@ -83,19 +83,17 @@ contract PendingOrders is DSMath, Ownable {
         _collateralToken = IERC20(collateralTokenAddress);
         _eventContractAddress = eventContractAddress;
 
-        // solhint-disable-next-line var-name-mixedcase
-        uint256 MAX_UINT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
         _collateralToken.approve(
             address(_predictionPool._thisCollateralization()),
-            MAX_UINT
+            type(uint256).max
         );
         IERC20(_predictionPool._whiteToken()).approve(
             _predictionPool._thisCollateralization(),
-            MAX_UINT
+            type(uint256).max
         );
         IERC20(_predictionPool._blackToken()).approve(
             _predictionPool._thisCollateralization(),
-            MAX_UINT
+            type(uint256).max
         );
     }
 
@@ -306,5 +304,13 @@ contract PendingOrders is DSMath, Ownable {
         );
         _eventContractAddress = _newEventAddress;
         emit EventContractAddressChanged(_eventContractAddress);
+    }
+
+    function emergencyWithdrawCollateral() public onlyOwner {
+        uint256 balance = _collateralToken.balanceOf(address(this));
+        require(
+            _collateralToken.transfer(msg.sender, balance),
+            "Unable to transfer"
+        );
     }
 }
