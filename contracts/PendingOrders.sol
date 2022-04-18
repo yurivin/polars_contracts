@@ -44,16 +44,17 @@ contract PendingOrders is DSMath, Ownable {
         uint256 blackPriceBefore;   // price of black token before the event
         uint256 whitePriceAfter;    // price of white token after the event
         uint256 blackPriceAfter;    // price of black token after the event
-        bool isExecuted;            // TRUE before the event, FALSE after the event
+        bool isExecuted;            // FALSE before the event, TRUE after the event
+        bool isStarted;             // FALSE before the event, TRUE after the event
         /* solhint-enable prettier/prettier */
     }
 
     // mapping from event ID to detail for that event
     mapping(uint256 => Detail) public _detailForEvent;
 
-    event OrderCreated(uint256 id, uint256 amount);
-    event OrderCanceled(uint256 id);
-    event CollateralWithdrew(uint256 amount);
+    event OrderCreated(uint256 id, address user, uint256 amount);
+    event OrderCanceled(uint256 id, address user);
+    event CollateralWithdrew(uint256 amount, address user);
     event ContractOwnerChanged(address owner);
     event EventContractAddressChanged(address eventContract);
     event FeeWithdrawAddressChanged(address feeAddress);
@@ -112,6 +113,7 @@ contract PendingOrders is DSMath, Ownable {
         bool _isWhite,
         uint256 _eventId
     ) external {
+        require(!_detailForEvent[_eventId].isStarted, "EVENT ALREADY STARTED");
         require(
             _collateralToken.balanceOf(msg.sender) >= _amount,
             "NOT ENOUGH COLLATERAL IN USER'S ACCOUNT"
@@ -142,7 +144,7 @@ contract PendingOrders is DSMath, Ownable {
         _ordersOfUser[msg.sender].push(_ordersCount);
 
         _collateralToken.transferFrom(msg.sender, address(this), _amount);
-        emit OrderCreated(_ordersCount, _amount);
+        emit OrderCreated(_ordersCount, msg.sender, _amount);
     }
 
     function ordersOfUser(address user)
@@ -156,7 +158,11 @@ contract PendingOrders is DSMath, Ownable {
     function cancelOrder(uint256 orderId) external {
         Order memory order = _orders[orderId];
         require(msg.sender == order.orderer, "NOT YOUR ORDER");
+
         require(order.isPending, "ORDER HAS ALREADY BEEN CANCELED");
+
+        require(!_detailForEvent[order.eventId].isStarted, "EVENT IN PROGRESS");
+
         require(
             !_detailForEvent[order.eventId].isExecuted,
             "ORDER HAS ALREADY BEEN EXECUTED"
@@ -169,7 +175,7 @@ contract PendingOrders is DSMath, Ownable {
         /* solhint-enable prettier/prettier */
         _orders[orderId].isPending = false;
         _collateralToken.transfer(order.orderer, order.amount);
-        emit OrderCanceled(orderId);
+        emit OrderCanceled(orderId, msg.sender);
     }
 
     function eventStart(uint256 _eventId) external onlyEventContract {
@@ -187,6 +193,7 @@ contract PendingOrders is DSMath, Ownable {
             // solhint-disable-next-line prettier/prettier
             _detailForEvent[_eventId].blackPriceBefore = _predictionPool._blackPrice();
         }
+        _detailForEvent[_eventId].isStarted = true;
     }
 
     function eventEnd(uint256 _eventId) external onlyEventContract {
@@ -209,12 +216,12 @@ contract PendingOrders is DSMath, Ownable {
             // solhint-disable-next-line prettier/prettier
             _detailForEvent[_eventId].blackPriceAfter = _predictionPool._blackPrice();
         }
-        if (ownBlack > 0 || ownWhite > 0) {
-            _detailForEvent[_eventId].isExecuted = true;
-        }
+        _detailForEvent[_eventId].isExecuted = true;
     }
 
     function withdrawCollateral() external returns (uint256) {
+        require(_ordersOfUser[msg.sender].length > 0, "YOU DON'T HAVE ORDERS");
+
         // total amount of collateral token that should be returned to user
         // feeAmount should be subtracted before actual return
         uint256 totalWithdrawAmount;
@@ -267,7 +274,7 @@ contract PendingOrders is DSMath, Ownable {
         }
 
         _collateralToken.transfer(msg.sender, totalWithdrawAmount.sub(1));
-        emit CollateralWithdrew(totalWithdrawAmount);
+        emit CollateralWithdrew(totalWithdrawAmount, msg.sender);
 
         return totalWithdrawAmount;
     }
