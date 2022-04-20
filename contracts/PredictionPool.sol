@@ -119,7 +119,7 @@ contract PredictionPool is Eventable, DSMath {
         address governanceWalletAddress,
         address eventContractAddress,
         address controllerWalletAddress
-    ) external {
+    ) external onlyGovernance {
         require(!inited, "Pool already initiated");
         require(
             controllerWalletAddress != address(0),
