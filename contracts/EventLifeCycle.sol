@@ -18,20 +18,20 @@ contract EventLifeCycle {
     event GovernanceAddressChanged(address governance);
     event OracleAddressAdded(address oracle);
     event OracleAddressExcluded(address oracle);
-    event BettingPoolAddressChanged(address betting);
+    event PredictionPoolAddressChanged(address prediction);
     event GameEventStarted(uint256 time, uint256 eventId);
     event GameEventEnded(int8 result, uint256 eventId);
 
-    Eventable public _bettingPool;
+    Eventable public _predictionPool;
 
     constructor(
         address governanceAddress,
         address oracleAddress,
-        address bettingPoolAddress
+        address predictionPoolAddress
     ) {
         _governanceAddress = governanceAddress;
         _oracleAddresses[oracleAddress] = true;
-        _bettingPool = Eventable(bettingPoolAddress);
+        _predictionPool = Eventable(predictionPoolAddress);
     }
 
     modifier onlyGovernance() {
@@ -96,7 +96,7 @@ contract EventLifeCycle {
         if (_usePendingOrders) {
             _pendingOrders.eventStart(ongoing.eventId);
         }
-        _bettingPool.submitEventStarted(ongoing.priceChangePart);
+        _predictionPool.submitEventStarted(ongoing.priceChangePart);
         eventIsInProgress = true;
         emit GameEventStarted(block.timestamp, ongoing.eventId);
         return ongoing.eventId;
@@ -142,7 +142,7 @@ contract EventLifeCycle {
             eventIsInProgress == true,
             "There is no ongoing event to finish"
         );
-        _bettingPool.submitEventResult(_result);
+        _predictionPool.submitEventResult(_result);
         uint256 eventId = _ongoingEvent.eventId;
         if (_usePendingOrders) {
             _pendingOrders.eventEnd(eventId);
@@ -163,7 +163,7 @@ contract EventLifeCycle {
         emit GovernanceAddressChanged(governanceAddress);
     }
 
-    function changeBettingPoolAddress(address poolAddress)
+    function changePredictionPoolAddress(address poolAddress)
         public
         onlyGovernance
     {
@@ -171,8 +171,8 @@ contract EventLifeCycle {
             poolAddress != address(0),
             "New pool address should be not null"
         );
-        _bettingPool = Eventable(poolAddress);
-        emit BettingPoolAddressChanged(poolAddress);
+        _predictionPool = Eventable(poolAddress);
+        emit PredictionPoolAddressChanged(poolAddress);
     }
 
     function addOracleAddress(address oracleAddress) public onlyGovernance {
