@@ -2,8 +2,6 @@ pragma solidity ^0.7.6;
 
 // SPDX-License-Identifier: Apache License 2.0
 
-import "./SuiteOwner.sol";
-
 interface ISuiteList {
     function addSuite(address suiteAddress, address suiteOwner) external;
 

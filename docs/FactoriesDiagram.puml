@@ -1,0 +1,107 @@
+@startuml
+
+actor Owner as owner #blue
+actor EventRunner #red
+actor "Any user" as user
+participant "Oracle Event\nManager" as oem #LightBlue
+
+box "FrontEnd Service" #LightBlue
+participant PendingOrders
+participant OracleSwapEventManager
+participant EventLifeCycle
+participant PredictionPool
+end box
+
+box "BackEnd" #LightYellow
+participant DexPair
+end box
+
+group One Event Iteration
+SomeUser -[#red]> PendingOrders: createOrder()
+activate SomeUser
+== Initialization ==
+EventRunner -[#blue]> OracleSwapEventManager: prepareEvent()
+activate EventRunner
+OracleSwapEventManager -> EventLifeCycle: addNewEvent()
+...30 minutes later...
+== Start Event ==
+EventRunner -[#blue]> OracleSwapEventManager: addAndStartEvent()
+
+OracleSwapEventManager -[#purple]> DexPair: getReserves()
+DexPair --[#purple]> OracleSwapEventManager: (_reserve0, _reserve1)
+OracleSwapEventManager --[#purple]> OracleSwapEventManager: calculatePrice()
+OracleSwapEventManager -> EventLifeCycle: startEvent()
+EventLifeCycle -> PendingOrders: startEvent()
+
+EventLifeCycle -> PredictionPool: submitEventStarted()
+
+...30 minutes later...
+== Finalize Event ==
+
+
+EventRunner -[#blue]> OracleSwapEventManager: finalizeEvent()
+OracleSwapEventManager -[#purple]> DexPair: getReserves()
+DexPair --[#purple]> OracleSwapEventManager: (_reserve0, _reserve1)
+OracleSwapEventManager --[#purple]> OracleSwapEventManager: calculatePrice()
+OracleSwapEventManager -> OracleSwapEventManager: calculateEventResult()
+
+
+...1 block later...
+EventRunner -[#blue]> OracleSwapEventManager: finalizeEvent()
+OracleSwapEventManager -[#purple]> DexPair: getReserves()
+DexPair --[#purple]> OracleSwapEventManager: (_reserve0, _reserve1)
+OracleSwapEventManager --[#purple]> OracleSwapEventManager: calculatePrice()
+deactivate EventRunner
+OracleSwapEventManager -> OracleSwapEventManager: calculateEventResult()
+OracleSwapEventManager -> EventLifeCycle: endEvent(int8 _result)
+EventLifeCycle -> PredictionPool: submitEventResult(_result)
+EventLifeCycle -> PendingOrders: eventEnd(eventId)
+
+/' OracleSwapEventManager -> ChainlinkAPIConsumer: requestPriceData("BNBUSDT")
+ChainlinkAPIConsumer --> NODE: Chainlink.Request
+NODE --> ChainlinkAPIConsumer: fulfill(_lastPrice)
+OracleSwapEventManager -> ChainlinkAPIConsumer: latestRoundData() '/
+
+
+SomeUser -[#red]> PendingOrders: withdrawCollateral()
+deactivate SomeUser
+end
+/' Alice -> Bob: Another authentication Request
+Alice <-- Bob: another authentication Response '/
+
+
+/'actor Owner as owner #blue
+actor "Any user" as user
+
+actor EventRunner #red
+'/
+
+box "FrontEnd Service" #LightBlue
+/'participant "FrontEnd Service" as fes'/
+actor "Any user" as user
+
+end box
+
+box "BackEnd" #LightYellow
+participant "SuiteFactory" as sf
+participant "Suite" as suite
+participant WhiteList as wl
+/'participant "Oracle Event\nManager" as oem'/
+participant "SuiteList" as sl
+participant ContractType
+end box
+
+group Create Suite
+user -[#red]> sf: createSuite()
+sf -[#red]> suite: createSuite()
+suite -[#blue]> user: SuiteInstanceAddress
+end
+group Deploy Suite
+user -[#red]> wl: getContractType(0)
+wl -[#blue]> user: true
+user -[#blue]> suite: SuiteInstanceAddress.addContract(0)
+user -[#red]> wl: getContractType(1)
+wl -[#blue]> user: true
+user -[#blue]> suite: SuiteInstanceAddress.addContract(1)
+end
+@enduml

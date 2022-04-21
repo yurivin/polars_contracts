@@ -1,35 +1,39 @@
 @startuml
+
 SuiteList <|-- SuiteOwner
 class SuiteList {
-    +address[] suites
-    +SuiteFactory suiteFactory
-    +mapping(address suite => uint256 index) suiteIndexes
-    +mapping(address suite => address owner) suiteOwners
-    +void addSuite(address suite) onlySuiteFactory
-    +void deleteSuite(address suite) onlySuiteOwner(msg.sender), onlyOwner
-    +address[] getUserSeriesPage(uint256 startIndex, uint256 count)
-    +void setSuiteFactory(address factory) onlyOwner
-    +void changeSuiteOwner(address newOwner) onlySuiteOwner(msg.sender)
+    +address[] _suites
+    +ISuiteFactory _suiteFactory
+    +mapping(address suite => uint256 index) _suiteIndexes
+    +mapping(address suite => address owner) _suiteOwners
+    modifier onlySuiteFactoryOrOwner
+    modifier modifierOwnerOrSuiteOwner(address suiteAddress)
+    +void addSuite(address suiteAddress, address suiteOwner) onlySuiteFactoryOrOwner
+    +void deleteSuite(address suiteAddress) onlySuiteOwner(suiteAddress), onlyOwner
+    +address[] getSuitePage(uint256 startIndex, uint256 count)
+    +void setSuiteFactory(address factoryAddress) onlyOwner
+    +void changeSuiteOwner(address suiteAddress, address candidateAddress) onlySuiteOwner(suiteAddress)
+    +boolean isSuiteOwner(address suiteAddress, address candidateAddress)
 }
 
 SuiteFactory <|-- Ownable
 class SuiteFactory {
-    +SuiteList suiteList
+    +ISuiteList _suiteList
     +address deploySuite()
     +void setSuiteList(address suiteList) onlyOwner
 }
 
 Suite <|-- Ownable
 class Suite {
-    +WhiteList whiteList
-    modifier onlyWhiteList()
+    +IWhiteList _whiteList
+    modifier onlyWhiteList
     +mapping(uint256 type => address) contracts
     +void addContract(uint256 type, address contract) onlyWhiteList
 }
 
 WhiteList <|-- Ownable
 class WhiteList {
-    +mapping(address factory => boolean) whisteList
+    +mapping(address factory => boolean) _whiteList
     +void add(address factory) onlyOwner
     +void remove(address factory) onlyOwner
 }
@@ -37,36 +41,36 @@ class WhiteList {
 PredictionCollateralFactory <|-- ContractType
 PredictionCollateralFactory <|-- SuiteOwner
 class PredictionCollateralFactory {
-    +SuiteList suiteList
-    +void createPredictionCollateral(address suite, predictionCollateralParams...) onlySuiteOwner
+    +ISuiteList _suiteList
+    +void createPredictionCollateral(address suite, predictionCollateralParams...) onlySuiteOwner(suiteAddress)
 }
 
 PredictionPoolFactory <|-- ContractType
 PredictionPoolFactory <|-- SuiteOwner
 class PredictionPoolFactory {
-    +SuiteList suiteList
-    +void createPredictionCollateral(address suite, predictionCollateralParams...) onlySuiteOwner
+    +ISuiteList _suiteList
+    +void createPredictionCollateral(address (suiteAddress), predictionCollateralParams...) onlySuiteOwner(suiteAddress)
 }
 
 EventLifeCycleFactory <|-- ContractType
 EventLifeCycleFactory <|-- SuiteOwner
 class EventLifeCycleFactory {
-    +SuiteList suiteList
-    +void createEventLifeCycle(address suite, predictionCollateralParams...) onlySuiteOwner
+    +ISuiteList _suiteList
+    +void createEventLifeCycle(address (suiteAddress), predictionCollateralParams...) onlySuiteOwner(suiteAddress)
 }
 
 class ContractType {
-    +uint256 contractType
-    +uint256 getContractType()
+    +uint256 _contractType
+    +uint256 _getContractType()
 }
 
 SuiteOwner <|-- Ownable
-/'All functions like Ownable exclude create/cahnge suite owner and vith "suite" prefix, but with
- suiteOwner logic, where wher we are checking ownership in SuiteList'/
+/'All functions like Ownable exclude create/change suite owner and with "suite" prefix, but with
+ suiteOwner logic, where we are checking ownership in SuiteList'/
 class SuiteOwner {
-    SuiteList suiteList
-    modifier onlySuiteOwner(address msg.sender)
-    +void changeSuiteList(address suiteList) onlyOwner
+    ISuiteList _suiteList
+    modifier onlySuiteOwner(address suiteAddress)
+    +void setSuiteList(address suiteList) onlyOwner
 }
 
 class Ownable {
