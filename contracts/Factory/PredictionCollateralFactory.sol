@@ -4,7 +4,6 @@ pragma solidity ^0.7.6;
 
 import "./ISuite.sol";
 import "./AbstractFactory.sol";
-import "../SafeMath.sol";
 import "../PredictionCollateralization.sol";
 
 contract PredictionCollateralFactory is AbstractFactory {
@@ -23,12 +22,14 @@ contract PredictionCollateralFactory is AbstractFactory {
         require(_suite.owner() == msg.sender, "Caller should be suite owner");
 
         PredictionCollateralization _pc = new PredictionCollateralization(
-            msg.sender, // address governanceAddress,
-            collateralTokenAddress, // address collateralTokenAddress,
-            whiteName, // string memory whiteName,
-            whiteSymbol, // string memory whiteSymbol,
-            blackName, // string memory blackName,
-            blackSymbol // string memory blackSymbol
+            /* solhint-disable prettier/prettier */
+            msg.sender,                 // address governanceAddress,
+            collateralTokenAddress,     // address collateralTokenAddress,
+            whiteName,                  // string memory whiteName,
+            whiteSymbol,                // string memory whiteSymbol,
+            blackName,                  // string memory blackName,
+            blackSymbol                 // string memory blackSymbol
+            /* solhint-enable prettier/prettier */
         );
         _suite.addContract(FACTORY_CONTRACT_TYPE, address(_pc));
 

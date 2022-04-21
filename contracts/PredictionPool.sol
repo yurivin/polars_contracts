@@ -129,7 +129,7 @@ contract PredictionPool is Eventable, DSMath {
             governanceWalletAddress != address(0),
             "governanceWalletAddress should not be null"
         );
-        eventContractAddress = eventContractAddress == address(0)
+        _eventContractAddress = eventContractAddress == address(0)
             ? msg.sender
             : eventContractAddress;
 

@@ -27,4 +27,12 @@ interface iPredictionCollateralization {
     function changeGovernanceAddress(address governanceAddress) external;
 
     function getCollateralization() external view returns (uint256);
+
+    function _governanceAddress() external returns (address);
+
+    function whiteToken() external returns (address);
+
+    function blackToken() external returns (address);
+
+    function collateralToken() external returns (address);
 }

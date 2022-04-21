@@ -7,7 +7,7 @@ import "./iPredictionCollateralization.sol";
 
 contract PredictionCollateralization is iPredictionCollateralization {
     address public _poolAddress;
-    address public _governanceAddress;
+    address public override _governanceAddress;
 
     TokenTemplate public _whiteToken;
     TokenTemplate public _blackToken;
@@ -173,5 +173,17 @@ contract PredictionCollateralization is iPredictionCollateralization {
 
     function getCollateralization() public view override returns (uint256) {
         return _collateralToken.balanceOf(address(this));
+    }
+
+    function whiteToken() public view override returns (address) {
+        return address(_whiteToken);
+    }
+
+    function blackToken() public view override returns (address) {
+        return address(_blackToken);
+    }
+
+    function collateralToken() public view override returns (address) {
+        return address(_collateralToken);
     }
 }
