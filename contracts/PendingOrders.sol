@@ -132,7 +132,6 @@ contract PendingOrders is DSMath, Ownable {
             _eventId,
             true
         );
-        _ordersCount += 1;
 
         /* solhint-disable prettier/prettier */
         _isWhite
@@ -143,6 +142,7 @@ contract PendingOrders is DSMath, Ownable {
 
         _collateralToken.transferFrom(msg.sender, address(this), _amount);
         emit OrderCreated(_ordersCount, msg.sender, _amount);
+        _ordersCount += 1;
     }
 
     function ordersOfUser(address user)
