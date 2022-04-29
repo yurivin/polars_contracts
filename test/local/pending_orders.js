@@ -15,6 +15,7 @@ const expect = require('chai').expect;
 const { deployContracts, ntob, BONE } = require('./../utils.js');
 
 const priceChangePart = ntob(0.05);
+const debug = 0;
 
 contract("DEV: PendingOrders", function (accounts) {
   "use strict";
@@ -90,6 +91,11 @@ contract("DEV: PendingOrders", function (accounts) {
     bid.id = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]);
 
     const ordersCount = await deployedPendingOrders._ordersCount();
+
+    if (debug) console.log("_orders:               ", ordersCount.toString());
+    if (debug) console.log("_orders:               ", (await deployedPendingOrders._orders(new BN("0"))));
+    if (debug) console.log("bid.id:                ", bid.id.toString());
+
     expect(ordersCount).to.be.bignumber.equal(new BN("1"));
 
     const eventDuration = time.duration.seconds(5);
@@ -97,7 +103,7 @@ contract("DEV: PendingOrders", function (accounts) {
     await addAndStartEvent(someEventsArray2[0].eventId, eventDuration);
 
     await expectRevert(
-      cancelOrder(bid.account, bid.id), "EVENT IN PROGRESS"
+      cancelOrder(accounts[bid.account], bid.id), "EVENT IN PROGRESS"
     );
 
     await time.increase(eventDuration);
@@ -337,7 +343,7 @@ contract("DEV: PendingOrders", function (accounts) {
     assert.equal(createOrderLog.length, eventCount, `triggers must be ${eventCount} event`);
 
     expectEvent.inLogs(createOrderLog, 'OrderCreated', {
-      id: new BN("1")
+      id: new BN("0")
     });
 
     const ordersCount = await deployedPendingOrders._ordersCount();
@@ -868,9 +874,10 @@ contract("DEV: PendingOrders", function (accounts) {
     ).to.be.bignumber.equal(blackBought);
   }
 
-  const createPendingOrder = async (isWhite, amount, eventId, runner = 0) => {
+  const createPendingOrder = async (isWhite, amount, eventId, runner) => {
     const amountBN = ntob(amount);
-    const ordersCountExpected = (await deployedPendingOrders._ordersCount()).add(new BN("1"));
+    const ordersCountExpected = (await deployedPendingOrders._ordersCount());
+    // const ordersCountExpected = (await deployedPendingOrders._ordersCount()).add(new BN("1"));
 
     const createOrder = await deployedPendingOrders.createOrder(
       amountBN,
@@ -885,10 +892,11 @@ contract("DEV: PendingOrders", function (accounts) {
 
     const ordersCountAfter = await deployedPendingOrders._ordersCount();
 
-    expect(ordersCountExpected).to.be.bignumber.equal(ordersCountAfter);
+    expect(ordersCountAfter).to.be.bignumber.equal(ordersCountExpected.add(new BN("1")));
 
     expectEvent.inLogs(createOrderLog, 'OrderCreated', {
       id: ordersCountExpected,
+      user: runner,
       amount: amountBN
     });
 
@@ -1026,10 +1034,10 @@ contract("DEV: PendingOrders", function (accounts) {
     return withdrawCollateral;
   }
 
-  const cancelOrder = async (accountId, orderId) => {
+  const cancelOrder = async (runner, orderId) => {
     const cancelOrder = await deployedPendingOrders.cancelOrder(
       orderId,
-      { from: accounts[accountId] }
+      { from: runner }
     );
     const { logs: cancelOrderLog } = cancelOrder;
     expectEvent.inLogs(cancelOrderLog, 'OrderCanceled', {
@@ -1055,7 +1063,7 @@ contract("DEV: PendingOrders", function (accounts) {
         .filter(el => event.eventId.eq(el.eventId))
         .map((el) => {
           if (el.cancel === true) {
-            cancelOrder(el.account, el.id)
+            cancelOrder(accounts[el.account], el.id)
           }
         })
 

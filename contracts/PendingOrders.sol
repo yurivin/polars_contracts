@@ -122,10 +122,9 @@ contract PendingOrders is DSMath, Ownable {
         );
         require(
             _ordersOfUser[msg.sender].length <= 10,
-            "Cannot have more than 10 orders for a user simultaneously"
+            "CANNOT HAVE MORE THAN 10 ORDERS FOR A USER SIMULTANEOUSLY"
         );
 
-        _ordersCount += 1;
         _orders[_ordersCount] = Order(
             msg.sender,
             _amount,
@@ -143,6 +142,7 @@ contract PendingOrders is DSMath, Ownable {
 
         _collateralToken.transferFrom(msg.sender, address(this), _amount);
         emit OrderCreated(_ordersCount, msg.sender, _amount);
+        _ordersCount += 1;
     }
 
     function ordersOfUser(address user)
@@ -275,14 +275,6 @@ contract PendingOrders is DSMath, Ownable {
         emit CollateralWithdrew(totalWithdrawAmount, msg.sender);
 
         return totalWithdrawAmount;
-    }
-
-    function calculateNewAmount(
-        uint256 originAmount,
-        uint256 priceBefore,
-        uint256 priceAfter
-    ) internal pure returns (uint256 newAmount) {
-        newAmount = wmul(wdiv(originAmount, priceBefore), priceAfter);
     }
 
     function changeContractOwner(address _newOwnerAddress) external onlyOwner {
