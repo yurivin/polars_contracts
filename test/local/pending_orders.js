@@ -15,6 +15,7 @@ const expect = require('chai').expect;
 const { deployContracts, ntob, BONE } = require('./../utils.js');
 
 const priceChangePart = ntob(0.05);
+const debug = 0;
 
 contract("DEV: PendingOrders", function (accounts) {
   "use strict";
@@ -73,6 +74,253 @@ contract("DEV: PendingOrders", function (accounts) {
     return assert.equal(await deployedEventLifeCycle._usePendingOrders(), true);
   });
 
+  it("test suite for cancel order on event in progress", async () => {
+
+    await addLiquidityToPrediction(50000);
+    const userColTotal = 100000;
+
+    for (const i of [...Array(accounts.length).keys()]) {
+      if (i > 0) { await sendCollateralTokenToUser(accounts[i], userColTotal) }
+    }
+    const someEventsArray2 = [
+      { eventId: new BN("101"), eventResult: new BN("1")  },
+    ];
+
+    let bid = { account: 3, isWhite: false, eventId: new BN("101"), amount: 1, withdrawAfterEvent: false, cancel: false };
+
+    bid.id = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]);
+
+    const ordersCount = await deployedPendingOrders._ordersCount();
+
+    if (debug) console.log("_orders:               ", ordersCount.toString());
+    if (debug) console.log("_orders:               ", (await deployedPendingOrders._orders(new BN("0"))));
+    if (debug) console.log("bid.id:                ", bid.id.toString());
+
+    expect(ordersCount).to.be.bignumber.equal(new BN("1"));
+
+    const eventDuration = time.duration.seconds(5);
+
+    await addAndStartEvent(someEventsArray2[0].eventId, eventDuration);
+
+    await expectRevert(
+      cancelOrder(accounts[bid.account], bid.id), "EVENT IN PROGRESS"
+    );
+
+    await time.increase(eventDuration);
+
+    const endEvent = await deployedEventLifeCycle.endEvent(
+      someEventsArray2[0].eventResult
+    );
+
+    await withdrawAmount(accounts[bid.account], new BN("944450619658606827"));
+
+    const amountBN = ntob(bid.amount);
+
+    await expectRevert(
+      deployedPendingOrders.createOrder(
+        amountBN,
+        bid.isWhite,
+        bid.eventId,
+        { from: accounts[bid.account] }
+      ), "EVENT ALREADY STARTED"
+    );
+
+    await expectRevert(
+      deployedPendingOrders.createOrder(
+        amountBN,
+        !bid.isWhite,
+        bid.eventId,
+        { from: accounts[bid.account] }
+      ), "EVENT ALREADY STARTED"
+    );
+
+    await expectRevert(
+      deployedPendingOrders.withdrawCollateral({
+        from: accounts[bid.account]
+      }), "YOU DON'T HAVE ORDERS"
+    );
+  });
+
+  it("test suite for Aider case (create order after event done)", async () => {
+
+    await addLiquidityToPrediction(50000);
+    const userColTotal = 100000;
+
+    for (const i of [...Array(accounts.length).keys()]) {
+      if (i > 0) { await sendCollateralTokenToUser(accounts[i], userColTotal) }
+    }
+    const someEventsArray2 = [
+      { eventId: new BN("101"), eventResult: new BN("1")  },
+    ];
+
+    let ordersApplied = [
+      { account: 3, isWhite: false, eventId: new BN("101"), amount: 1, withdrawAfterEvent: false, cancel: false }
+    ];
+
+    for (let bid of ordersApplied) {
+      bid.id = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]); // runner = 0
+      bid.withdrawDone = false;
+    }
+
+    const ordersCount = await deployedPendingOrders._ordersCount();
+    expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
+
+    const eventDuration = time.duration.seconds(5);
+
+    await addAndStartEvent(someEventsArray2[0].eventId, eventDuration);
+
+    await time.increase(eventDuration);
+    const endEvent = await deployedEventLifeCycle.endEvent(
+      someEventsArray2[0].eventResult
+    );
+
+    await withdrawAmount(accounts[ordersApplied[0].account], new BN("944450619658606827"));
+
+    const amountBN = ntob(ordersApplied[0].amount);
+
+    await expectRevert(
+      deployedPendingOrders.createOrder(
+        amountBN,
+        ordersApplied[0].isWhite,
+        ordersApplied[0].eventId,
+        { from: accounts[ordersApplied[0].account] }
+      ), "EVENT ALREADY STARTED"
+    );
+
+    await expectRevert(
+      deployedPendingOrders.createOrder(
+        amountBN,
+        !ordersApplied[0].isWhite,
+        ordersApplied[0].eventId,
+        { from: accounts[ordersApplied[0].account] }
+      ), "EVENT ALREADY STARTED"
+    );
+
+    await expectRevert(
+      deployedPendingOrders.withdrawCollateral({
+        from: accounts[ordersApplied[0].account]
+      }), "YOU DON'T HAVE ORDERS"
+    );
+  });
+
+  it("test emergency withdraw by owner", async () => {
+
+    await addLiquidityToPrediction(50000);
+    const userColTotal = 100000;
+
+    for (const i of [...Array(accounts.length).keys()]) {
+      if (i > 0) { await sendCollateralTokenToUser(accounts[i], userColTotal) }
+    }
+    const someEventsArray2 = [
+      { eventId: new BN("101"), eventResult: new BN("1")  },
+    ];
+
+    const someBids2 = [
+      { account: 3, isWhite: false, eventId: new BN("3639043"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0xe9d3f501b082ba426b4fb1be6b00be64d486d4d9
+      { account: 3, isWhite: false, eventId: new BN("3639043"), amount: 10, withdrawAfterEvent: false, cancel: false }, // 0xe9d3f501b082ba426b4fb1be6b00be64d486d4d9
+      { account: 4, isWhite: false, eventId: new BN("3639043"), amount: 32, withdrawAfterEvent: false, cancel: false }, // 0x104be074ad7bb0357258e9afe9b8e0a58c551833
+      { account: 5, isWhite: false, eventId: new BN("3836557"), amount: 333, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
+      { account: 5, isWhite: false, eventId: new BN("3639055"), amount: 62, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
+      { account: 5, isWhite: false, eventId: new BN("3610190"), amount: 40, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
+      { account: 5, isWhite: false, eventId: new BN("3629382"), amount: 906, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
+      { account: 5, isWhite: false, eventId: new BN("3639054"), amount: 87, withdrawAfterEvent: true,  cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
+    ]
+
+    let ordersApplied = [
+      someBids2[0],
+      someBids2[1],
+      someBids2[2],
+      someBids2[3],
+      someBids2[4],
+      someBids2[5],
+      someBids2[6],
+      someBids2[7]
+    ];
+
+    for (let bid of ordersApplied) {
+      bid.id = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]); // runner = 0
+      bid.withdrawDone = false;
+    }
+
+    const ordersCount = await deployedPendingOrders._ordersCount();
+    expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
+
+    const colBalancePO = await deployedCollateralToken.balanceOf(deployedPendingOrders.address);
+
+    const colBalanceOwner = await deployedCollateralToken.balanceOf(deployerAddress);
+
+    const sum = ordersApplied
+    .map((el) => {
+      return el.amount;
+    })
+    .reduce(
+      (previousValue, currentValue) => previousValue + currentValue, 0
+    );
+    expect(ntob(sum)).to.be.bignumber.equal(colBalancePO);
+
+    await deployedPendingOrders.emergencyWithdrawCollateral()
+
+    const colBalancePO2 = await deployedCollateralToken.balanceOf(deployedPendingOrders.address);
+    expect(new BN("0")).to.be.bignumber.equal(colBalancePO2);
+
+    const colBalanceOwner2 = await deployedCollateralToken.balanceOf(deployerAddress);
+    expect(colBalanceOwner2).to.be.bignumber.equal(colBalanceOwner.add(ntob(sum)));
+  });
+
+  it.skip("test suite for multiple pending orders (8 orders) - ERRORED", async () => {
+
+    await addLiquidityToPrediction(50000);
+    const userColTotal = 100000;
+
+    for (const i of [...Array(accounts.length).keys()]) {
+      if (i > 0) { await sendCollateralTokenToUser(accounts[i], userColTotal) }
+    }
+    const someEventsArray2 = [
+      { eventId: new BN("101"), eventResult: new BN("1")  },
+      { eventId: new BN("102"), eventResult: new BN("1")  },
+      { eventId: new BN("103"), eventResult: new BN("0")  },
+      { eventId: new BN("104"), eventResult: new BN("1")  },
+      { eventId: new BN("105"), eventResult: new BN("-1") },
+      { eventId: new BN("106"), eventResult: new BN("-1") },
+      { eventId: new BN("107"), eventResult: new BN("0")  }
+    ];
+
+    const someBids2 = [
+      { account: 3, isWhite: false, eventId: new BN("3639043"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0xe9d3f501b082ba426b4fb1be6b00be64d486d4d9
+      { account: 3, isWhite: false, eventId: new BN("3639043"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0xe9d3f501b082ba426b4fb1be6b00be64d486d4d9
+      { account: 4, isWhite: false, eventId: new BN("3639043"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0x104be074ad7bb0357258e9afe9b8e0a58c551833
+      { account: 5, isWhite: false, eventId: new BN("3836557"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
+      { account: 5, isWhite: false, eventId: new BN("3639055"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
+      { account: 5, isWhite: false, eventId: new BN("3610190"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
+      { account: 5, isWhite: false, eventId: new BN("3629382"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
+      { account: 5, isWhite: false, eventId: new BN("3639054"), amount: 1, withdrawAfterEvent: true,  cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
+    ]
+
+    let ordersApplied = [
+      someBids2[0],
+      someBids2[1],
+      someBids2[2],
+      someBids2[3],
+      someBids2[4],
+      someBids2[5],
+      someBids2[6],
+      someBids2[7]
+    ];
+
+    for (let bid of ordersApplied) {
+      bid.id = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]); // runner = 0
+      bid.withdrawDone = false;
+    }
+
+    const ordersCount = await deployedPendingOrders._ordersCount();
+    expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
+
+    await runEvents(someEventsArray2, ordersApplied);
+
+    await withdrawAmount(accounts[3], 0);
+    assert.equal(1, 0, `ddddddddddd`);
+  });
+
   it("should REVERT on 'Cannot buyback more than sold from the pool'", async () => {
     const amount = new BN("10");
     const expectedWhiteBuy = new BN("20"); // If whitePrice == 0.5
@@ -95,7 +343,7 @@ contract("DEV: PendingOrders", function (accounts) {
     assert.equal(createOrderLog.length, eventCount, `triggers must be ${eventCount} event`);
 
     expectEvent.inLogs(createOrderLog, 'OrderCreated', {
-      id: new BN("1")
+      id: new BN("0")
     });
 
     const ordersCount = await deployedPendingOrders._ordersCount();
@@ -626,9 +874,10 @@ contract("DEV: PendingOrders", function (accounts) {
     ).to.be.bignumber.equal(blackBought);
   }
 
-  const createPendingOrder = async (isWhite, amount, eventId, runner = 0) => {
+  const createPendingOrder = async (isWhite, amount, eventId, runner) => {
     const amountBN = ntob(amount);
-    const ordersCountExpected = (await deployedPendingOrders._ordersCount()).add(new BN("1"));
+    const ordersCountExpected = (await deployedPendingOrders._ordersCount());
+    // const ordersCountExpected = (await deployedPendingOrders._ordersCount()).add(new BN("1"));
 
     const createOrder = await deployedPendingOrders.createOrder(
       amountBN,
@@ -643,10 +892,11 @@ contract("DEV: PendingOrders", function (accounts) {
 
     const ordersCountAfter = await deployedPendingOrders._ordersCount();
 
-    expect(ordersCountExpected).to.be.bignumber.equal(ordersCountAfter);
+    expect(ordersCountAfter).to.be.bignumber.equal(ordersCountExpected.add(new BN("1")));
 
     expectEvent.inLogs(createOrderLog, 'OrderCreated', {
       id: ordersCountExpected,
+      user: runner,
       amount: amountBN
     });
 
@@ -784,10 +1034,10 @@ contract("DEV: PendingOrders", function (accounts) {
     return withdrawCollateral;
   }
 
-  const cancelOrder = async (accountId, orderId) => {
+  const cancelOrder = async (runner, orderId) => {
     const cancelOrder = await deployedPendingOrders.cancelOrder(
       orderId,
-      { from: accounts[accountId] }
+      { from: runner }
     );
     const { logs: cancelOrderLog } = cancelOrder;
     expectEvent.inLogs(cancelOrderLog, 'OrderCanceled', {
@@ -813,7 +1063,7 @@ contract("DEV: PendingOrders", function (accounts) {
         .filter(el => event.eventId.eq(el.eventId))
         .map((el) => {
           if (el.cancel === true) {
-            cancelOrder(el.account, el.id)
+            cancelOrder(accounts[el.account], el.id)
           }
         })
 

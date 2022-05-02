@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GNU General Public License v3.0 or later
 
 pragma solidity ^0.7.4;
-pragma abicoder v2;
 
 import "./Common/Ownable.sol";
 import "./IEventLifeCycle.sol";
@@ -89,11 +88,6 @@ contract OracleEventManager is Ownable {
     event ConfigChanged(string optionName, uint256 newValue);
 
     event AppEnded(uint256 nowTime, uint256 eventEndTimeExpected, int8 result);
-
-    function getGameEvent() external view returns (GameEvent memory) {
-        GameEvent memory gameEvent = _gameEvent;
-        return gameEvent;
-    }
 
     function toString(uint256 value) internal pure returns (string memory) {
         // Inspired by OraclizeAPI's implementation - MIT licence
