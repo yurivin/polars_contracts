@@ -822,6 +822,8 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
 
         _collateralForWhite = _collateralForWhite.add(forWhite);
         _collateralForBlack = _collateralForBlack.add(forBlack);
+        _whiteBought = _whiteBought.add(bwAmount);
+        _blackBought = _blackBought.add(bwAmount);
 
         _mint(msg.sender, bwAmount);
 
@@ -856,6 +858,8 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
 
         _collateralForWhite = _collateralForWhite.sub(forWhite);
         _collateralForBlack = _collateralForBlack.sub(forBlack);
+        _whiteBought = _whiteBought.sub(bwAmount);
+        _blackBought = _blackBought.sub(bwAmount);
 
         uint collateralToSend = wmul(poolTokensAmount, sPrice);
 
