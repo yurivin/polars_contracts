@@ -848,7 +848,7 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         );
     }
 
-    function withdrawLiquidity(uint poolTokensAmount) public {
+    function withdrawLiquidity(uint256 poolTokensAmount) public {
         require (allowance[msg.sender][address(this)] >= poolTokensAmount, "Not enough pool tokens are delegated");
         require (balanceOf[msg.sender] >= poolTokensAmount, "Not enough tokens on the user balance");
 
