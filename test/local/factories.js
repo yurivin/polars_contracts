@@ -20,9 +20,11 @@ const SuiteList = artifacts.require('SuiteList');
 const PredictionCollateralFactory = artifacts.require('PredictionCollateralFactory');
 const PredictionPoolFactory = artifacts.require('PredictionPoolFactory');
 const EventLifeCycleFactory = artifacts.require('EventLifeCycleFactory');
+const PendingOrdersFactory = artifacts.require('PendingOrdersFactory');
 const PredictionCollateralization = artifacts.require('PredictionCollateralization');
 const PredictionPool = artifacts.require('PredictionPool');
 const EventLifeCycle = artifacts.require('EventLifeCycle');
+const PendingOrders = artifacts.require('PendingOrders');
 
 const debug = 0;
 // const debug = 1;
@@ -46,6 +48,7 @@ contract("DEV: Factories", (accounts) => {
   let deployedPredictionCollateralFactory;
   let deployedPredictionPoolFactory;
   let deployedEventLifeCycleFactory;
+  let deployedPendingOrdersFactory;
 
   let snapshotA;
 
@@ -103,6 +106,10 @@ contract("DEV: Factories", (accounts) => {
     );
 
     deployedEventLifeCycleFactory = await EventLifeCycleFactory.new(
+      { from: deployerAddress }
+    );
+
+    deployedPendingOrdersFactory = await PendingOrdersFactory.new(
       { from: deployerAddress }
     );
 
@@ -199,7 +206,7 @@ contract("DEV: Factories", (accounts) => {
     });
   });
 
-  const deploySuite = async (user, suiteName) => {
+  const deploySuite = async (user, suiteName, collateralTokenAddress) => {
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     await deployedPolToken.transfer(
       user,                               // address recipient
@@ -215,6 +222,7 @@ contract("DEV: Factories", (accounts) => {
     await sleep(1000);
     const deployedSuiteTx = await deployedSuiteFactory.deploySuite(
       suiteName,
+      collateralTokenAddress,
       { from: user }
     );
     const deployedSuiteAddress = deployedSuiteTx.logs[2].args.suiteAddress;
@@ -222,6 +230,10 @@ contract("DEV: Factories", (accounts) => {
 
     const deployedSuite = await Suite.at(deployedSuiteAddress);
     const suiteOwner = await deployedSuite.owner();
+
+    expect(
+      await deployedSuite._suiteFactoryAddress()
+    ).to.be.equals(deployedSuiteFactory.address);
 
     if (debug) console.log("suiteOwner          :", suiteOwner);
     if (debug) console.log("user                :", user);
@@ -408,7 +420,8 @@ contract("DEV: Factories", (accounts) => {
 
       await expectRevert(
         deployedSuiteFactory.deploySuite(
-          // "SomeNameSuite",
+          "SomeNameSuite",
+          deployedCollateralToken.address,
           { from: accounts[9] }
         ), "WhiteList address not defined"
       );
@@ -422,28 +435,14 @@ contract("DEV: Factories", (accounts) => {
 
       await expectRevert(
         deployedSuiteFactory.deploySuite(
-          // "SomeNameSuite",
+          "",
+          deployedCollateralToken.address,
           { from: accounts[9] }
         ), "Parameter suiteName is null"
       );
     })
 
     it('should revert create suite if don`t have enough commission tokens', async () => {
-      // const keccakPCtype = web3.utils.keccak256("PREDICTION_COLLATERAL");
-
-      // await deployedWhiteList.add(
-      //   keccakPCtype,
-      //   factoryAccount
-      // );
-
-      // const _allowedFactories = await deployedWhiteList._allowedFactories.call(
-      //   keccakPCtype
-      // );
-      // expect(_allowedFactories).to.be.equals(factoryAccount);
-
-      // expect(await deployedSuiteList._whiteList()).to.be.equals("0x0000000000000000000000000000000000000000");
-      // await deployedSuiteList.setWhiteList(deployedWhiteList.address);
-      // expect(await deployedSuiteList._whiteList()).to.be.equals(deployedWhiteList.address);
       await setWhiteList(
         "PREDICTION_COLLATERAL",
         deployedPredictionCollateralFactory.address
@@ -452,6 +451,7 @@ contract("DEV: Factories", (accounts) => {
       await expectRevert(
         deployedSuiteFactory.deploySuite(
           "SomeNameSuite",
+          deployedCollateralToken.address,
           { from: accounts[9] }
         ), "You don't have enough commission tokens for the action"
       );
@@ -459,7 +459,7 @@ contract("DEV: Factories", (accounts) => {
 
     it('should revert create suite if not enough delegated commission tokens', async () => {
       await deployedPolToken.transfer(
-        accounts[9], // address recipient
+        accounts[9],                    // address recipient
         ntob(commissionForCreateSuite), // uint256 amount
         { from: deployerAddress }
       )
@@ -472,6 +472,7 @@ contract("DEV: Factories", (accounts) => {
       await expectRevert(
         deployedSuiteFactory.deploySuite(
           "SomeNameSuite",
+          deployedCollateralToken.address,
           { from: accounts[9] }
         ), "Not enough delegated commission tokens for the action"
       );
@@ -487,11 +488,85 @@ contract("DEV: Factories", (accounts) => {
         deployedPredictionCollateralFactory.address
       );
 
+      const deployedSuiteAddress = await deploySuite(
+        someUser1,
+        "SomeNameSuite",
+        deployedCollateralToken.address
+      );
+
+      const _suites0 = await deployedSuiteList._suites(0);
+
+      await expectRevert(
+        deployedPendingOrdersFactory.createContract(
+          _suites0,                                       // address suiteAddress,
+          { from: someUser1 }
+        ), "You must create Prediction Pool before PendingOrders contract"
+      );
+
+      await expectRevert(
+        deployedEventLifeCycleFactory.createContract(
+          _suites0,                                       // address suiteAddress,
+          someUser1,                                      // address oracleAddress
+          { from: someUser1 }
+        ), "You must create Prediction Pool before EventLifeCycle contract"
+      );
+
+      await expectRevert(
+        deployedPredictionPoolFactory.createContract(
+          _suites0,                                       // address suiteAddress,
+          new BN("500000000000000000"),                   // uint256 whitePrice
+          new BN("500000000000000000"),                   // uint256 blackPrice
+          { from: someUser1 }
+        ), "You must create Prediction Collateralization before PredictionPool contract"
+      );
+
+      const createCollateralContractTx = await deployedPredictionCollateralFactory.createContract(
+        _suites0,                           // address suiteAddress,
+        "testWhiteName",                    // string memory whiteName,
+        "testWhiteSymbol",                  // string memory whiteSymbol,
+        "testBlackName",                    // string memory blackName,
+        "testBlackSymbol",                  // string memory blackSymbol
+        { from: someUser1 }
+      );
+
+      const { logs: createCollateralContractTxLog } = createCollateralContractTx;
+      const eventCount = 1;
+      assert.equal(createCollateralContractTxLog.length, eventCount, `triggers must be ${eventCount} event`);
+
+      expectEvent.inLogs(createCollateralContractTxLog, 'ContractCreated', {
+        suiteAddress: _suites0,
+        contractType: "PREDICTION_COLLATERAL"
+      });
+
+      await expectRevert(
+        deployedPredictionCollateralFactory.createContract(
+          _suites0,                           // address suiteAddress,
+          "testWhiteName",                    // string memory whiteName,
+          "testWhiteSymbol",                  // string memory whiteSymbol,
+          "testBlackName",                    // string memory blackName,
+          "testBlackSymbol",                  // string memory blackSymbol
+          { from: someUser1 }
+        ), "Contract already exist"
+      );
+    });
+
+    it('should create PredictionCollateral, PredictionPool and EventLifeCycle contracts and add its to user`s suite', async () => {
+      await setWhiteList();
+
+      await addToWhiteList(
+        "PREDICTION_COLLATERAL",
+        deployedPredictionCollateralFactory.address
+      );
+
       const isSuiteExists = await deployedSuiteList.isSuiteExists(accounts[6]);
       if (debug) console.log("isSuiteExists       :", isSuiteExists);
       expect(isSuiteExists).to.be.equals(false);
 
-      const deployedSuiteAddress = await deploySuite(someUser1, "SomeNameSuite");
+      const deployedSuiteAddress = await deploySuite(
+        someUser1,
+        "SomeNameSuite",
+        deployedCollateralToken.address
+      );
 
       const _suites0 = await deployedSuiteList._suites(0);
       expect(_suites0).to.be.equals(deployedSuiteAddress);
@@ -506,7 +581,6 @@ contract("DEV: Factories", (accounts) => {
       await expectRevert(
         deployedPredictionCollateralFactory.createContract(
           _suites0,                         // address suiteAddress,
-          deployedCollateralToken.address,  // address collateralTokenAddress,
           "testWhiteName",                  // string memory whiteName,
           "testWhiteSymbol",                // string memory whiteSymbol,
           "testBlackName",                  // string memory blackName,
@@ -516,7 +590,6 @@ contract("DEV: Factories", (accounts) => {
 
       const createCollateralContractTx = await deployedPredictionCollateralFactory.createContract(
         _suites0,                           // address suiteAddress,
-        deployedCollateralToken.address,    // address collateralTokenAddress,
         "testWhiteName",                    // string memory whiteName,
         "testWhiteSymbol",                  // string memory whiteSymbol,
         "testBlackName",                    // string memory blackName,
@@ -535,7 +608,7 @@ contract("DEV: Factories", (accounts) => {
 
 
       const collateralContractAddress = createCollateralContractTx.logs[0].args.contractAddress;
-      // if (debug)
+
       if (debug) console.log("contractCollAddress:", collateralContractAddress);
 
       const factoryCollateralContractType = await deployedPredictionCollateralFactory.FACTORY_CONTRACT_TYPE();
@@ -548,10 +621,12 @@ contract("DEV: Factories", (accounts) => {
         collateralContractAddress
       );
 
+      expect(
+        await deployedPredictionCollateralization._governanceAddress()
+      ).to.be.equals(deployedPredictionCollateralFactory.address);
+
       if (debug) console.log("_poolAddress        :", (await deployedPredictionCollateralization._poolAddress()));
       assert.equal(deployedPredictionCollateralFactory.address, await deployedPredictionCollateralization._poolAddress());
-
-      assert.equal(someUser1, await deployedPredictionCollateralization._governanceAddress());
 
       const deployedWhiteToken = await TokenTemplate.at(await deployedPredictionCollateralization._whiteToken());
 
@@ -577,7 +652,6 @@ contract("DEV: Factories", (accounts) => {
       await expectRevert(
         deployedPredictionPoolFactory.createContract(
           _suites0,                                     // address suiteAddress,
-          deployedCollateralToken.address,              // address collateralTokenAddress,
           new BN("500000000000000000"),                 // uint256 whitePrice
           new BN("500000000000000000")                  // uint256 blackPrice
         ), "Caller should be suite owner"
@@ -586,7 +660,6 @@ contract("DEV: Factories", (accounts) => {
       await expectRevert(
         deployedPredictionPoolFactory.createContract(
           _suites0,                                     // address suiteAddress,
-          deployedCollateralToken.address,              // address collateralTokenAddress,
           new BN("500000000000000000"),                 // uint256 whitePrice
           new BN("500000000000000000"),                 // uint256 blackPrice
           { from: someUser1 }
@@ -600,7 +673,6 @@ contract("DEV: Factories", (accounts) => {
 
       const createPoolContractTx = await deployedPredictionPoolFactory.createContract(
         _suites0,                                       // address suiteAddress,
-        deployedCollateralToken.address,                // address collateralTokenAddress,
         new BN("500000000000000000"),                   // uint256 whitePrice
         new BN("500000000000000000"),                   // uint256 blackPrice
         { from: someUser1 }
@@ -629,12 +701,22 @@ contract("DEV: Factories", (accounts) => {
         poolContractAddress
       );
 
+      expect(
+        await deployedPredictionPool._governanceAddress()
+      ).to.be.equals(deployedPredictionPoolFactory.address);
+
       expect(await deployedPredictionPool._thisCollateralization()).to.be.equals(deployedPredictionCollateralization.address);
       expect(await deployedPredictionPool._whiteToken()).to.be.equals(deployedWhiteToken.address);
       expect(await deployedPredictionPool._blackToken()).to.be.equals(deployedBlackToken.address);
 
-      await deployedPredictionCollateralization.changePoolAddress(
-        deployedPredictionPool.address,
+      await expectRevert(
+        deployedPredictionCollateralFactory.changePoolAddress(
+          _suites0,
+        ), "Caller should be suite owner"
+      );
+
+      await deployedPredictionCollateralFactory.changePoolAddress(
+        _suites0,
         { from: someUser1 }
       );
 
@@ -703,11 +785,13 @@ contract("DEV: Factories", (accounts) => {
         elcContractAddress
       );
 
+      expect(
+        await deployedEventLifeCycle._governanceAddress()
+      ).to.be.equals(await deployedSuiteFactory.owner());
+
       await expectRevert(
         deployedPredictionPoolFactory.initPredictionPool(
           _suites0,                           // address suiteAddress
-          suiteOwner,                         // address governanceWalletAddress
-          suiteOwner                          // address controllerWalletAddress
         ), "Caller should be suite owner"
       );
 
@@ -720,8 +804,6 @@ contract("DEV: Factories", (accounts) => {
 
       await deployedPredictionPoolFactory.initPredictionPool(
         _suites0,                             // address suiteAddress
-        suiteOwner,                           // address governanceWalletAddress
-        suiteOwner,                           // address controllerWalletAddress
         { from: suiteOwner }
       )
 
@@ -735,9 +817,72 @@ contract("DEV: Factories", (accounts) => {
       expect(await deployedPredictionPool.inited()).to.be.equals(true);
 
       assert.equal(deployedEventLifeCycle.address, await deployedPredictionPool._eventContractAddress());
-      assert.equal(someUser1, await deployedPredictionCollateralization._governanceAddress());
-      assert.equal(someUser1, await deployedEventLifeCycle._governanceAddress());
-      assert.equal(someUser1, await deployedPredictionPool._governanceAddress());
+      assert.equal(await deployedSuiteFactory.owner(), await deployedPredictionCollateralization._governanceAddress());
+      assert.equal(await deployedSuiteFactory.owner(), await deployedEventLifeCycle._governanceAddress());
+      assert.equal(await deployedSuiteFactory.owner(), await deployedPredictionPool._governanceAddress());
+
+      // -------------------------Pending---------------------------------------
+      await expectRevert(
+        deployedPendingOrdersFactory.createContract(
+          _suites0,                                     // address suiteAddress,
+        ), "Caller should be suite owner"
+      );
+
+      await expectRevert(
+        deployedPendingOrdersFactory.createContract(
+          _suites0,                                     // address suiteAddress,
+          { from: someUser1 }
+        ), "Caller should be in White List"
+      );
+
+      await addToWhiteList(
+        "PENDING_ORDERS",
+        deployedPendingOrdersFactory.address
+      );
+
+      const createPendingOrdersContractTx = await deployedPendingOrdersFactory.createContract(
+        _suites0,                                       // address suiteAddress,
+        { from: someUser1 }
+      );
+
+      const { logs: createPendingOrdersContractTxLog } = createPendingOrdersContractTx;
+
+      assert.equal(createPendingOrdersContractTxLog.length, eventCount, `triggers must be ${eventCount} event`);
+
+      expectEvent.inLogs(createPendingOrdersContractTxLog, 'ContractCreated', {
+        suiteAddress: _suites0,
+        contractType: "PENDING_ORDERS"
+      });
+
+      const poContractAddress = createPendingOrdersContractTx.logs[0].args.contractAddress;
+
+      if (debug) console.log("contractPOAddress   :", poContractAddress);
+
+      const factoryPOContractType = await deployedPendingOrdersFactory.FACTORY_CONTRACT_TYPE();
+      if (debug) console.log("factoryPContractType:", factoryPOContractType);
+
+      expect(await deployedSuite.contracts(factoryPOContractType)).to.be.equals(poContractAddress);
+
+
+      const deployedPendingOrders = await PendingOrders.at(
+        poContractAddress
+      );
+
+
+      if (debug) console.log("pof address         :", deployedPendingOrdersFactory.address);
+      if (debug) console.log("po gov              :", (await deployedPendingOrders.owner()));
+      if (debug) console.log("po elc address      :", (await deployedPendingOrders._eventContractAddress()));
+
+      assert.equal(deployedEventLifeCycle.address, await deployedPredictionPool._eventContractAddress());
+      assert.equal(someUser1, await deployedPendingOrders.owner());
+
+      expect(
+        await deployedPendingOrders._ordersCount()
+      ).to.be.bignumber.equal(new BN("0"));
+
+      assert.equal(await deployedPendingOrders._collateralToken(), deployedCollateralToken.address);
+      assert.equal(await deployedPendingOrders._predictionPool(), deployedPredictionPool.address);
+      assert.equal(await deployedPendingOrders._eventContractAddress(), deployedEventLifeCycle.address);
 
       //  ---------------------------buyBlack-----------------------------------
       const addForWhiteAmount = new BN("5000000000000000000");
@@ -878,7 +1023,11 @@ contract("DEV: Factories", (accounts) => {
         deployedPredictionCollateralFactory.address
       );
 
-      const deployedSuiteAddress = await deploySuite(someUser1, "SomeNameSuite");
+      const deployedSuiteAddress = await deploySuite(
+        someUser1,
+        "SomeNameSuite",
+        deployedCollateralToken.address
+      );
 
       const _suites0 = await deployedSuiteList._suites(0);
       expect(_suites0).to.be.equals(deployedSuiteAddress);
@@ -901,7 +1050,11 @@ contract("DEV: Factories", (accounts) => {
         deployedPredictionCollateralFactory.address
       );
 
-      const deployedSuiteAddress = await deploySuite(someUser1, "SomeNameSuite");
+      const deployedSuiteAddress = await deploySuite(
+        someUser1,
+        "SomeNameSuite",
+        deployedCollateralToken.address
+      );
 
       const _suites0 = await deployedSuiteList._suites(0);
       expect(_suites0).to.be.equals(deployedSuiteAddress);
@@ -927,7 +1080,11 @@ contract("DEV: Factories", (accounts) => {
 
       const isSuiteExistsAfterDelete = await deployedSuiteList.isSuiteExists(deployedSuiteAddress);
 
-      const deployedSuiteAddress2 = await deploySuite(someUser1, "SomeNameSuite");
+      const deployedSuiteAddress2 = await deploySuite(
+        someUser1,
+        "SomeNameSuite",
+        deployedCollateralToken.address
+      );
       const isSuiteExists2 = await deployedSuiteList.isSuiteExists(deployedSuiteAddress2);
       if (debug) console.log("isSuiteExists2      :", isSuiteExists2);
 

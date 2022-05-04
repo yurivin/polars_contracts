@@ -33,7 +33,9 @@
     "verify:dex:bsc_testnet": "truffle run verify OracleSwapEventManager --network bsc_testnet",
     "deploy:chainlink:rinkeby": "truffle migrate --network rinkeby --f 7 --to 7",
     "verify:chainlinkem:rinkeby": "truffle run verify OraclePayableChainLinkEventManager --network rinkeby",
-    "verify:chainlink:rinkeby": "truffle run verify ChainlinkAPIConsumer --network rinkeby"
+    "verify:chainlink:rinkeby": "truffle run verify ChainlinkAPIConsumer --network rinkeby",
+    "deploy:factory:bsc_testnet": "truffle migrate --network bsc_testnet --f 8 --to 8",
+    "verify:factory:bsc_testnet": "truffle run verify WhiteList SuiteFactory SuiteList PredictionCollateralFactory EventLifeCycleFactory PendingOrdersFactory --network bsc_testnet"
   },
   "repository": {
     "type": "git",
@@ -56,7 +58,7 @@
     "solhint-plugin-prettier": "0.0.5",
     "solidity-coverage": "^0.7.17",
     "truffle": "^5.4.22",
-    "truffle-plugin-verify": "^0.5.18"
+    "truffle-plugin-verify": "^0.5.25"
   },
   "dependencies": {
     "js-big-decimal": "^1.3.4"

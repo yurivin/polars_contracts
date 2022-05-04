@@ -22,7 +22,10 @@ contract SuiteFactory is Ownable {
         address suiteOwner
     );
 
-    function deploySuite(string memory suiteName) external returns (address) {
+    function deploySuite(
+        string memory suiteName,
+        address collateralTokenAddress
+    ) external returns (address) {
         require(
             _suiteList._whiteList() != address(0),
             "WhiteList address not defined"
@@ -45,7 +48,11 @@ contract SuiteFactory is Ownable {
             ),
             "Transfer commission failed"
         );
-        Suite _suite = new Suite(suiteName, _suiteList._whiteList());
+        Suite _suite = new Suite(
+            suiteName,
+            collateralTokenAddress,
+            _suiteList._whiteList()
+        );
         _suite.transferOwnership(msg.sender);
         emit SuiteDeployed(suiteName, address(_suite), msg.sender);
         _suiteList.addSuite(address(_suite), msg.sender);
@@ -63,5 +70,13 @@ contract SuiteFactory is Ownable {
 
     function setComissionToken(address token) external onlyOwner {
         _commissionToken = IERC20(token);
+    }
+
+    function withdrawComission() public onlyOwner {
+        uint256 balance = _commissionToken.balanceOf(address(this));
+        require(
+            _commissionToken.transfer(msg.sender, balance),
+            "Unable to transfer"
+        );
     }
 }

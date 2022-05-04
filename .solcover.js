@@ -1,5 +1,9 @@
 module.exports = {
   skipFiles: [
+    'Factory/ISuite.sol',
+    'Factory/ISuiteFactory.sol',
+    'Factory/ISuiteList.sol',
+    'IChainlinkAPIConsumer.sol',
     'Common',
     'DexFarming',
     'Incentives',

@@ -7,6 +7,10 @@ interface ISuite {
 
     function contracts(bytes32 contractType) external view returns (address);
 
+    function _collateralTokenAddress() external returns (address);
+
+    function _suiteFactoryAddress() external returns (address);
+
     function addContract(bytes32 contractType, address contractAddress)
         external;
 }

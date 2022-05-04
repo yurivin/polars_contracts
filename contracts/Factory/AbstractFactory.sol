@@ -11,6 +11,13 @@ abstract contract AbstractFactory {
         _;
     }
 
+    modifier noExist(address suiteAddress, bytes32 contractType) {
+        ISuite _suite = ISuite(suiteAddress);
+        address factoryContract = _suite.contracts(contractType);
+        require(factoryContract == address(0), "Contract already exist");
+        _;
+    }
+
     event ContractCreated(
         address suiteAddress,
         address contractAddress,

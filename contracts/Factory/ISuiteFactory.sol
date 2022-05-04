@@ -5,5 +5,7 @@ pragma solidity ^0.7.6;
 interface ISuiteFactory {
     function deploySuite() external returns (address);
 
+    function owner() external returns (address);
+
     function setSuiteList(address suiteList) external;
 }

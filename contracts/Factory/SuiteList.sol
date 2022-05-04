@@ -145,7 +145,7 @@ contract SuiteList is Ownable {
         return result;
     }
 
-    function setSuiteFactory(address factoryAddress) external {
+    function setSuiteFactory(address factoryAddress) external onlyOwner {
         _suiteFactory = ISuiteFactory(factoryAddress);
     }
 
