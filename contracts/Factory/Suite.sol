@@ -9,6 +9,8 @@ contract Suite is Ownable {
     WhiteList public _whiteList;
 
     string public _suiteName;
+    address public _collateralTokenAddress;
+    address public _suiteFactoryAddress;
 
     modifier onlyWhiteListed(bytes32 contractType) {
         require(
@@ -20,8 +22,14 @@ contract Suite is Ownable {
 
     mapping(bytes32 => address) public contracts;
 
-    constructor(string memory suiteName, address whiteList) {
+    constructor(
+        string memory suiteName,
+        address collateralTokenAddress,
+        address whiteList
+    ) {
         _suiteName = suiteName;
+        _collateralTokenAddress = collateralTokenAddress;
+        _suiteFactoryAddress = msg.sender; // suiteFactory
         _whiteList = WhiteList(whiteList);
     }
 

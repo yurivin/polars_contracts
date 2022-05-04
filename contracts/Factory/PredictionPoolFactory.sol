@@ -3,21 +3,29 @@ pragma solidity ^0.7.6;
 // SPDX-License-Identifier: Apache License 2.0
 
 import "./ISuite.sol";
+import "./ISuiteFactory.sol";
 import "./AbstractFactory.sol";
 import "../PredictionPool.sol";
 import "../IPredictionPool.sol";
 import "../iPredictionCollateralization.sol";
 
 contract PredictionPoolFactory is AbstractFactory {
+    /*
+     *   keccak256("PREDICTION_POOL")
+     *   0xe0adb0cc970f5fceb8dcd74884ef805feaaf050608733f0726801680146e1937
+     */
     bytes32 public constant FACTORY_CONTRACT_TYPE =
         keccak256("PREDICTION_POOL");
 
     function createContract(
         address suiteAddress,
-        address collateralTokenAddress,
         uint256 whitePrice,
         uint256 blackPrice
-    ) public returns (bool success) {
+    )
+        public
+        noExist(suiteAddress, FACTORY_CONTRACT_TYPE)
+        returns (bool success)
+    {
         ISuite _suite = ISuite(suiteAddress);
         require(_suite.owner() == msg.sender, "Caller should be suite owner");
 
@@ -29,18 +37,18 @@ contract PredictionPoolFactory is AbstractFactory {
             predictionCollateralAddress != address(0),
             "You must create Prediction Collateralization before PredictionPool contract"
         );
-        iPredictionCollateralization _pc = iPredictionCollateralization(
+        iPredictionCollateralization _ipc = iPredictionCollateralization(
             predictionCollateralAddress
         );
 
         PredictionPool _pp = new PredictionPool(
             /* solhint-disable prettier/prettier */
-            predictionCollateralAddress,    // address thisCollateralizationAddress,
-            collateralTokenAddress,         // address collateralTokenAddress,
-            _pc.whiteToken(),               // address whiteTokenAddress,
-            _pc.blackToken(),               // address blackTokenAddress,
-            whitePrice,                     // uint256 whitePrice,
-            blackPrice                      // uint256 blackPrice
+            predictionCollateralAddress,        // address thisCollateralizationAddress,
+            _suite._collateralTokenAddress(),   // address collateralTokenAddress,
+            _ipc.whiteToken(),                  // address whiteTokenAddress,
+            _ipc.blackToken(),                  // address blackTokenAddress,
+            whitePrice,                         // uint256 whitePrice,
+            blackPrice                          // uint256 blackPrice
             /* solhint-enable prettier/prettier */
         );
 
@@ -50,11 +58,10 @@ contract PredictionPoolFactory is AbstractFactory {
         return true;
     }
 
-    function initPredictionPool(
-        address suiteAddress,
-        address governanceWalletAddress,
-        address controllerWalletAddress
-    ) public returns (bool success) {
+    function initPredictionPool(address suiteAddress)
+        public
+        returns (bool success)
+    {
         ISuite _suite = ISuite(suiteAddress);
         address suiteOwner = _suite.owner();
 
@@ -79,13 +86,16 @@ contract PredictionPoolFactory is AbstractFactory {
         );
 
         IPredictionPool _ipp = IPredictionPool(predictionPoolAddress);
+        ISuiteFactory _isf = ISuiteFactory(_suite._suiteFactoryAddress());
 
+        address globalOwner = _isf.owner();
         _ipp.init(
-            governanceWalletAddress,
+            globalOwner, // governanceWalletAddress,
             eventLifeCycleAddress,
-            controllerWalletAddress
+            suiteOwner // controllerWalletAddress
         );
-        _ipp.changeGovernanceAddress(suiteOwner);
+
+        _ipp.changeGovernanceAddress(globalOwner);
         return true;
     }
 }
