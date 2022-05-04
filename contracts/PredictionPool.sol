@@ -184,7 +184,7 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         if(_onlyOrderer) {
             require(
                 _ordererAddress == msg.sender,
-                "Pool is shutting down. This function does not work"
+                "Incorrerct orderer"
             );
         }
         _;
@@ -808,7 +808,7 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         _onlyOrderer = only;
     }
 
-    function addLiquidity(uint tokensAmount)
+    function addLiquidity(uint256 tokensAmount)
     public {
         require (_collateralToken.allowance(msg.sender, address(this)) >= tokensAmount, "Not enough tokens are delegated");
         require (_collateralToken.balanceOf(msg.sender) >= tokensAmount, "Not enough tokens on the user balance");
@@ -828,6 +828,8 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         _mint(msg.sender, bwAmount);
 
         emit AddLiquidity(msg.sender, tokensAmount);
+
+        _collateralToken.transferFrom(msg.sender, address(this), tokensAmount);
 
         _thisCollateralization.buySeparately(
             address(this),
@@ -881,5 +883,7 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
             address(_blackToken),
             forBlack
         );
+
+        _collateralToken.transfer(msg.sender, collateralToSend);
     }
 }
