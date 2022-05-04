@@ -24,6 +24,7 @@ const {
   PRIVATE_KEY,
   ETHER_SCAN_API_KEY,
   BSC_SCAN_API_KEY,
+  HECO_SCAN_API_KEY,
   SEED_ADDRESS_BSC,
   SEED_ADDRESS_KOVAN,
   SEED_ADDRESS_RINKEBY,
@@ -91,6 +92,17 @@ module.exports = {
      port: 8545,
      timeoutBlocks: 200,
      confirmations: 5,
+     production: true    // Treats this network as if it was a public net. (default: false)
+    },
+    heco_testnet: {
+     provider: () => new HDWalletProvider(
+      mnemonic, SEED_ADDRESS_HECO,
+     ),
+     network_id: 256,
+     port: 8545,
+     timeoutBlocks: 200,
+     confirmations: 5,
+     skipDryRun: true,
      production: true    // Treats this network as if it was a public net. (default: false)
     },
     rinkeby_fork: {
@@ -166,13 +178,13 @@ module.exports = {
   api_keys: {
     bscscan: BSC_SCAN_API_KEY,
     etherscan: ETHER_SCAN_API_KEY,
+    hecoinfo: HECO_SCAN_API_KEY,
     // optimistic_etherscan: 'MY_API_KEY',
     // arbiscan: 'MY_API_KEY',
     // bscscan: 'MY_API_KEY',
     // snowtrace: 'MY_API_KEY',
     // polygonscan: 'MY_API_KEY',
     // ftmscan: 'MY_API_KEY',
-    // hecoinfo: 'MY_API_KEY',
     // moonscan: 'MY_API_KEY'
   },
 

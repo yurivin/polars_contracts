@@ -25,6 +25,8 @@
     "verify:elc:bsc_testnet": "truffle run verify EventLifeCycle --network bsc_testnet",
     "deploy:pending:rinkeby": "truffle migrate --network rinkeby --f 5 --to 5",
     "verify:pending:rinkeby": "truffle run verify PendingOrders --network rinkeby",
+    "deploy:pending:heco_testnet": "truffle migrate --network heco_testnet --f 5 --to 5",
+    "verify:pending:heco_testnet": "truffle run verify PendingOrders --network heco_testnet --debug",
     "deploy:pending:bsc_testnet": "truffle migrate --network bsc_testnet --f 5 --to 5",
     "verify:pending:bsc_testnet": "truffle run verify PendingOrders --network bsc_testnet",
     "deploy:dex:rinkeby": "truffle migrate --network rinkeby --f 6 --to 6",
