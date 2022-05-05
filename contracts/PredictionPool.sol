@@ -846,8 +846,6 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
             "Not enough tokens on the user balance"
         );
 
-        _collateralToken.transferFrom(msg.sender, address(this), tokensAmount);
-
         uint256 wPrice = _whitePrice;
         uint256 bPrice = _blackPrice;
         uint256 sPrice = wPrice.add(bPrice);
