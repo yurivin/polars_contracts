@@ -9,7 +9,7 @@ const {
 const chai = require('chai');
 const expect = require('chai').expect;
 
-const { deployContracts } = require('./../utils.js');
+const { deployContracts, ntob, BONE } = require('./../utils.js');
 
 contract("DEV: PredictionPool", (accounts) => {
   "use strict";
@@ -55,6 +55,91 @@ contract("DEV: PredictionPool", (accounts) => {
 
   it("should assert PredictionCollateralization address equal PredictionPool._thisCollateralization()", async function () {
     return assert.equal(await deployedPredictionPool._thisCollateralization(), deployedPredictionCollateralization.address);
+  });
+
+  it("addLiquidity and withdrawLiquidity", async function () {
+    const tokensAmount = ntob(1000)
+
+    await expectRevert(
+      deployedPredictionPool.addLiquidity(
+        tokensAmount,
+        { from: accounts[6] }
+      ),
+      "Not enough tokens are delegated",
+    );
+
+    await deployedCollateralToken.approve(
+      deployedPredictionPool.address,     // address spender
+      tokensAmount,                       // uint256 value
+      { from: accounts[6] }
+    )
+
+    await expectRevert(
+      deployedPredictionPool.addLiquidity(
+        tokensAmount,
+        { from: accounts[6] }
+      ),
+      "Not enough tokens on the user balance",
+    );
+
+    const addLiquidity = await deployedPredictionPool.addLiquidity(
+      tokensAmount,
+      { from: deployerAddress }
+    );
+    const { logs: addLiquidityLog } = addLiquidity;
+
+    expectEvent.inLogs(addLiquidityLog, 'AddLiquidity', {
+      user: deployerAddress,
+      whitePrice: ntob(0.5),              // "500000000000000000",
+      blackPrice: ntob(0.5),              // "500000000000000000",
+      bwAmount: tokensAmount,             // "1000000000000000000000",
+      colaterallAmount: tokensAmount      // "1000000000000000000000"
+    });
+
+    const bwTokensAmount = ntob(1000)
+
+    await expectRevert(
+      deployedPredictionPool.withdrawLiquidity(
+        bwTokensAmount,
+        { from: accounts[6] }
+      ),
+      "Not enough pool tokens are delegated",
+    );
+
+    await deployedPredictionPool.approve(
+      deployedPredictionPool.address,     // address spender
+      bwTokensAmount,                     // uint256 value
+      { from: accounts[6] }
+    )
+
+    await expectRevert(
+      deployedPredictionPool.withdrawLiquidity(
+        bwTokensAmount,
+        { from: accounts[6] }
+      ),
+      "Not enough tokens on the user balance",
+    );
+
+    await deployedPredictionPool.approve(
+      deployedPredictionPool.address,     // address spender
+      bwTokensAmount,                     // uint256 value
+      { from: deployerAddress }
+    )
+
+    const withdrawLiquidity = await deployedPredictionPool.withdrawLiquidity(
+      bwTokensAmount,
+      { from: deployerAddress }
+    );
+
+    const { logs: withdrawLiquidityLog } = withdrawLiquidity;
+
+    expectEvent.inLogs(withdrawLiquidityLog, 'WithdrawLiquidity', {
+      user: deployerAddress,
+      whitePrice: ntob(0.5),              // "500000000000000000",
+      blackPrice: ntob(0.5),              // "500000000000000000",
+      bwAmount: bwTokensAmount,           // "1000000000000000000000",
+      colaterallAmount: bwTokensAmount    // "1000000000000000000000"
+    });
   });
 
   it("buyBlack", async function () {
