@@ -82,6 +82,12 @@ contract("DEV: PredictionPool", (accounts) => {
       "Not enough tokens on the user balance",
     );
 
+    const blackBoughtBeforeAdd = await deployedPredictionPool._blackBought();
+    const whiteBoughtBeforeAdd = await deployedPredictionPool._whiteBought();
+
+    expect(blackBoughtBeforeAdd).to.be.bignumber.equal(new BN("0"));
+    expect(whiteBoughtBeforeAdd).to.be.bignumber.equal(new BN("0"));
+
     const addLiquidity = await deployedPredictionPool.addLiquidity(
       tokensAmount,
       { from: deployerAddress }
@@ -95,6 +101,12 @@ contract("DEV: PredictionPool", (accounts) => {
       bwAmount: tokensAmount,             // "1000000000000000000000",
       colaterallAmount: tokensAmount      // "1000000000000000000000"
     });
+
+    const blackBoughtAfterAdd = await deployedPredictionPool._blackBought();
+    const whiteBoughtAfterAdd = await deployedPredictionPool._whiteBought();
+
+    expect(blackBoughtAfterAdd).to.be.bignumber.equal(tokensAmount);
+    expect(whiteBoughtAfterAdd).to.be.bignumber.equal(tokensAmount);
 
     const bwTokensAmount = ntob(1000)
 
@@ -140,6 +152,12 @@ contract("DEV: PredictionPool", (accounts) => {
       bwAmount: bwTokensAmount,           // "1000000000000000000000",
       colaterallAmount: bwTokensAmount    // "1000000000000000000000"
     });
+
+    const blackBoughtAfterWithdraw = await deployedPredictionPool._blackBought();
+    const whiteBoughtAfterWithdraw = await deployedPredictionPool._whiteBought();
+
+    expect(blackBoughtAfterWithdraw).to.be.bignumber.equal(new BN("0"));
+    expect(whiteBoughtAfterWithdraw).to.be.bignumber.equal(new BN("0"));
   });
 
   it("buyBlack", async function () {
