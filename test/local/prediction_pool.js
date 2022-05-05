@@ -59,6 +59,7 @@ contract("DEV: PredictionPool", (accounts) => {
 
   it("addLiquidity and withdrawLiquidity", async function () {
     const tokensAmount = ntob(1000)
+    const bwTokensAmount = ntob(1000)
 
     await expectRevert(
       deployedPredictionPool.addLiquidity(
@@ -98,17 +99,15 @@ contract("DEV: PredictionPool", (accounts) => {
       user: deployerAddress,
       whitePrice: ntob(0.5),              // "500000000000000000",
       blackPrice: ntob(0.5),              // "500000000000000000",
-      bwAmount: tokensAmount,             // "1000000000000000000000",
+      bwAmount: bwTokensAmount,             // "1000000000000000000000",
       colaterallAmount: tokensAmount      // "1000000000000000000000"
     });
 
     const blackBoughtAfterAdd = await deployedPredictionPool._blackBought();
     const whiteBoughtAfterAdd = await deployedPredictionPool._whiteBought();
 
-    expect(blackBoughtAfterAdd).to.be.bignumber.equal(tokensAmount);
-    expect(whiteBoughtAfterAdd).to.be.bignumber.equal(tokensAmount);
-
-    const bwTokensAmount = ntob(1000)
+    expect(blackBoughtAfterAdd).to.be.bignumber.equal(bwTokensAmount);
+    expect(whiteBoughtAfterAdd).to.be.bignumber.equal(bwTokensAmount);
 
     await expectRevert(
       deployedPredictionPool.withdrawLiquidity(
@@ -177,7 +176,7 @@ contract("DEV: PredictionPool", (accounts) => {
     );
     const { logs: buyBlackLog } = buyBlack;
 
-    const eventCount = 1;
+    const eventCount = 4;
     assert.equal(buyBlackLog.length, eventCount, `triggers must be ${eventCount} event`);
 
     const blackBought = new BN("9970000000000000000");
@@ -210,7 +209,7 @@ contract("DEV: PredictionPool", (accounts) => {
     );
     const { logs: buyWhiteLog } = buyWhite;
 
-    const eventCount = 1;
+    const eventCount = 4;
     assert.equal(buyWhiteLog.length, eventCount, `triggers must be ${eventCount} event`);
 
     const whiteBought = new BN("9970000000000000000");
