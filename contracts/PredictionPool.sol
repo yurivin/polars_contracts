@@ -208,11 +208,8 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
     }
 
     modifier onlyOrdererModifier() {
-        if(_onlyOrderer) {
-            require(
-                _ordererAddress == msg.sender,
-                "Incorrerct orderer"
-            );
+        if (_onlyOrderer) {
+            require(_ordererAddress == msg.sender, "Incorrerct orderer");
         }
         _;
     }

@@ -6,6 +6,8 @@ const {
   snapshot
 } = require('@openzeppelin/test-helpers');
 
+const bigDecimal = require('js-big-decimal');
+
 const chai = require('chai');
 const expect = require('chai').expect;
 
@@ -60,6 +62,27 @@ contract("DEV: PredictionPool", (accounts) => {
   it("addLiquidity and withdrawLiquidity", async function () {
     const tokensAmount = ntob(1000)
     const bwTokensAmount = ntob(1000)
+    const blackTokensAmount = ntob(1000)
+    const whiteTokensAmount = ntob(1000)
+    const totalCollateralTokensAmount = ntob(10000000000000)
+    const forWhiteAmount = ntob(500)
+    const forBlackAmount = ntob(500)
+
+    const startPrice = ntob(0.5)
+
+    const sPrice = startPrice.add(startPrice);
+    expect(sPrice).to.be.bignumber.equal(ntob(1));
+
+    const bwAmnt = new bigDecimal(tokensAmount.toString())
+      .divide(new bigDecimal(sPrice.toString(10)), 18);
+
+    const forWhite = bwAmnt.multiply(new bigDecimal(startPrice.toString(10))).getValue()
+
+    const forBlack = bwAmnt.multiply(new bigDecimal(startPrice.toString(10))).getValue()
+
+    const bwAmount = new BN(
+      bwAmnt.multiply(new bigDecimal(BONE.toString(10))).getValue()
+    );
 
     await expectRevert(
       deployedPredictionPool.addLiquidity(
@@ -83,11 +106,51 @@ contract("DEV: PredictionPool", (accounts) => {
       "Not enough tokens on the user balance",
     );
 
-    const blackBoughtBeforeAdd = await deployedPredictionPool._blackBought();
-    const whiteBoughtBeforeAdd = await deployedPredictionPool._whiteBought();
+    expect(bwAmount).to.be.bignumber.equal(bwTokensAmount);
+    expect(forWhite).to.be.bignumber.equal(forWhiteAmount);
+    expect(forBlack).to.be.bignumber.equal(forBlackAmount);
 
-    expect(blackBoughtBeforeAdd).to.be.bignumber.equal(new BN("0"));
-    expect(whiteBoughtBeforeAdd).to.be.bignumber.equal(new BN("0"));
+    expect(await deployedPredictionPool._whitePrice()).to.be.bignumber.equal(startPrice);
+    expect(await deployedPredictionPool._blackPrice()).to.be.bignumber.equal(startPrice);
+
+    expect(await deployedPredictionPool._collateralForWhite()).to.be.bignumber.equal(new BN("0"));
+    expect(await deployedPredictionPool._collateralForBlack()).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedPredictionPool.balanceOf(deployerAddress)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedCollateralToken.balanceOf(deployedPredictionPool.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedCollateralToken.balanceOf(deployerAddress)
+    ).to.be.bignumber.equal(totalCollateralTokensAmount);
+
+    expect(
+      await deployedCollateralToken.balanceOf(deployedPredictionCollateralization.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedWhiteToken.balanceOf(deployedPredictionPool.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedBlackToken.balanceOf(deployedPredictionPool.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedWhiteToken.balanceOf(deployedPredictionCollateralization.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedBlackToken.balanceOf(deployedPredictionCollateralization.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(await deployedPredictionPool._blackBought()).to.be.bignumber.equal(new BN("0"));
+    expect(await deployedPredictionPool._whiteBought()).to.be.bignumber.equal(new BN("0"));
+
 
     const addLiquidity = await deployedPredictionPool.addLiquidity(
       tokensAmount,
@@ -103,11 +166,48 @@ contract("DEV: PredictionPool", (accounts) => {
       colaterallAmount: tokensAmount      // "1000000000000000000000"
     });
 
-    const blackBoughtAfterAdd = await deployedPredictionPool._blackBought();
-    const whiteBoughtAfterAdd = await deployedPredictionPool._whiteBought();
 
-    expect(blackBoughtAfterAdd).to.be.bignumber.equal(bwTokensAmount);
-    expect(whiteBoughtAfterAdd).to.be.bignumber.equal(bwTokensAmount);
+    expect(await deployedPredictionPool._whitePrice()).to.be.bignumber.equal(startPrice);
+    expect(await deployedPredictionPool._blackPrice()).to.be.bignumber.equal(startPrice);
+
+    expect(await deployedPredictionPool._collateralForWhite()).to.be.bignumber.equal(forWhiteAmount);
+    expect(await deployedPredictionPool._collateralForBlack()).to.be.bignumber.equal(forBlackAmount);
+
+    expect(
+      await deployedPredictionPool.balanceOf(deployerAddress)
+    ).to.be.bignumber.equal(bwTokensAmount);
+
+    expect(
+      await deployedCollateralToken.balanceOf(deployedPredictionPool.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedCollateralToken.balanceOf(deployerAddress)
+    ).to.be.bignumber.equal(totalCollateralTokensAmount.sub(tokensAmount));
+
+    expect(
+      await deployedCollateralToken.balanceOf(deployedPredictionCollateralization.address)
+    ).to.be.bignumber.equal(tokensAmount);
+
+    expect(
+      await deployedWhiteToken.balanceOf(deployedPredictionPool.address)
+    ).to.be.bignumber.equal(whiteTokensAmount);
+
+    expect(
+      await deployedBlackToken.balanceOf(deployedPredictionPool.address)
+    ).to.be.bignumber.equal(blackTokensAmount);
+
+    expect(
+      await deployedWhiteToken.balanceOf(deployedPredictionCollateralization.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedBlackToken.balanceOf(deployedPredictionCollateralization.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(await deployedPredictionPool._blackBought()).to.be.bignumber.equal(bwTokensAmount);
+    expect(await deployedPredictionPool._whiteBought()).to.be.bignumber.equal(bwTokensAmount);
+
 
     await expectRevert(
       deployedPredictionPool.withdrawLiquidity(
@@ -152,11 +252,46 @@ contract("DEV: PredictionPool", (accounts) => {
       colaterallAmount: bwTokensAmount    // "1000000000000000000000"
     });
 
-    const blackBoughtAfterWithdraw = await deployedPredictionPool._blackBought();
-    const whiteBoughtAfterWithdraw = await deployedPredictionPool._whiteBought();
+    expect(await deployedPredictionPool._whitePrice()).to.be.bignumber.equal(startPrice);
+    expect(await deployedPredictionPool._blackPrice()).to.be.bignumber.equal(startPrice);
 
-    expect(blackBoughtAfterWithdraw).to.be.bignumber.equal(new BN("0"));
-    expect(whiteBoughtAfterWithdraw).to.be.bignumber.equal(new BN("0"));
+    expect(await deployedPredictionPool._collateralForWhite()).to.be.bignumber.equal(new BN("0"));
+    expect(await deployedPredictionPool._collateralForBlack()).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedPredictionPool.balanceOf(deployerAddress)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedCollateralToken.balanceOf(deployedPredictionPool.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedCollateralToken.balanceOf(deployerAddress)
+    ).to.be.bignumber.equal(totalCollateralTokensAmount);
+
+    expect(
+      await deployedCollateralToken.balanceOf(deployedPredictionCollateralization.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedWhiteToken.balanceOf(deployedPredictionPool.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedBlackToken.balanceOf(deployedPredictionPool.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedWhiteToken.balanceOf(deployedPredictionCollateralization.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(
+      await deployedBlackToken.balanceOf(deployedPredictionCollateralization.address)
+    ).to.be.bignumber.equal(new BN("0"));
+
+    expect(await deployedPredictionPool._blackBought()).to.be.bignumber.equal(new BN("0"));
+    expect(await deployedPredictionPool._whiteBought()).to.be.bignumber.equal(new BN("0"));
   });
 
   it("buyBlack", async function () {
