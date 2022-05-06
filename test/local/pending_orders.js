@@ -141,6 +141,47 @@ contract("DEV: PendingOrders", function (accounts) {
     );
   });
 
+  it("test for Yurii case (totalWithdrawAmount is 0)", async () => {
+
+    await addLiquidityToPrediction(50000);
+    const userColTotal = 100000;
+
+    for (const i of [...Array(accounts.length).keys()]) {
+      if (i > 0) { await sendCollateralTokenToUser(accounts[i], userColTotal) }
+    }
+    const someEventsArray2 = [
+      { eventId: new BN("101"), eventResult: new BN("1")  },
+    ];
+
+    let ordersApplied = [
+      { account: 3, isWhite: false, eventId: new BN("101"), amount: 1, withdrawAfterEvent: false, cancel: false }
+    ];
+
+    let bid = ordersApplied[0];
+    bid.id = await createPendingOrder(
+      bid.isWhite,
+      bid.amount,
+      bid.eventId,
+      accounts[bid.account]
+    );
+    bid.withdrawDone = false;
+
+    const ordersCount = await deployedPendingOrders._ordersCount();
+    expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
+
+    const eventDuration = time.duration.seconds(5);
+
+    cancelOrder(accounts[bid.account], bid.id)
+
+    await withdrawAmount(accounts[ordersApplied[0].account], new BN("0"));
+
+    // await expectRevert(
+    //   deployedPendingOrders.withdrawCollateral({
+    //     from: accounts[ordersApplied[0].account]
+    //   }), "YOU DON'T HAVE ORDERS"
+    // );
+  });
+
   it("test suite for Aider case (create order after event done)", async () => {
 
     await addLiquidityToPrediction(50000);
