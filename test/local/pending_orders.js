@@ -141,7 +141,7 @@ contract("DEV: PendingOrders", function (accounts) {
     );
   });
 
-  it("test for Yurii case (totalWithdrawAmount is 0)", async () => {
+  it("withdraw when totalWithdrawAmount is 0", async () => {
 
     await addLiquidityToPrediction(50000);
     const userColTotal = 100000;
