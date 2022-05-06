@@ -271,7 +271,10 @@ contract PendingOrders is DSMath, Ownable {
             }
         }
 
-        _collateralToken.transfer(msg.sender, totalWithdrawAmount.sub(1));
+        if (totalWithdrawAmount > 0) {
+            _collateralToken.transfer(msg.sender, totalWithdrawAmount.sub(1));
+        }
+
         emit CollateralWithdrew(totalWithdrawAmount, msg.sender);
 
         return totalWithdrawAmount;
