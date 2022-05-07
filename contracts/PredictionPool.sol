@@ -583,13 +583,8 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         (
             uint256 collateralAmountWithFee,
             uint256 collateralToSend
-        ) = genericSell(
-                _blackToken,
-                _blackPrice,
-                minPrice,
-                tokensAmount,
-                true
-            );
+        ) = genericSell(_blackToken, _blackPrice, minPrice, tokensAmount, true);
+
         _blackBought = _blackBought.sub(tokensAmount);
         _collateralForBlack = _collateralForBlack.sub(collateralAmountWithFee);
         _blackSoldThisCycle = _blackSoldThisCycle.add(tokensAmount);
@@ -609,7 +604,13 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         (
             uint256 collateralAmountWithFee,
             uint256 collateralToSend
-        ) = genericSell(_whiteToken, _whitePrice, minPrice, tokensAmount, false);
+        ) = genericSell(
+                _whiteToken,
+                _whitePrice,
+                minPrice,
+                tokensAmount,
+                false
+            );
         _whiteBought = _whiteBought.sub(tokensAmount);
         _collateralForWhite = _collateralForWhite.sub(collateralAmountWithFee);
         _whiteSoldThisCycle = _whiteSoldThisCycle.add(tokensAmount);
@@ -805,23 +806,34 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         _controllerFeeCollected = 0;
     }
 
-    function addCollateral(uint256 forWhiteAmount, uint256 forBlackAmount) external onlyGovernance {
+    function addCollateral(uint256 forWhiteAmount, uint256 forBlackAmount)
+        external
+        onlyGovernance
+    {
         _collateralForBlack = _collateralForBlack.add(forBlackAmount);
         _collateralForWhite = _collateralForWhite.add(forWhiteAmount);
-        _collateralToken.transferFrom(msg.sender, address(_thisCollateralization), forWhiteAmount.add(forBlackAmount));
+        _collateralToken.transferFrom(
+            msg.sender,
+            address(_thisCollateralization),
+            forWhiteAmount.add(forBlackAmount)
+        );
     }
 
-    function changeFees(uint256 fee, uint256 governanceFee, uint256 controllerFee, uint256 bwAdditionFee) external onlyGovernance {
+    function changeFees(
+        uint256 fee,
+        uint256 governanceFee,
+        uint256 controllerFee,
+        uint256 bwAdditionFee
+    ) external onlyGovernance {
+        require(fee <= 0.1 * 1e18, "Too high total fee");
+        require(governanceFee <= _maxFeePart, "Too high governance fee");
+        require(controllerFee <= _maxFeePart, "Too high controller fee");
+        require(bwAdditionFee <= _maxFeePart, "Too high bwAddition fee");
 
-    require(fee <= 0.1 * 1e18, "Too high total fee");
-    require(governanceFee <= _maxFeePart, "Too high governance fee");
-    require(controllerFee <= _maxFeePart, "Too high controller fee");
-    require(bwAdditionFee <= _maxFeePart,  "Too high bwAddition fee");
-
-    FEE = fee;
-    _governanceFee = governanceFee;
-    _controllerFee = controllerFee;
-    _bwAdditionFee = bwAdditionFee;
+        FEE = fee;
+        _governanceFee = governanceFee;
+        _controllerFee = controllerFee;
+        _bwAdditionFee = bwAdditionFee;
     }
 
     function changeOrderer(address newOrderer) external onlyGovernance {
