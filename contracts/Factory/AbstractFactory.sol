@@ -6,15 +6,15 @@ import "./ISuite.sol";
 
 abstract contract AbstractFactory {
     modifier onlySuiteOwner(address suiteAddress) {
-        ISuite _suite = ISuite(suiteAddress);
-        require(_suite.owner() == msg.sender, "Caller should be suite owner");
+        ISuite suite = ISuite(suiteAddress);
+        require(suite.owner() == msg.sender, "Caller should be suite owner");
         _;
     }
 
-    modifier noExist(address suiteAddress, bytes32 contractType) {
-        ISuite _suite = ISuite(suiteAddress);
-        address factoryContract = _suite.contracts(contractType);
-        require(factoryContract == address(0), "Contract already exist");
+    modifier noExist(address suiteAddress, uint8 contractType) {
+        ISuite suite = ISuite(suiteAddress);
+        address userContract = suite.contracts(contractType);
+        require(userContract == address(0), "Contract already exist");
         _;
     }
 

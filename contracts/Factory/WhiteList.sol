@@ -5,16 +5,13 @@ pragma solidity ^0.7.6;
 import "../Common/Ownable.sol";
 
 contract WhiteList is Ownable {
-    mapping(bytes32 => address) public _allowedFactories;
+    mapping(uint8 => address) public _allowedFactories;
 
-    function add(bytes32 factoryType, address factoryAddress)
-        external
-        onlyOwner
-    {
+    function add(uint8 factoryType, address factoryAddress) external onlyOwner {
         _allowedFactories[factoryType] = factoryAddress;
     }
 
-    function remove(bytes32 factoryType) external onlyOwner {
+    function remove(uint8 factoryType) external onlyOwner {
         _allowedFactories[factoryType] = address(0);
     }
 }

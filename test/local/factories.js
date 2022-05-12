@@ -32,7 +32,7 @@ const maxPageSize = 30;
 const polTokenSupply = 1000000000;
 const commissionForCreateSuite = 1; // 1$
 
-contract("DEV: Factories", (accounts) => {
+contract.only("DEV: Factories", (accounts) => {
   "use strict";
 
   const [ deployerAddress, someUser1, someUser2, factoryAccount, someUser3 ] = accounts;
@@ -122,29 +122,29 @@ contract("DEV: Factories", (accounts) => {
 
   describe("WhiteList", () => {
     it('should assert WhiteList add and remove allowance of factory', async () => {
-      const keccakPCtype = web3.utils.keccak256("PREDICTION_COLLATERAL");
+      const typePC = 0; // PREDICTION_COLLATERAL
 
       let _allowedFactories = await deployedWhiteList._allowedFactories.call(
-        keccakPCtype
+        typePC
       );
       expect(_allowedFactories).to.be.equals(
         "0x0000000000000000000000000000000000000000"
       );
 
       await deployedWhiteList.add(
-        keccakPCtype,
+        typePC,
         factoryAccount
       );
       _allowedFactories = await deployedWhiteList._allowedFactories.call(
-        keccakPCtype
+        typePC
       );
       expect(_allowedFactories).to.be.equals(factoryAccount);
 
       await deployedWhiteList.remove(
-        keccakPCtype
+        typePC
       );
       _allowedFactories = await deployedWhiteList._allowedFactories.call(
-        keccakPCtype
+        typePC
       );
       expect(_allowedFactories).to.be.equals(
         "0x0000000000000000000000000000000000000000"
@@ -152,14 +152,14 @@ contract("DEV: Factories", (accounts) => {
 
       await expectRevert(
         deployedWhiteList.add(
-          keccakPCtype,
+          typePC,
           factoryAccount,
           { from: someUser1 }
         ), "Revert or exceptional halt"
       );
 
       _allowedFactories = await deployedWhiteList._allowedFactories.call(
-        keccakPCtype
+        typePC
       );
       expect(_allowedFactories).to.be.equals(
         "0x0000000000000000000000000000000000000000"
@@ -167,7 +167,7 @@ contract("DEV: Factories", (accounts) => {
 
       await expectRevert(
         deployedWhiteList.remove(
-          keccakPCtype,
+          typePC,
           { from: someUser1 }
         ), "Revert or exceptional halt"
       );
@@ -248,15 +248,13 @@ contract("DEV: Factories", (accounts) => {
   }
 
   const addToWhiteList = async (type, factoryAddress) => {
-    const keccakPCtype = web3.utils.keccak256(type);
-
     await deployedWhiteList.add(
-      keccakPCtype,
+      type,
       factoryAddress
     );
 
     const _allowedFactories = await deployedWhiteList._allowedFactories.call(
-      keccakPCtype
+      type
     );
     expect(_allowedFactories).to.be.equals(factoryAddress);
   }
@@ -484,7 +482,7 @@ contract("DEV: Factories", (accounts) => {
       await setWhiteList();
 
       await addToWhiteList(
-        "PREDICTION_COLLATERAL",
+        0, // "PREDICTION_COLLATERAL",
         deployedPredictionCollateralFactory.address
       );
 
@@ -554,7 +552,7 @@ contract("DEV: Factories", (accounts) => {
       await setWhiteList();
 
       await addToWhiteList(
-        "PREDICTION_COLLATERAL",
+        0, // "PREDICTION_COLLATERAL",
         deployedPredictionCollateralFactory.address
       );
 
@@ -667,7 +665,7 @@ contract("DEV: Factories", (accounts) => {
       );
 
       await addToWhiteList(
-        "PREDICTION_POOL",
+        1, // "PREDICTION_POOL",
         deployedPredictionPoolFactory.address
       );
 
@@ -752,7 +750,7 @@ contract("DEV: Factories", (accounts) => {
       );
 
       await addToWhiteList(
-        "EVENT_LIFE_CYCLE",
+        2, // "EVENT_LIFE_CYCLE",
         deployedEventLifeCycleFactory.address
       );
 
@@ -836,7 +834,7 @@ contract("DEV: Factories", (accounts) => {
       );
 
       await addToWhiteList(
-        "PENDING_ORDERS",
+        3, // "PENDING_ORDERS",
         deployedPendingOrdersFactory.address
       );
 
@@ -874,7 +872,7 @@ contract("DEV: Factories", (accounts) => {
       if (debug) console.log("po elc address      :", (await deployedPendingOrders._eventContractAddress()));
 
       assert.equal(deployedEventLifeCycle.address, await deployedPredictionPool._eventContractAddress());
-      assert.equal(someUser1, await deployedPendingOrders.owner());
+      assert.equal(await deployedSuiteFactory.owner(), await deployedPendingOrders.owner());
 
       expect(
         await deployedPendingOrders._ordersCount()

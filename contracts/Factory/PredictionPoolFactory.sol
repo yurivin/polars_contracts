@@ -11,11 +11,11 @@ import "../iPredictionCollateralization.sol";
 
 contract PredictionPoolFactory is AbstractFactory {
     /*
-     *   keccak256("PREDICTION_POOL")
-     *   0xe0adb0cc970f5fceb8dcd74884ef805feaaf050608733f0726801680146e1937
+     *   "PREDICTION_POOL"
+     *   id: 1
      */
-    bytes32 public constant FACTORY_CONTRACT_TYPE =
-        keccak256("PREDICTION_POOL");
+    uint8 public constant FACTORY_CONTRACT_TYPE = 1;
+    string public constant FACTORY_CONTRACT_NAME = "PREDICTION_POOL";
 
     function createContract(
         address suiteAddress,
@@ -26,35 +26,35 @@ contract PredictionPoolFactory is AbstractFactory {
         noExist(suiteAddress, FACTORY_CONTRACT_TYPE)
         returns (bool success)
     {
-        ISuite _suite = ISuite(suiteAddress);
-        require(_suite.owner() == msg.sender, "Caller should be suite owner");
+        ISuite suite = ISuite(suiteAddress);
+        require(suite.owner() == msg.sender, "Caller should be suite owner");
 
-        address predictionCollateralAddress = _suite.contracts(
-            keccak256("PREDICTION_COLLATERAL")
+        address predictionCollateralAddress = suite.contracts(
+            0 // id for PREDICTION_COLLATERAL
         );
 
         require(
             predictionCollateralAddress != address(0),
             "You must create Prediction Collateralization before PredictionPool contract"
         );
-        iPredictionCollateralization _ipc = iPredictionCollateralization(
+        iPredictionCollateralization ipc = iPredictionCollateralization(
             predictionCollateralAddress
         );
 
-        PredictionPool _pp = new PredictionPool(
+        PredictionPool pp = new PredictionPool(
             /* solhint-disable prettier/prettier */
             predictionCollateralAddress,        // address thisCollateralizationAddress,
-            _suite._collateralTokenAddress(),   // address collateralTokenAddress,
-            _ipc.whiteToken(),                  // address whiteTokenAddress,
-            _ipc.blackToken(),                  // address blackTokenAddress,
+            suite._collateralTokenAddress(),    // address collateralTokenAddress,
+            ipc.whiteToken(),                   // address whiteTokenAddress,
+            ipc.blackToken(),                   // address blackTokenAddress,
             whitePrice,                         // uint256 whitePrice,
             blackPrice                          // uint256 blackPrice
             /* solhint-enable prettier/prettier */
         );
 
-        _suite.addContract(FACTORY_CONTRACT_TYPE, address(_pp));
+        suite.addContract(FACTORY_CONTRACT_TYPE, address(pp));
 
-        emit ContractCreated(suiteAddress, address(_pp), "PREDICTION_POOL");
+        emit ContractCreated(suiteAddress, address(pp), FACTORY_CONTRACT_NAME);
         return true;
     }
 
@@ -62,17 +62,17 @@ contract PredictionPoolFactory is AbstractFactory {
         public
         returns (bool success)
     {
-        ISuite _suite = ISuite(suiteAddress);
-        address suiteOwner = _suite.owner();
+        ISuite suite = ISuite(suiteAddress);
+        address suiteOwner = suite.owner();
 
         require(suiteOwner == msg.sender, "Caller should be suite owner");
 
-        address predictionPoolAddress = _suite.contracts(
-            keccak256("PREDICTION_POOL")
+        address predictionPoolAddress = suite.contracts(
+            1 // id for PREDICTION_POOL
         );
 
-        address eventLifeCycleAddress = _suite.contracts(
-            keccak256("EVENT_LIFE_CYCLE")
+        address eventLifeCycleAddress = suite.contracts(
+            2 // id for EVENT_LIFE_CYCLE
         );
 
         require(
@@ -85,17 +85,17 @@ contract PredictionPoolFactory is AbstractFactory {
             "You must create EventLifeCycle contract"
         );
 
-        IPredictionPool _ipp = IPredictionPool(predictionPoolAddress);
-        ISuiteFactory _isf = ISuiteFactory(_suite._suiteFactoryAddress());
+        IPredictionPool ipp = IPredictionPool(predictionPoolAddress);
+        ISuiteFactory isf = ISuiteFactory(suite._suiteFactoryAddress());
 
-        address globalOwner = _isf.owner();
-        _ipp.init(
+        address globalOwner = isf.owner();
+        ipp.init(
             globalOwner, // governanceWalletAddress,
             eventLifeCycleAddress,
             suiteOwner // controllerWalletAddress
         );
 
-        _ipp.changeGovernanceAddress(globalOwner);
+        ipp.changeGovernanceAddress(globalOwner);
         return true;
     }
 }

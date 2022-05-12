@@ -48,16 +48,16 @@ contract SuiteFactory is Ownable {
             ),
             "Transfer commission failed"
         );
-        Suite _suite = new Suite(
+        Suite suite = new Suite(
             suiteName,
             collateralTokenAddress,
             _suiteList._whiteList()
         );
-        _suite.transferOwnership(msg.sender);
-        emit SuiteDeployed(suiteName, address(_suite), msg.sender);
-        _suiteList.addSuite(address(_suite), msg.sender);
+        suite.transferOwnership(msg.sender);
+        emit SuiteDeployed(suiteName, address(suite), msg.sender);
+        _suiteList.addSuite(address(suite), msg.sender);
 
-        return address(_suite);
+        return address(suite);
     }
 
     function setSuiteList(address suiteListAddress) external onlyOwner {

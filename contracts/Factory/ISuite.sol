@@ -5,12 +5,11 @@ pragma solidity ^0.7.6;
 interface ISuite {
     function owner() external view returns (address);
 
-    function contracts(bytes32 contractType) external view returns (address);
+    function contracts(uint8 contractType) external view returns (address);
 
     function _collateralTokenAddress() external returns (address);
 
     function _suiteFactoryAddress() external returns (address);
 
-    function addContract(bytes32 contractType, address contractAddress)
-        external;
+    function addContract(uint8 contractType, address contractAddress) external;
 }
