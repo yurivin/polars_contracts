@@ -12,7 +12,7 @@ contract Suite is Ownable {
     address public _collateralTokenAddress;
     address public _suiteFactoryAddress;
 
-    modifier onlyWhiteListed(bytes32 contractType) {
+    modifier onlyWhiteListed(uint8 contractType) {
         require(
             _whiteList._allowedFactories(contractType) == msg.sender,
             "Caller should be in White List"
@@ -20,7 +20,7 @@ contract Suite is Ownable {
         _;
     }
 
-    mapping(bytes32 => address) public contracts;
+    mapping(uint8 => address) public contracts;
 
     constructor(
         string memory suiteName,
@@ -33,7 +33,7 @@ contract Suite is Ownable {
         _whiteList = WhiteList(whiteList);
     }
 
-    function addContract(bytes32 contractType, address contractAddress)
+    function addContract(uint8 contractType, address contractAddress)
         external
         onlyWhiteListed(contractType)
     {

@@ -9,22 +9,22 @@ import "../EventLifeCycle.sol";
 
 contract EventLifeCycleFactory is AbstractFactory {
     /*
-     *   keccak256("EVENT_LIFE_CYCLE")
-     *   0x324de064bf1fe44405ff9f415e6eae2f73fc125102342142a7bb43ef46869f4d
+     *   "EVENT_LIFE_CYCLE"
+     *   id: 2
      */
-    bytes32 public constant FACTORY_CONTRACT_TYPE =
-        keccak256("EVENT_LIFE_CYCLE");
+    uint8 public constant FACTORY_CONTRACT_TYPE = 2;
+    string public constant FACTORY_CONTRACT_NAME = "EVENT_LIFE_CYCLE";
 
     function createContract(address suiteAddress, address oracleAddress)
         public
         noExist(suiteAddress, FACTORY_CONTRACT_TYPE)
         returns (bool success)
     {
-        ISuite _suite = ISuite(suiteAddress);
-        require(_suite.owner() == msg.sender, "Caller should be suite owner");
+        ISuite suite = ISuite(suiteAddress);
+        require(suite.owner() == msg.sender, "Caller should be suite owner");
 
-        address predictionPoolAddress = _suite.contracts(
-            keccak256("PREDICTION_POOL")
+        address predictionPoolAddress = suite.contracts(
+            1 // id for PREDICTION_POOL
         );
 
         require(
@@ -32,19 +32,19 @@ contract EventLifeCycleFactory is AbstractFactory {
             "You must create Prediction Pool before EventLifeCycle contract"
         );
 
-        ISuiteFactory _isf = ISuiteFactory(_suite._suiteFactoryAddress());
+        ISuiteFactory isf = ISuiteFactory(suite._suiteFactoryAddress());
 
-        EventLifeCycle _elc = new EventLifeCycle(
+        EventLifeCycle elc = new EventLifeCycle(
             /* solhint-disable prettier/prettier */
-            _isf.owner(),           // address governanceAddress,
+            isf.owner(),            // address governanceAddress,
             oracleAddress,          // address oracleAddress,
             predictionPoolAddress   // address predictionPoolAddress
             /* solhint-enable prettier/prettier */
         );
 
-        _suite.addContract(FACTORY_CONTRACT_TYPE, address(_elc));
+        suite.addContract(FACTORY_CONTRACT_TYPE, address(elc));
 
-        emit ContractCreated(suiteAddress, address(_elc), "EVENT_LIFE_CYCLE");
+        emit ContractCreated(suiteAddress, address(elc), FACTORY_CONTRACT_NAME);
         return true;
     }
 }
