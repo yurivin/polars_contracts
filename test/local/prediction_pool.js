@@ -59,6 +59,88 @@ contract("DEV: PredictionPool", (accounts) => {
     return assert.equal(await deployedPredictionPool._thisCollateralization(), deployedPredictionCollateralization.address);
   });
 
+  it("Orderer functional enabled", async function () {
+    const anotherOrderer = accounts[7]
+    await deployedPredictionPool.changeOrderer(
+      anotherOrderer,
+      { from: deployerAddress }
+    );
+    await deployedPredictionPool.setOnlyOrderer(
+      true,
+      { from: deployerAddress }
+    );
+
+    const collateralAmountToBuy = new BN("100000000000000000000000");
+    const buyPayment = new BN("5000000000000000000");
+
+    const initialBlackOrWhitePrice = new BN("500000000000000000");
+
+    const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
+
+    expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(collateralAmountToBuy);
+
+    await expectRevert(
+      deployedPredictionPool.buyBlack(
+        initialBlackOrWhitePrice,
+        buyPayment,
+        { from: deployerAddress }
+      ),
+      "Incorrerct orderer",
+    );
+
+    await expectRevert(
+      deployedPredictionPool.buyBlack(
+        initialBlackOrWhitePrice,
+        buyPayment,
+        { from: anotherOrderer }
+      ),
+      "Not enough delegated tokens",
+    );
+
+    await deployedCollateralToken.approve(
+      deployedPredictionCollateralization.address,
+      buyPayment,
+      { from: anotherOrderer }
+    );
+
+    await expectRevert(
+      deployedPredictionPool.buyBlack(
+        initialBlackOrWhitePrice,
+        buyPayment,
+        { from: anotherOrderer }
+      ),
+      "SafeMath: subtraction overflow",
+    );
+
+    await deployedCollateralToken.transfer(
+      anotherOrderer,
+      buyPayment,
+      { from: deployerAddress }
+    );
+
+    const buyBlack = await deployedPredictionPool.buyBlack(
+      initialBlackOrWhitePrice,
+      buyPayment,
+      { from: anotherOrderer }
+    );
+    const { logs: buyBlackLog } = buyBlack;
+
+    const eventCount = 4;
+    assert.equal(buyBlackLog.length, eventCount, `triggers must be ${eventCount} event`);
+
+    const blackBought = new BN("9970000000000000000");
+
+    expectEvent.inLogs(buyBlackLog, 'BuyBlack', {
+      user: anotherOrderer,
+      amount: blackBought,
+      price: initialBlackOrWhitePrice
+    });
+
+    return expect(
+      await deployedBlackToken.balanceOf(anotherOrderer)
+    ).to.be.bignumber.equal(blackBought);
+  });
+
   it("addLiquidity and withdrawLiquidity", async function () {
     const tokensAmount = ntob(1000)
     const bwTokensAmount = ntob(1000)
