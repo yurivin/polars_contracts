@@ -68,6 +68,8 @@ const deployContracts = async (deployerAddress, debug=0) => {
     deployerAddress,
     deployerAddress,
     deployerAddress,
+    deployerAddress,
+    false,
     { from: deployerAddress }
   );
   await deployedPredictionCollateralization.changePoolAddress(

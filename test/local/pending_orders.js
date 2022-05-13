@@ -844,7 +844,7 @@ contract("DEV: PendingOrders", function (accounts) {
   // Utility
   const buyToken = async (color, initialBlackOrWhitePrice, buyPayment) => {
     let buyColor;
-    const eventCount = 1;
+    const eventCount = 4;
     if (color === "white") {
       buyColor = await deployedPredictionPool.buyWhite(
         initialBlackOrWhitePrice,
