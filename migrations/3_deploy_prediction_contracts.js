@@ -114,6 +114,9 @@ module.exports = async(deployer, network, accounts) => {
             contractsAddresses.predictionPool = deployedPredictionPool.address;
             contractsAddresses.predictionPool = deployedPredictionPool.address;
             fs.writeFileSync(deployMainContractsFileName, JSON.stringify(contractsAddresses, null, 2));
+        } else {
+            // const deployedPredictionPool = await PredictionPool.at(contractsAddresses.predictionPool);
+            // let result = await deployedPredictionPool.changeGovernanceAddress("0x23E6B56B3874E53D43a065B2a5EbCCEBA2238635")
         }
 
     } catch(e) {
