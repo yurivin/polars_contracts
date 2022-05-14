@@ -1,5 +1,6 @@
 const {
   BN,           // Big Number support
+  time,
   constants,    // Common constants, like the zero address and largest integers
   expectEvent,  // Assertions for emitted events
   expectRevert, // Assertions for transactions that should fail
@@ -32,7 +33,7 @@ const maxPageSize = 30;
 const polTokenSupply = 1000000000;
 const commissionForCreateSuite = 1; // 1$
 
-contract.only("DEV: Factories", (accounts) => {
+contract("DEV: Factories", (accounts) => {
   "use strict";
 
   const [ deployerAddress, someUser1, someUser2, factoryAccount, someUser3 ] = accounts;
@@ -172,54 +173,21 @@ contract.only("DEV: Factories", (accounts) => {
         ), "Revert or exceptional halt"
       );
     });
-
-    it.skip('should assert WhiteList add and remove allowance of factory', async () => {
-      let _allowedFactories = await deployedWhiteList._allowedFactories.call(0, factoryAccount);
-      expect(_allowedFactories).to.be.equals(false);
-
-      await deployedWhiteList.add(0, factoryAccount);
-      _allowedFactories = await deployedWhiteList._allowedFactories.call(0, factoryAccount);
-      expect(_allowedFactories).to.be.equals(true);
-
-      await deployedWhiteList.remove(0, factoryAccount);
-      _allowedFactories = await deployedWhiteList._allowedFactories.call(0, factoryAccount);
-      expect(_allowedFactories).to.be.equals(false);
-
-      await expectRevert(
-        deployedWhiteList.add(
-          0,
-          factoryAccount,
-          { from: someUser1 }
-        ), "Revert or exceptional halt"
-      );
-
-      _allowedFactories = await deployedWhiteList._allowedFactories.call(0, factoryAccount);
-      expect(_allowedFactories).to.be.equals(false);
-
-      await expectRevert(
-        deployedWhiteList.remove(
-          0,
-          factoryAccount,
-          { from: someUser1 }
-        ), "Revert or exceptional halt"
-      );
-    });
   });
 
   const deploySuite = async (user, suiteName, collateralTokenAddress) => {
-    const sleep = ms => new Promise(r => setTimeout(r, ms));
     await deployedPolToken.transfer(
       user,                               // address recipient
       ntob(commissionForCreateSuite),     // uint256 amount
       { from: deployerAddress }
     )
-    await sleep(1000);
+
     await deployedPolToken.approve(
       deployedSuiteFactory.address,       // address spender
       ntob(commissionForCreateSuite*20),  // uint256 amount
       { from: user }
     )
-    await sleep(1000);
+
     const deployedSuiteTx = await deployedSuiteFactory.deploySuite(
       suiteName,
       collateralTokenAddress,
@@ -266,156 +234,76 @@ contract.only("DEV: Factories", (accounts) => {
   }
 
   describe("Suite", () => {
-    it.skip('should create 50 suites for 7 users and print it', async () => {
-      // let deployedSuiteTx = await deployedSuiteFactory.deploySuite(
-      //   { from: someUser1 }
-      // );
-      // let deployedSuiteAddress = deployedSuiteTx.logs[2].args.suiteAddress;
-      // // console.log("deployedSuiteAddress:", deployedSuiteAddress);
-      // console.log("deployedSuiteAddress:", deployedSuiteAddress);
+    it('should create 50 suites for 7 users and print it', async () => {
 
-      // let deployedSuite = await Suite.at(deployedSuiteAddress);
-      // let suiteOwner = await deployedSuite.owner();
-      // console.log("suiteOwner          :", suiteOwner);
-      // console.log("someUser1           :", someUser1);
-
-      // const deployedSuiteAddress = await deploySuite(someUser1);
-      // let deployedSuite = await Suite.at(deployedSuiteAddress);
-
-      // console.log("deployedSuiteList   :", deployedSuiteList.address);
-
-      // // const addSuiteTx = await deployedSuiteList.addSuite(deployedSuiteAddress, suiteOwner);
-      // // console.log("addSuiteTx          :", addSuiteTx);
-
-      // const getSuitesByPage = await deployedSuiteList.getSuitesByPage(new BN("0"), new BN("10"));
-      // console.log("getSuitesByPage     :", getSuitesByPage);
-
-      // let deployedSuiteTx2 = await deployedSuiteFactory.deploySuite(
-      //   { from: someUser2 }
-      // );
-      // let deployedSuiteAddress2 = deployedSuiteTx2.logs[2].args.suiteAddress;
-      // console.log("deployedSuiteAddress:", deployedSuiteAddress2);
-      // let deployedSuite2 = await Suite.at(deployedSuiteAddress2);
-      // let suiteOwner2 = await deployedSuite2.owner();
-      // console.log("suiteOwner          :", suiteOwner2);
-      // console.log("someUser2           :", someUser2);
-
-      // const deployedSuiteAddress2 = await deploySuite(someUser2);
-      // let deployedSuite2 = await Suite.at(deployedSuiteAddress2);
-
-      // const getSuitesByPage2 = await deployedSuiteList.getSuitesByPage(new BN("0"), new BN("10"));
-      // console.log("getSuitesByPage2    :", getSuitesByPage2);
-
-      // [...Array(50).keys()].forEach(async (element) => await deploySuite(someUser2));
-
-      const countSuitesForTest = 2;
-      // const countSuitesForTest = 10;
-      // const countSuitesForTest = 50;
-      console.log("acountSuitesForTest :", countSuitesForTest);
-      console.log("accounts.length     :", accounts.length);
+      const countSuitesForTest = 50;
+      if (debug) console.log("acountSuitesForTest :", countSuitesForTest);
+      if (debug) console.log("accounts.length     :", accounts.length);
 
       const maxAccountInUse = 6;
       const startAccountInUse = (maxAccountInUse / 2);// - 1;
       const endAccountInUse = accounts.length - (maxAccountInUse / 2);// + 1;
       let y = startAccountInUse;
-      console.log("startAccountInUse   :", startAccountInUse);
-      console.log("endAccountInUse     :", endAccountInUse);
-      // let y = accounts.length - (maxAccountInUse/2)
-      // await Promise.all(
-      //   [...Array(50).keys()].forEach(async (element) => {
-      //     y++;
-      //     if (y > 9) y=1;
-      //     else if (y < 1) y=accounts.length;
-      //     await deploySuite(accounts[y])
-      //   })
-      // )
+      if (debug) console.log("startAccountInUse   :", startAccountInUse);
+      if (debug) console.log("endAccountInUse     :", endAccountInUse);
 
-      const sleep = async (ms) => new Promise(r => setTimeout(r, ms));
-      await Promise.all(
-        // [...Array(50).keys()].forEach(async (element) => await deploySuite(someUser2))
-        [...Array(countSuitesForTest).keys()].map(async (element) => {
+      await expectRevert(
+        deployedSuiteFactory.deploySuite(
+          "SomeNameSuite",
+          deployedCollateralToken.address,
+          { from: accounts[1] }
+        ), "WhiteList address not defined"
+      );
 
-          console.log("y                   :", y);
-          // await deploySuite(accounts[1]);
-          console.log("x                   :", y);
-          await sleep(1000);
-          console.log("x                   :", y);
-          await deploySuite(accounts[y]);
-          await time.advanceBlock();
-          // const getSuitesCount = await deployedSuiteList.getSuitesCount();
-          // if (debug) console.log("getSuitesCount      :", getSuitesCount.toString());
-          y++;
-          if (y >= endAccountInUse) y=startAccountInUse;
-          else if (y <= startAccountInUse) y=endAccountInUse;
-        })
-      )
-      // await Promise.all(
-      //   // [...Array(50).keys()].forEach(async (element) => await deploySuite(someUser2))
-      //   [...Array(50).keys()].map(async (element) => {
-      //     await deploySuite(someUser2);
-      //     const getSuitesSize = await deployedSuiteList.getSuitesSize();
-      //     console.log("getSuitesSize       :", getSuitesSize.toString());
-      //   })
-      // )
+      expect(await deployedSuiteFactory._suiteList()).to.be.equals(deployedSuiteList.address);
+
+      await deployedSuiteFactory.setSuiteList(deployedSuiteList.address)
+      await deployedSuiteList.setWhiteList(deployedWhiteList.address)
+
+      for (let i = 0; i < countSuitesForTest; i++) {
+        await deploySuite(accounts[y], "SomeNameSuite", deployedCollateralToken.address);
+        y++;
+        if (y >= endAccountInUse) y=startAccountInUse;
+        else if (y <= startAccountInUse) y=endAccountInUse;
+      }
+
       const iterations = Math.floor(countSuitesForTest / maxPageSize);
-      console.log("iterations          :", iterations);
+      if (debug) console.log("iterations          :", iterations);
       await Promise.all(
         [...Array(iterations).keys()].map(async (iteration) => {
           const getSuitesByPage = await deployedSuiteList.getSuitesByPage(new BN(iteration.toString(10)), new BN(maxPageSize.toString(10)));
-          console.log("getSuitesByPage     :", getSuitesByPage);
+          if (debug) console.log("getSuitesByPage     :", getSuitesByPage);
         })
       )
 
       const remain = countSuitesForTest % maxPageSize;
       if (remain > 0) {
         const getSuitesByPage = await deployedSuiteList.getSuitesByPage(new BN((countSuitesForTest-remain).toString(10)), new BN(remain.toString(10)));
-        console.log("getSuitesByPage     :", getSuitesByPage);
+        if (debug) console.log("getSuitesByPage     :", getSuitesByPage);
       }
-      console.log("iterationD          :", countSuitesForTest % maxPageSize);
-      // const getSuitesByPage = await deployedSuiteList.getSuitesByPage(new BN("0"), new BN("10"));
-      // console.log("getSuitesByPage     :", getSuitesByPage);
+      if (debug) console.log("iterationD          :", countSuitesForTest % maxPageSize);
 
-      // const getUserSuitesCount = await deployedSuiteList.getUserSuitesCount(accounts[5]);
-      // console.log("getUserSuitesCount  :", getUserSuitesCount.toNumber());
-      // console.log("getUserSuitesCount  :", getUserSuitesCount.toString());
-
-      // const _suiteIndexesByUserMap = await deployedSuiteList._suiteIndexesByUserMap(accounts[5], 0);
-      // console.log("_suiteIndexes       :", _suiteIndexesByUserMap.toString());
-
-      // await Promise.all(
-      //   [...Array(getUserSuitesCount.toNumber()).keys()].map(async (index) => {
-      //     const _suiteIndexesByUserMap = await deployedSuiteList._suiteIndexesByUserMap(accounts[5], index);
-      //     const _suite = await deployedSuiteList._suites(_suiteIndexesByUserMap);
-      //     console.log("_suiteIndexes       :", _suiteIndexesByUserMap.toString(), _suite);
-      //   })
-      // )
       let i = startAccountInUse;
       for (i=startAccountInUse; i<=endAccountInUse; i++) {
-        console.log("i                   :", i);
+        if (debug) console.log("i                   :", i);
         const getUserSuitesCount = await deployedSuiteList.getUserSuitesCount(accounts[i]);
         const userIterations = Math.floor(getUserSuitesCount / maxPageSize);
-        // console.log("userIterations      :", userIterations);
         await Promise.all(
           [...Array(userIterations).keys()].map(async (iteration) => {
             const getUserSuitesByPage = await deployedSuiteList.getUserSuitesByPage(accounts[i], new BN(iteration.toString(10)), new BN(maxPageSize.toString(10)));
-            console.log("getUserSuitesByPage :", getUserSuitesByPage);
+            if (debug) console.log("getUserSuitesByPage :", getUserSuitesByPage);
           })
         )
         const userRemain = getUserSuitesCount % maxPageSize;
         if (userRemain > 0) {
-          // console.log("userRemain          :", userRemain);
-          // console.log("userRemain          :", getUserSuitesCount.toNumber());
-          // console.log("userRemain          :", new BN((getUserSuitesCount.toNumber()-userRemain).toString(10)).toString());
           const getUserSuitesByPage = await deployedSuiteList.getUserSuitesByPage(accounts[i], new BN((getUserSuitesCount-userRemain).toString(10)), new BN(userRemain.toString(10)));
-          console.log("getUserSuitesByPage   :", getUserSuitesByPage);
+          if (debug) console.log("getUserSuitesByPage   :", getUserSuitesByPage);
         }
       }
 
     });
 
     it('should revert create suite if WhiteList address not defined', async () => {
-
-
       await expectRevert(
         deployedSuiteFactory.deploySuite(
           "SomeNameSuite",
@@ -1011,6 +899,40 @@ contract.only("DEV: Factories", (accounts) => {
   });
 
   describe("SuiteList", () => {
+    it('getSuitesByPage test', async () => {
+      await expectRevert(
+        deployedSuiteList.getSuitesByPage(new BN("10"), new BN("31")), "Count must be less than 30"
+      );
+
+      await expectRevert(
+        deployedSuiteList.getSuitesByPage(new BN("10"), new BN("5")), "Start index must be less than suites length"
+      );
+
+      await expectRevert(
+        deployedSuiteFactory.deploySuite(
+          "SomeNameSuite",
+          deployedCollateralToken.address,
+          { from: accounts[1] }
+        ), "WhiteList address not defined"
+      );
+
+      expect(await deployedSuiteFactory._suiteList()).to.be.equals(deployedSuiteList.address);
+
+      // await deployedSuiteFactory.setSuiteList(deployedSuiteList.address)
+      await deployedSuiteList.setWhiteList(deployedWhiteList.address)
+
+      const countSuitesForTest = 10;
+      for (let i = 0; i < countSuitesForTest; i++) {
+        await deploySuite(accounts[1], "SomeNameSuite", deployedCollateralToken.address);
+      }
+
+      if (debug) console.log("getSuitesByPage      :", await deployedSuiteList.getSuitesByPage(new BN("9"), new BN("5")));
+
+      await expectRevert(
+        deployedSuiteList.getSuitesByPage(new BN("10"), new BN("5")), "Start index must be less than suites length"
+      );
+    });
+
     it('should assert isSuiteExists equal false on start and true after create suite', async () => {
       const isSuiteExists = await deployedSuiteList.isSuiteExists(accounts[6]); // some address
       if (debug) console.log("isSuiteExists       :", isSuiteExists);
@@ -1120,25 +1042,6 @@ contract.only("DEV: Factories", (accounts) => {
         );
       });
 
-      // const insertContract = await deployedContractType.insertContract(
-      //   accounts[9],
-      //   web3.utils.asciiToHex("val"),
-      //   true,
-      //   { from: accounts[9] }
-      // );
-
-      // const { logs: insertContractLog } = insertContract;
-      // const eventCount = 0;
-      // assert.equal(insertContractLog.length, eventCount, `triggers must be ${eventCount} event`);
-
-      // expectEvent.inLogs(insertContractLog, 'OrderCreated', {
-      //   id: new BN("1")
-      // });
-      // insertContract(
-      //   address factoryAddress,
-      //   bytes32 nameType,
-      //   bool enabled
-      // )
       const _countAfter = await deployedContractType._count.call();
       expect(_countAfter).to.be.bignumber.equal(new BN("1"));
     });
@@ -1166,57 +1069,8 @@ contract.only("DEV: Factories", (accounts) => {
         );
       });
 
-      // const insertContract = await deployedContractType.insertContract(
-      //   accounts[9],
-      //   web3.utils.asciiToHex("val"),
-      //   true,
-      //   { from: accounts[9] }
-      // );
-
-      // const { logs: insertContractLog } = insertContract;
-      // const eventCount = 0;
-      // assert.equal(insertContractLog.length, eventCount, `triggers must be ${eventCount} event`);
-
-      // expectEvent.inLogs(insertContractLog, 'OrderCreated', {
-      //   id: new BN("1")
-      // });
-      // insertContract(
-      //   address factoryAddress,
-      //   bytes32 nameType,
-      //   bool enabled
-      // )
       const _countAfter = await deployedContractType._count.call();
       expect(_countAfter).to.be.bignumber.equal(new BN("1"));
     });
   });
-
-  // it("should assert approveValue equal deployer's CollateralToken allowance count for PredictionCollateralization", async function () {
-  //   return expect(
-  //     await deployedCollateralToken.allowance(deployerAddress, deployedPredictionCollateralization.address)
-  //   ).to.be.bignumber.equal(approveValue);
-  // });
-
-  // it("should assert approveValue equal deployer's CollateralToken allowance count for PredictionPool", async function () {
-  //   return expect(
-  //     await deployedCollateralToken.allowance(deployerAddress, deployedPredictionPool.address)
-  //   ).to.be.bignumber.equal(approveValue);
-  // });
-
-  // it("should assert approveValue equal deployer's whiteToken allowance count for PredictionCollateralization", async function () {
-  //   return expect(
-  //     await deployedWhiteToken.allowance(deployerAddress, deployedPredictionCollateralization.address)
-  //   ).to.be.bignumber.equal(approveValue);
-  // });
-
-  // it("should assert approveValue equal deployer's blackToken allowance count for PredictionCollateralization", async function () {
-  //   return expect(
-  //     await deployedBlackToken.allowance(deployerAddress, deployedPredictionCollateralization.address)
-  //   ).to.be.bignumber.equal(approveValue);
-  // });
-
-  // it("should assert approveValue equal deployer's CollateralToken allowance count for PendingOrders", async function () {
-  //   return expect(
-  //     await deployedCollateralToken.allowance(deployerAddress, deployedPendingOrders.address)
-  //   ).to.be.bignumber.equal(approveValue);
-  // });
 });
