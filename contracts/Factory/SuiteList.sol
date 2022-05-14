@@ -107,6 +107,10 @@ contract SuiteList is Ownable {
         uint256 count
     ) external view returns (address[] memory) {
         require(count <= 30, "Count must be less than 30");
+        require(
+            startIndex < _suites.length,
+            "Start index must be less than suites length"
+        );
         uint256 border = startIndex.add(count);
 
         if (border > _suiteIndexesByUserMap[user].length) {
@@ -129,7 +133,10 @@ contract SuiteList is Ownable {
         returns (address[] memory)
     {
         require(count <= 30, "Count must be less than 30");
-        // uint256 border = startIndex + count;
+        require(
+            startIndex < _suites.length,
+            "Start index must be less than suites length"
+        );
         uint256 border = startIndex.add(count);
 
         if (border > _suites.length) {
