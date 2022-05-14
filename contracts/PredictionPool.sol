@@ -6,16 +6,19 @@ import "./Eventable.sol";
 import "./iPredictionCollateralization.sol";
 import "./DSMath.sol";
 import "./SafeMath.sol";
+import "./PoolToken.sol";
 
-contract PredictionPool is Eventable, DSMath {
+contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
     using SafeMath for uint256;
 
     bool public _eventStarted = false;
     bool public _poolShutdown = false;
+    bool public _onlyOrderer = false;
 
     address public _governanceAddress;
     address public _eventContractAddress;
     address public _governanceWalletAddress;
+    address public _ordererAddress;
 
     /*
     Founders wallets
@@ -26,6 +29,20 @@ contract PredictionPool is Eventable, DSMath {
     event BuyWhite(address user, uint256 amount, uint256 price);
     event SellBlack(address user, uint256 amount, uint256 price);
     event SellWhite(address user, uint256 amount, uint256 price);
+    event AddLiquidity(
+        address user,
+        uint256 whitePrice,
+        uint256 blackPrice,
+        uint256 bwAmount,
+        uint256 colaterallAmount
+    );
+    event WithdrawLiquidity(
+        address user,
+        uint256 whitePrice,
+        uint256 blackPrice,
+        uint256 bwAmount,
+        uint256 colaterallAmount
+    );
 
     IERC20 public _whiteToken;
     IERC20 public _blackToken;
@@ -113,12 +130,29 @@ contract PredictionPool is Eventable, DSMath {
 
         _whitePrice = whitePrice;
         _blackPrice = blackPrice;
+
+        _collateralToken.approve(
+            address(thisCollateralizationAddress),
+            type(uint256).max
+        );
+
+        _whiteToken.approve(
+            address(thisCollateralizationAddress),
+            type(uint256).max
+        );
+
+        _blackToken.approve(
+            address(thisCollateralizationAddress),
+            type(uint256).max
+        );
     }
 
     function init(
         address governanceWalletAddress,
         address eventContractAddress,
-        address controllerWalletAddress
+        address controllerWalletAddress,
+        address ordererAddress,
+        bool onlyOrderer
     ) external onlyGovernance {
         require(!inited, "Pool already initiated");
         require(
@@ -135,6 +169,9 @@ contract PredictionPool is Eventable, DSMath {
 
         _governanceWalletAddress = governanceWalletAddress;
         _controllerWalletAddress = controllerWalletAddress;
+        _onlyOrderer = onlyOrderer;
+        _ordererAddress = ordererAddress;
+
         inited = true;
     }
 
@@ -167,6 +204,13 @@ contract PredictionPool is Eventable, DSMath {
             _poolShutdown == false,
             "Pool is shutting down. This function does not work"
         );
+        _;
+    }
+
+    modifier onlyOrdererModifier() {
+        if (_onlyOrderer) {
+            require(_ordererAddress == msg.sender, "Incorrerct orderer");
+        }
         _;
     }
 
@@ -461,6 +505,7 @@ contract PredictionPool is Eventable, DSMath {
         external
         noEvent
         notPoolShutdown
+        onlyOrdererModifier
     {
         require(tokenId == 0 || tokenId == 1, "TokenId should be 0 or 1");
 
@@ -528,6 +573,7 @@ contract PredictionPool is Eventable, DSMath {
     function sellBlack(uint256 tokensAmount, uint256 minPrice)
         external
         noEvent
+        onlyOrdererModifier
     {
         require(
             _blackBought > tokensAmount.add(MIN_HOLD),
@@ -538,6 +584,7 @@ contract PredictionPool is Eventable, DSMath {
             uint256 collateralAmountWithFee,
             uint256 collateralToSend
         ) = genericSell(_blackToken, _blackPrice, minPrice, tokensAmount, true);
+
         _blackBought = _blackBought.sub(tokensAmount);
         _collateralForBlack = _collateralForBlack.sub(collateralAmountWithFee);
         _blackSoldThisCycle = _blackSoldThisCycle.add(tokensAmount);
@@ -547,6 +594,7 @@ contract PredictionPool is Eventable, DSMath {
     function sellWhite(uint256 tokensAmount, uint256 minPrice)
         external
         noEvent
+        onlyOrdererModifier
     {
         require(
             _whiteBought > tokensAmount.add(MIN_HOLD),
@@ -612,6 +660,7 @@ contract PredictionPool is Eventable, DSMath {
         external
         noEvent
         notPoolShutdown
+        onlyOrdererModifier
     {
         (uint256 tokenAmount, uint256 collateralToBuy) = genericBuy(
             maxPrice,
@@ -630,6 +679,7 @@ contract PredictionPool is Eventable, DSMath {
         external
         noEvent
         notPoolShutdown
+        onlyOrdererModifier
     {
         (uint256 tokenAmount, uint256 collateralToBuy) = genericBuy(
             maxPrice,
@@ -784,5 +834,117 @@ contract PredictionPool is Eventable, DSMath {
         _governanceFee = governanceFee;
         _controllerFee = controllerFee;
         _bwAdditionFee = bwAdditionFee;
+    }
+
+    function changeOrderer(address newOrderer) external onlyGovernance {
+        _ordererAddress = newOrderer;
+    }
+
+    function setOnlyOrderer(bool only) external onlyGovernance {
+        _onlyOrderer = only;
+    }
+
+    function addLiquidity(uint256 tokensAmount) public {
+        require(
+            _collateralToken.allowance(msg.sender, address(this)) >=
+                tokensAmount,
+            "Not enough tokens are delegated"
+        );
+        require(
+            _collateralToken.balanceOf(msg.sender) >= tokensAmount,
+            "Not enough tokens on the user balance"
+        );
+
+        uint256 wPrice = _whitePrice;
+        uint256 bPrice = _blackPrice;
+        uint256 sPrice = wPrice.add(bPrice);
+        uint256 bwAmount = wdiv(tokensAmount, sPrice);
+        uint256 forWhite = wmul(bwAmount, wPrice);
+        uint256 forBlack = wmul(bwAmount, bPrice);
+
+        _collateralForWhite = _collateralForWhite.add(forWhite);
+        _collateralForBlack = _collateralForBlack.add(forBlack);
+        _whiteBought = _whiteBought.add(bwAmount);
+        _blackBought = _blackBought.add(bwAmount);
+
+        _mint(msg.sender, bwAmount);
+
+        emit AddLiquidity(msg.sender, wPrice, bPrice, bwAmount, tokensAmount);
+
+        _collateralToken.transferFrom(msg.sender, address(this), tokensAmount);
+
+        /* solhint-disable prettier/prettier */
+        _thisCollateralization.buySeparately(
+            address(this),              // address destination,
+            bwAmount,                   // uint256 tokensAmount,
+            address(_whiteToken),       // address tokenAddress,
+            forWhite,                   // uint256 payment,
+            address(_collateralToken)   // address paymentTokenAddress
+        );
+
+        _thisCollateralization.buySeparately(
+            address(this),              // address destination,
+            bwAmount,                   // uint256 tokensAmount,
+            address(_blackToken),       // address tokenAddress,
+            forBlack,                   // uint256 payment,
+            address(_collateralToken)   // address paymentTokenAddress
+        );
+        /* solhint-enable prettier/prettier */
+    }
+
+    function withdrawLiquidity(uint256 poolTokensAmount) public {
+        require(
+            allowance[msg.sender][address(this)] >= poolTokensAmount,
+            "Not enough pool tokens are delegated"
+        );
+        require(
+            balanceOf[msg.sender] >= poolTokensAmount,
+            "Not enough tokens on the user balance"
+        );
+
+        uint256 wPrice = _whitePrice;
+        uint256 bPrice = _blackPrice;
+        uint256 sPrice = wPrice.add(bPrice);
+        uint256 forWhite = wmul(poolTokensAmount, wPrice);
+        uint256 forBlack = wmul(poolTokensAmount, bPrice);
+
+        _collateralForWhite = _collateralForWhite.sub(forWhite);
+        _collateralForBlack = _collateralForBlack.sub(forBlack);
+        _whiteBought = _whiteBought.sub(poolTokensAmount);
+        _blackBought = _blackBought.sub(poolTokensAmount);
+
+        uint256 collateralToSend = wmul(poolTokensAmount, sPrice);
+
+        require(
+            _collateralToken.balanceOf(address(_thisCollateralization)) >=
+                collateralToSend,
+            "Not enough collateral in the contract"
+        );
+
+        _burn(msg.sender, poolTokensAmount);
+
+        emit WithdrawLiquidity(
+            msg.sender,
+            wPrice,
+            bPrice,
+            poolTokensAmount,
+            collateralToSend
+        );
+
+        _thisCollateralization.buyBackSeparately(
+            address(this),
+            poolTokensAmount,
+            address(_whiteToken),
+            forWhite
+        );
+
+        _thisCollateralization.buyBackSeparately(
+            address(this),
+            poolTokensAmount,
+            address(_blackToken),
+            forBlack
+        );
+
+        _collateralToken.transfer(msg.sender, collateralToSend);
     }
 }
