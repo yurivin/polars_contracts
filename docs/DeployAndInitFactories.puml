@@ -1,0 +1,56 @@
+@startuml
+
+box "FrontEnd Service" #LightBlue
+actor "Admin user" as governance
+end box
+
+box "BackEnd" #LightYellow
+participant WhiteList as wl
+participant "SuiteList" as sl
+participant "SuiteFactory" as sf
+end box
+
+box "Factories" #LightGreen
+participant "PredictionCollateralFactory" as pcf
+participant "PredictionPoolProxy" as ppp
+participant "PredictionPoolFactory" as ppf
+participant "EventLifeCycleFactory" as elcf
+participant "PendingOrdersFactory" as pof
+end box
+
+governance -[#blue]> wl: deploy()
+governance -[#blue]> sf: deploy(\n\ttokenAddress,\n\tcommissionAmount\n)
+governance -[#blue]> sl: deploy(suiteFactoryAddress)
+governance -[#blue]> sf: setSuiteList(suiteListAddress)
+governance -[#blue]> pcf: deploy()
+governance -[#blue]> ppp: deploy()
+governance -[#blue]> ppf: deploy(\n\tpredictionPoolProxyAddress\n)
+governance -[#blue]> elcf: deploy()
+governance -[#blue]> pof: deploy()
+
+governance -[#blue]> sf: setSuiteList(suiteListAddress)
+governance -[#blue]> sl: setSuiteFactory(\n\tsuiteFactoryAddress)
+governance -[#blue]> sl: setWhiteList(whiteListAddress)
+
+governance -[#blue]> wl: add(0, pcfAddress)
+note right
+// 0 - PREDICTION_COLLATERAL
+predictionCollateralFactoryAddress
+end note
+governance -[#blue]> wl: add(1, ppfAddress)
+note right
+// 1 - PREDICTION_POOL
+predictionPoolFactoryAddress
+end note
+governance -[#blue]> wl: add(2, elcfAddress)
+note right
+// 2 - EVENT_LIFE_CYCLE
+eventLifeCycleFactoryAddress
+end note
+governance -[#blue]> wl: add(3, pofAddress)
+note right
+// 3 - PENDING_ORDERS
+pendingOrdersFactoryAddress
+end note
+
+@enduml

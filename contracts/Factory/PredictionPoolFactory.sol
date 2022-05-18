@@ -5,7 +5,7 @@ pragma solidity ^0.7.6;
 import "./ISuite.sol";
 import "./ISuiteFactory.sol";
 import "./AbstractFactory.sol";
-import "../PredictionPool.sol";
+import "./IPredictionPoolProxy.sol";
 import "../IPredictionPool.sol";
 import "../iPredictionCollateralization.sol";
 
@@ -16,6 +16,15 @@ contract PredictionPoolFactory is AbstractFactory {
      */
     uint8 public constant FACTORY_CONTRACT_TYPE = 1;
     string public constant FACTORY_CONTRACT_NAME = "PREDICTION_POOL";
+    address public _proxyAddress;
+
+    constructor(address proxyAddress) {
+        _proxyAddress = proxyAddress;
+    }
+
+    function changeProxyAddress(address proxyAddress) external {
+        _proxyAddress = proxyAddress;
+    }
 
     function createContract(
         address suiteAddress,
@@ -29,36 +38,19 @@ contract PredictionPoolFactory is AbstractFactory {
         ISuite suite = ISuite(suiteAddress);
         require(suite.owner() == msg.sender, "Caller should be suite owner");
 
-        address predictionCollateralAddress = suite.contracts(
-            0 // id for PREDICTION_COLLATERAL
+        address pp = IPredictionPoolProxy(_proxyAddress).createPredictionPool(
+            suiteAddress,
+            whitePrice,
+            blackPrice
         );
 
-        require(
-            predictionCollateralAddress != address(0),
-            "You must create Prediction Collateralization before PredictionPool contract"
-        );
-        iPredictionCollateralization ipc = iPredictionCollateralization(
-            predictionCollateralAddress
-        );
+        suite.addContract(FACTORY_CONTRACT_TYPE, pp);
 
-        PredictionPool pp = new PredictionPool(
-            /* solhint-disable prettier/prettier */
-            predictionCollateralAddress,        // address thisCollateralizationAddress,
-            suite._collateralTokenAddress(),    // address collateralTokenAddress,
-            ipc.whiteToken(),                   // address whiteTokenAddress,
-            ipc.blackToken(),                   // address blackTokenAddress,
-            whitePrice,                         // uint256 whitePrice,
-            blackPrice                          // uint256 blackPrice
-            /* solhint-enable prettier/prettier */
-        );
-
-        suite.addContract(FACTORY_CONTRACT_TYPE, address(pp));
-
-        emit ContractCreated(suiteAddress, address(pp), FACTORY_CONTRACT_NAME);
+        emit ContractCreated(suiteAddress, pp, FACTORY_CONTRACT_NAME);
         return true;
     }
 
-    function initPredictionPool(address suiteAddress)
+    function initPredictionPool(address suiteAddress, uint256 fee)
         public
         returns (bool success)
     {
@@ -90,9 +82,25 @@ contract PredictionPoolFactory is AbstractFactory {
 
         address globalOwner = isf.owner();
         ipp.init(
-            globalOwner, // governanceWalletAddress,
+            /* solhint-disable prettier/prettier */
+            globalOwner,            // governanceWalletAddress,
             eventLifeCycleAddress,
-            suiteOwner // controllerWalletAddress
+            suiteOwner,             // controllerWalletAddress
+            suiteOwner,             // ordererAddress
+            false                   // orderer enabled
+            /* solhint-enable prettier/prettier */
+        );
+
+        // 0.2% max
+        require(fee <= 0.002 * 1e18, "Too high total fee");
+
+        ipp.changeFees(
+            /* solhint-disable prettier/prettier */
+            fee,            // uint256 fee,
+            0.3  * 1e18,    // uint256 governanceFee,
+            0.65 * 1e18,    // uint256 controllerFee,
+            0.05 * 1e18     // uint256 bwAdditionFee
+            /* solhint-enable prettier/prettier */
         );
 
         ipp.changeGovernanceAddress(globalOwner);

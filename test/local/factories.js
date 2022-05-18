@@ -13,13 +13,13 @@ const expect = require('chai').expect;
 const { deployContracts, ntob, BONE } = require('./../utils.js');
 
 const TokenTemplate = artifacts.require('TokenTemplate');
-const ContractType = artifacts.require('ContractType');
 const WhiteList = artifacts.require('WhiteList');
 const SuiteFactory = artifacts.require('SuiteFactory');
 const Suite = artifacts.require('Suite');
 const SuiteList = artifacts.require('SuiteList');
 const PredictionCollateralFactory = artifacts.require('PredictionCollateralFactory');
 const PredictionPoolFactory = artifacts.require('PredictionPoolFactory');
+const PredictionPoolProxy = artifacts.require('PredictionPoolProxy');
 const EventLifeCycleFactory = artifacts.require('EventLifeCycleFactory');
 const PendingOrdersFactory = artifacts.require('PendingOrdersFactory');
 const PredictionCollateralization = artifacts.require('PredictionCollateralization');
@@ -42,11 +42,11 @@ contract("DEV: Factories", (accounts) => {
 
   let deployedPolToken;
   let deployedCollateralToken;
-  let deployedContractType;
   let deployedWhiteList;
   let deployedSuiteFactory;
   let deployedSuiteList;
   let deployedPredictionCollateralFactory;
+  let deployedPredictionPoolProxy;
   let deployedPredictionPoolFactory;
   let deployedEventLifeCycleFactory;
   let deployedPendingOrdersFactory;
@@ -77,10 +77,6 @@ contract("DEV: Factories", (accounts) => {
       { from: deployerAddress }
     );
 
-    deployedContractType = await ContractType.new(
-      { from: deployerAddress }
-    );
-
     deployedWhiteList = await WhiteList.new(
       { from: deployerAddress }
     );
@@ -102,7 +98,12 @@ contract("DEV: Factories", (accounts) => {
       { from: deployerAddress }
     );
 
+    deployedPredictionPoolProxy = await PredictionPoolProxy.new(
+      { from: deployerAddress }
+    );
+
     deployedPredictionPoolFactory = await PredictionPoolFactory.new(
+      deployedPredictionPoolProxy.address,
       { from: deployerAddress }
     );
 
@@ -397,6 +398,8 @@ contract("DEV: Factories", (accounts) => {
         ), "You must create Prediction Pool before EventLifeCycle contract"
       );
 
+      await deployedPredictionPoolFactory.changeProxyAddress(deployedPredictionPoolProxy.address)
+
       await expectRevert(
         deployedPredictionPoolFactory.createContract(
           _suites0,                                       // address suiteAddress,
@@ -543,6 +546,8 @@ contract("DEV: Factories", (accounts) => {
         ), "Caller should be suite owner"
       );
 
+      await deployedPredictionPoolFactory.changeProxyAddress(deployedPredictionPoolProxy.address)
+
       await expectRevert(
         deployedPredictionPoolFactory.createContract(
           _suites0,                                     // address suiteAddress,
@@ -616,7 +621,7 @@ contract("DEV: Factories", (accounts) => {
 
       await expectRevert(
         deployedPredictionPool.init(
-          suiteOwner, suiteOwner, suiteOwner
+          suiteOwner, suiteOwner, suiteOwner, suiteOwner, false
         ), "CALLER SHOULD BE GOVERNANCE"
       );
 
@@ -677,8 +682,17 @@ contract("DEV: Factories", (accounts) => {
 
       await expectRevert(
         deployedPredictionPoolFactory.initPredictionPool(
-          _suites0,                           // address suiteAddress
+          _suites0,                           // address suiteAddress,
+          ntob(0.002)
         ), "Caller should be suite owner"
+      );
+
+      await expectRevert(
+        deployedPredictionPoolFactory.initPredictionPool(
+          _suites0,                           // address suiteAddress,
+          ntob(0.02),
+        { from: suiteOwner }
+        ), "Too high total fee"
       );
 
       if (debug) console.log("deployerAddress     :", deployerAddress);
@@ -690,6 +704,7 @@ contract("DEV: Factories", (accounts) => {
 
       await deployedPredictionPoolFactory.initPredictionPool(
         _suites0,                             // address suiteAddress
+        ntob(0.002),
         { from: suiteOwner }
       )
 
@@ -700,6 +715,7 @@ contract("DEV: Factories", (accounts) => {
       if (debug) console.log("elc address         :", (await deployedPredictionPool._eventContractAddress()));
       if (debug) console.log("pp gov              :", (await deployedPredictionPool._governanceAddress()));
 
+      expect(await deployedPredictionPool.FEE()).to.be.bignumber.equal(ntob(0.002));
       expect(await deployedPredictionPool.inited()).to.be.equals(true);
 
       assert.equal(deployedEventLifeCycle.address, await deployedPredictionPool._eventContractAddress());
@@ -815,9 +831,11 @@ contract("DEV: Factories", (accounts) => {
       );
       const { logs: buyBlackLog } = buyBlack;
 
-      assert.equal(buyBlackLog.length, eventCount, `triggers must be ${eventCount} event`);
+      const eventCountForSellAndBuy = 4;
 
-      const blackBought = new BN("9970000000000000000");
+      assert.equal(buyBlackLog.length, eventCountForSellAndBuy, `triggers must be ${eventCountForSellAndBuy} event`);
+
+      const blackBought = new BN("9980000000000000000");
 
       expectEvent.inLogs(buyBlackLog, 'BuyBlack', {
         user: someUser3,
@@ -882,9 +900,9 @@ contract("DEV: Factories", (accounts) => {
       const { logs: buyWhiteLog } = buyWhite;
 
 
-      assert.equal(buyWhiteLog.length, eventCount, `triggers must be ${eventCount} event`);
+      assert.equal(buyWhiteLog.length, eventCountForSellAndBuy, `triggers must be ${eventCountForSellAndBuy} event`);
 
-      const whiteBought = new BN("9970000000000000000");
+      const whiteBought = new BN("9980000000000000000");
 
       expectEvent.inLogs(buyWhiteLog, 'BuyWhite', {
         user: someUser3,

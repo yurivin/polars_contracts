@@ -31,6 +31,15 @@ interface IPredictionPool {
     function init(
         address governanceWalletAddress,
         address eventContractAddress,
-        address controllerWalletAddress
+        address controllerWalletAddress,
+        address ordererAddress,
+        bool onlyOrderer
+    ) external;
+
+    function changeFees(
+        uint256 fee,
+        uint256 governanceFee,
+        uint256 controllerFee,
+        uint256 bwAdditionFee
     ) external;
 }

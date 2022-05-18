@@ -165,10 +165,10 @@ module.exports = async(deployer, network, accounts) => {
          * deployedSuiteFactory.setSuiteList(deployedSuiteList.address)
          * deployedSuiteList.setSuiteFactory(deployedSuiteFactory.address)
          * deployedSuiteList.setWhiteList(deployedWhiteList.address)
-         * deployedWhiteList.add(keccak256("PREDICTION_COLLATERAL"), deployedPredictionCollateralFactory.address)
-         * deployedWhiteList.add(keccak256("PREDICTION_POOL"), deployedPredictionPoolFactory.address)
-         * deployedWhiteList.add(keccak256("EVENT_LIFE_CYCLE"), deployedEventLifeCycleFactory.address)
-         * deployedWhiteList.add(keccak256("PENDING_ORDERS"), deployedPendingOrdersFactory.address)
+         * deployedWhiteList.add(0, deployedPredictionCollateralFactory.address)    // 0 - PREDICTION_COLLATERAL
+         * deployedWhiteList.add(1, deployedPredictionPoolFactory.address)          // 1 - PREDICTION_POOL
+         * deployedWhiteList.add(2, deployedEventLifeCycleFactory.address)          // 2 - EVENT_LIFE_CYCLE
+         * deployedWhiteList.add(3, deployedPendingOrdersFactory.address)           // 3 - PENDING_ORDERS
         /* Need manual init */
 
     } catch(e) {
