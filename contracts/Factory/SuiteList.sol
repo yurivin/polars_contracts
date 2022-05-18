@@ -67,7 +67,7 @@ contract SuiteList is Ownable {
 
         uint256 index = _suiteIndexes[suiteAddress];
         delete _suiteIndexes[suiteAddress];
-        delete _suiteOwners[suiteAddress];
+        // delete _suiteOwners[suiteAddress];
 
         if (index >= _suites.length) {
             return;
@@ -76,7 +76,7 @@ contract SuiteList is Ownable {
         uint256 lastIndex = _suites.length - 1;
 
         if (index != lastIndex) {
-            delete _suites[index];
+            // delete _suites[index];
             _suites[index] = _suites[lastIndex];
         }
 
