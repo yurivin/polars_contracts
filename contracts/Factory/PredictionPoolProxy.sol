@@ -1,18 +1,20 @@
 pragma solidity ^0.7.4;
 // "SPDX-License-Identifier: MIT"
 
+import "../Common/Ownable.sol";
 import "./ISuite.sol";
 import "../PredictionPool.sol";
 
-contract PredictionPoolProxy {
+contract PredictionPoolProxy is Ownable {
+    address public _deployer;
+
     function createPredictionPool(
         address suiteAddress,
         uint256 whitePrice,
         uint256 blackPrice
     ) external returns (address) {
-    // ) external onlyGovernance {
+        require(_deployer == msg.sender, "Caller should be allowed deployer");
         ISuite suite = ISuite(suiteAddress);
-        // require(suite.owner() == msg.sender, "Caller should be suite owner");
 
         address predictionCollateralAddress = suite.contracts(
             0 // id for PREDICTION_COLLATERAL
@@ -37,5 +39,9 @@ contract PredictionPoolProxy {
         );
         pp.changeGovernanceAddress(msg.sender);
         return address(pp);
+    }
+
+    function setDeployer(address deployer) external onlyOwner {
+        _deployer = deployer;
     }
 }

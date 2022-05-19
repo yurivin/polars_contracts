@@ -406,6 +406,17 @@ contract("DEV: Factories", (accounts) => {
           new BN("500000000000000000"),                   // uint256 whitePrice
           new BN("500000000000000000"),                   // uint256 blackPrice
           { from: someUser1 }
+        ), "Caller should be allowed deployer"
+      );
+
+      await deployedPredictionPoolProxy.setDeployer(deployedPredictionPoolFactory.address);
+
+      await expectRevert(
+        deployedPredictionPoolFactory.createContract(
+          _suites0,                                       // address suiteAddress,
+          new BN("500000000000000000"),                   // uint256 whitePrice
+          new BN("500000000000000000"),                   // uint256 blackPrice
+          { from: someUser1 }
         ), "You must create Prediction Collateralization before PredictionPool contract"
       );
 
@@ -546,7 +557,18 @@ contract("DEV: Factories", (accounts) => {
         ), "Caller should be suite owner"
       );
 
-      await deployedPredictionPoolFactory.changeProxyAddress(deployedPredictionPoolProxy.address)
+      await deployedPredictionPoolFactory.changeProxyAddress(deployedPredictionPoolProxy.address);
+
+      await expectRevert(
+        deployedPredictionPoolFactory.createContract(
+          _suites0,                                     // address suiteAddress,
+          new BN("500000000000000000"),                 // uint256 whitePrice
+          new BN("500000000000000000"),                 // uint256 blackPrice
+          { from: someUser1 }
+        ), "Caller should be allowed deployer"
+      );
+
+      await deployedPredictionPoolProxy.setDeployer(deployedPredictionPoolFactory.address);
 
       await expectRevert(
         deployedPredictionPoolFactory.createContract(
@@ -1042,53 +1064,6 @@ contract("DEV: Factories", (accounts) => {
       const balance = await deployedPolToken.balanceOf(deployerAddress);
       if (debug) console.log("balance             :", balance.toString(10));
       expect(balance).to.be.bignumber.equal(ntob(polTokenSupply));
-    });
-
-    it.skip('should assert ContractType count equal 0 on start', async () => {
-      const _countBefore = await deployedContractType._count.call();
-      expect(_countBefore).to.be.bignumber.equal(new BN("0"));
-
-      await [
-        "PredictionCollateralization",
-        "PredictionPool"
-      ].forEach(async (contract) => {
-        const insertContract = await deployedContractType.insertContract(
-          accounts[9],
-          web3.utils.asciiToHex(contract),
-          true,
-          { from: accounts[9] }
-        );
-      });
-
-      const _countAfter = await deployedContractType._count.call();
-      expect(_countAfter).to.be.bignumber.equal(new BN("1"));
-    });
-  });
-
-  describe.skip("ContractType", () => {
-    it('should assert ContractType count equal 0 on start', async () => {
-      const _count = await deployedContractType._count.call();
-      expect(_count).to.be.bignumber.equal(new BN("0"));
-    });
-
-    it('should assert ContractType count equal 0 on start', async () => {
-      const _countBefore = await deployedContractType._count.call();
-      expect(_countBefore).to.be.bignumber.equal(new BN("0"));
-
-      await [
-        "PredictionCollateralization",
-        "PredictionPool"
-      ].forEach(async (contract) => {
-        const insertContract = await deployedContractType.insertContract(
-          accounts[9],
-          web3.utils.asciiToHex(contract),
-          true,
-          { from: accounts[9] }
-        );
-      });
-
-      const _countAfter = await deployedContractType._count.call();
-      expect(_countAfter).to.be.bignumber.equal(new BN("1"));
     });
   });
 });

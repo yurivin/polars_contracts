@@ -162,7 +162,7 @@ contract SuiteList is Ownable {
 
     function changeSuiteOwner(address suiteAddress, address candidateAddress)
         external
-        // onlySuiteOwner(suiteAddress)
+        onlyOwner
     {
         _suiteOwners[suiteAddress] = candidateAddress;
     }
