@@ -1,0 +1,74 @@
+@startuml
+
+box "FrontEnd Service" #LightBlue
+actor "Any user" as user
+actor "Admin user" as governance
+end box
+
+box "BackEnd" #LightYellow
+participant "SuiteList" as sl
+participant "SuiteFactory" as sf
+participant "Suite" as suite
+participant WhiteList as wl
+end box
+
+
+box "Factories" #LightGreen
+participant "PredictionCollateralFactory" as pcf
+participant "PredictionPoolProxy" as ppp
+participant "PredictionPoolFactory" as ppf
+participant "EventLifeCycleFactory" as elcf
+participant "PendingOrdersFactory" as pof
+end box
+
+
+group Create Suite
+user -[#blue]> sf: deploySuite(\n\tsuiteName,\n\tcollateralTokenAddress,\n\twhiteList\n)
+sf -[#purple]> sf: create SuiteInstance
+sf -[#purple]> sl: addSuite(\nSuiteInstanceAddress,\nmsg.sender)
+sf -[#purple]> suite: transferOwnership(msg.sender)
+sf -[#green]> user: SuiteInstanceAddress
+end
+group Deploy Suite Contracts
+user -[#blue]> sl: getOwnSuites()
+sl -[#blue]> user: SuitesAddresses[]
+group Prediction Collateral
+user -[#blue]> wl: getFactoryAddressByType(0)
+wl -[#green]> user: predictionCollateralFactoryAddress
+user -[#blue]> pcf: createContract(\n\tsuitesAddress,\n\twhiteName,\n\twhiteSymbol,\n\tblackName,\n\tblackSymbol\n)
+pcf -[#green]> pcf: PredictionCollateral\n.new(parameters)
+pcf -[#purple]> suite: addContract(0,\n  predictionCollateralAddress\n)
+end
+group Prediction Pool
+user -[#blue]> wl: getFactoryAddressByType(1)
+wl -[#green]> user: predictionPoolFactoryAddress
+user -[#blue]> ppf: createContract(\n\tsuiteAddress,\n\twhitePrice,\n\tblackPrice\n)
+ppf -[#green]> ppp: createPredictionPool(\n\tsuiteAddress,\n\twhitePrice,\n\tblackPrice\n)
+ppp -[#green]> ppp: PredictionPool\n.new(parameters)
+ppp -[#green]> ppf: predictionPoolAddress
+ppf -[#purple]> suite: addContract(1, predictionPoolAddress)
+end
+
+
+user -[#blue]> pcf: changePoolAddress(suiteAddress)
+
+user -[#blue]> ppf: initPredictionPool(suiteAddress, fee)
+
+group Event Life Cycle
+user -[#blue]> wl: getFactoryAddressByType(2)
+wl -[#green]> user: eventLifeCycleFactoryAddress
+user -[#blue]> elcf: createContract(\n\tsuiteAddress,\n\toracleAddress\n)
+elcf -[#green]> elcf: EventLifeCycle\n.new(parameters)
+elcf -[#purple]> suite: addContract(2, eventLifeCycleAddress)
+end
+
+group Pending Orders
+user -[#blue]> wl: getFactoryAddressByType(3)
+wl -[#green]> user: pendingOrdersFactoryAddress
+user -[#blue]> pof: createContract(\n\tsuiteAddress\n)
+pof -[#green]> pof: PendingOrders\n.new(parameters)
+pof -[#purple]> suite: addContract(3, pendingOrdersAddress)
+end
+
+end
+@enduml

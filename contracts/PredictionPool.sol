@@ -153,7 +153,7 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         address controllerWalletAddress,
         address ordererAddress,
         bool onlyOrderer
-    ) external {
+    ) external onlyGovernance {
         require(!inited, "Pool already initiated");
         require(
             controllerWalletAddress != address(0),
