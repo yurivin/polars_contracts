@@ -1,107 +1,74 @@
 @startuml
 
-actor Owner as owner #blue
-actor EventRunner #red
-actor "Any user" as user
-participant "Oracle Event\nManager" as oem #LightBlue
-
 box "FrontEnd Service" #LightBlue
-participant PendingOrders
-participant OracleSwapEventManager
-participant EventLifeCycle
-participant PredictionPool
+actor "Any user" as user
+actor "Admin user" as governance
 end box
 
 box "BackEnd" #LightYellow
-participant DexPair
-end box
-
-group One Event Iteration
-SomeUser -[#red]> PendingOrders: createOrder()
-activate SomeUser
-== Initialization ==
-EventRunner -[#blue]> OracleSwapEventManager: prepareEvent()
-activate EventRunner
-OracleSwapEventManager -> EventLifeCycle: addNewEvent()
-...30 minutes later...
-== Start Event ==
-EventRunner -[#blue]> OracleSwapEventManager: addAndStartEvent()
-
-OracleSwapEventManager -[#purple]> DexPair: getReserves()
-DexPair --[#purple]> OracleSwapEventManager: (_reserve0, _reserve1)
-OracleSwapEventManager --[#purple]> OracleSwapEventManager: calculatePrice()
-OracleSwapEventManager -> EventLifeCycle: startEvent()
-EventLifeCycle -> PendingOrders: startEvent()
-
-EventLifeCycle -> PredictionPool: submitEventStarted()
-
-...30 minutes later...
-== Finalize Event ==
-
-
-EventRunner -[#blue]> OracleSwapEventManager: finalizeEvent()
-OracleSwapEventManager -[#purple]> DexPair: getReserves()
-DexPair --[#purple]> OracleSwapEventManager: (_reserve0, _reserve1)
-OracleSwapEventManager --[#purple]> OracleSwapEventManager: calculatePrice()
-OracleSwapEventManager -> OracleSwapEventManager: calculateEventResult()
-
-
-...1 block later...
-EventRunner -[#blue]> OracleSwapEventManager: finalizeEvent()
-OracleSwapEventManager -[#purple]> DexPair: getReserves()
-DexPair --[#purple]> OracleSwapEventManager: (_reserve0, _reserve1)
-OracleSwapEventManager --[#purple]> OracleSwapEventManager: calculatePrice()
-deactivate EventRunner
-OracleSwapEventManager -> OracleSwapEventManager: calculateEventResult()
-OracleSwapEventManager -> EventLifeCycle: endEvent(int8 _result)
-EventLifeCycle -> PredictionPool: submitEventResult(_result)
-EventLifeCycle -> PendingOrders: eventEnd(eventId)
-
-/' OracleSwapEventManager -> ChainlinkAPIConsumer: requestPriceData("BNBUSDT")
-ChainlinkAPIConsumer --> NODE: Chainlink.Request
-NODE --> ChainlinkAPIConsumer: fulfill(_lastPrice)
-OracleSwapEventManager -> ChainlinkAPIConsumer: latestRoundData() '/
-
-
-SomeUser -[#red]> PendingOrders: withdrawCollateral()
-deactivate SomeUser
-end
-/' Alice -> Bob: Another authentication Request
-Alice <-- Bob: another authentication Response '/
-
-
-/'actor Owner as owner #blue
-actor "Any user" as user
-
-actor EventRunner #red
-'/
-
-box "FrontEnd Service" #LightBlue
-/'participant "FrontEnd Service" as fes'/
-actor "Any user" as user
-
-end box
-
-box "BackEnd" #LightYellow
+participant "SuiteList" as sl
 participant "SuiteFactory" as sf
 participant "Suite" as suite
 participant WhiteList as wl
-/'participant "Oracle Event\nManager" as oem'/
-participant "SuiteList" as sl
-participant ContractType
 end box
 
+
+box "Factories" #LightGreen
+participant "PredictionCollateralFactory" as pcf
+participant "PredictionPoolProxy" as ppp
+participant "PredictionPoolFactory" as ppf
+participant "EventLifeCycleFactory" as elcf
+participant "PendingOrdersFactory" as pof
+end box
+
+
 group Create Suite
-user -[#red]> sf: createSuite()
-sf -[#red]> suite: createSuite()
-suite -[#blue]> user: SuiteInstanceAddress
+user -[#blue]> sf: deploySuite(\n\tsuiteName,\n\tcollateralTokenAddress,\n\twhiteList\n)
+sf -[#purple]> sf: create SuiteInstance
+sf -[#purple]> sl: addSuite(\nSuiteInstanceAddress,\nmsg.sender)
+sf -[#purple]> suite: transferOwnership(msg.sender)
+sf -[#green]> user: SuiteInstanceAddress
 end
-group Deploy Suite
-user -[#red]> wl: getContractType(0)
-wl -[#blue]> user: true
-user -[#blue]> suite: SuiteInstanceAddress.addContract(0)
-user -[#red]> wl: getContractType(1)
-wl -[#blue]> user: true
-user -[#blue]> suite: SuiteInstanceAddress.addContract(1)
+group Deploy Suite Contracts
+user -[#blue]> sl: getOwnSuites()
+sl -[#blue]> user: SuitesAddresses[]
+group Prediction Collateral
+user -[#blue]> wl: getFactoryAddressByType(0)
+wl -[#green]> user: predictionCollateralFactoryAddress
+user -[#blue]> pcf: createContract(\n\tsuitesAddress,\n\twhiteName,\n\twhiteSymbol,\n\tblackName,\n\tblackSymbol\n)
+pcf -[#green]> pcf: PredictionCollateral\n.new(parameters)
+pcf -[#purple]> suite: addContract(0,\n  predictionCollateralAddress\n)
+end
+group Prediction Pool
+user -[#blue]> wl: getFactoryAddressByType(1)
+wl -[#green]> user: predictionPoolFactoryAddress
+user -[#blue]> ppf: createContract(\n\tsuiteAddress,\n\twhitePrice,\n\tblackPrice\n)
+ppf -[#green]> ppp: createPredictionPool(\n\tsuiteAddress,\n\twhitePrice,\n\tblackPrice\n)
+ppp -[#green]> ppp: PredictionPool\n.new(parameters)
+ppp -[#green]> ppf: predictionPoolAddress
+ppf -[#purple]> suite: addContract(1, predictionPoolAddress)
+end
+
+
+user -[#blue]> pcf: changePoolAddress(suiteAddress)
+
+user -[#blue]> ppf: initPredictionPool(suiteAddress, fee)
+
+group Event Life Cycle
+user -[#blue]> wl: getFactoryAddressByType(2)
+wl -[#green]> user: eventLifeCycleFactoryAddress
+user -[#blue]> elcf: createContract(\n\tsuiteAddress,\n\toracleAddress\n)
+elcf -[#green]> elcf: EventLifeCycle\n.new(parameters)
+elcf -[#purple]> suite: addContract(2, eventLifeCycleAddress)
+end
+
+group Pending Orders
+user -[#blue]> wl: getFactoryAddressByType(3)
+wl -[#green]> user: pendingOrdersFactoryAddress
+user -[#blue]> pof: createContract(\n\tsuiteAddress\n)
+pof -[#green]> pof: PendingOrders\n.new(parameters)
+pof -[#purple]> suite: addContract(3, pendingOrdersAddress)
+end
+
 end
 @enduml
