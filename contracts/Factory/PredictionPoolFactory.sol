@@ -91,15 +91,15 @@ contract PredictionPoolFactory is AbstractFactory {
             /* solhint-enable prettier/prettier */
         );
 
-        // 0.2% max
-        require(fee <= 0.002 * 1e18, "Too high total fee");
+        // 0.1% min - 10% max (by Pool require)
+        require(fee > 0.001 * 1e18, "Too low total fee");
 
         ipp.changeFees(
             /* solhint-disable prettier/prettier */
             fee,            // uint256 fee,
             0.3  * 1e18,    // uint256 governanceFee,
-            0.65 * 1e18,    // uint256 controllerFee,
-            0.05 * 1e18     // uint256 bwAdditionFee
+            0.35 * 1e18,    // uint256 controllerFee,
+            0.35 * 1e18     // uint256 bwAdditionFee
             /* solhint-enable prettier/prettier */
         );
 

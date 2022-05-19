@@ -712,7 +712,15 @@ contract("DEV: Factories", (accounts) => {
       await expectRevert(
         deployedPredictionPoolFactory.initPredictionPool(
           _suites0,                           // address suiteAddress,
-          ntob(0.02),
+          ntob(0.0009),
+        { from: suiteOwner }
+        ), "Too low total fee"
+      );
+
+      await expectRevert(
+        deployedPredictionPoolFactory.initPredictionPool(
+          _suites0,                           // address suiteAddress,
+          ntob(0.11),
         { from: suiteOwner }
         ), "Too high total fee"
       );
