@@ -18,12 +18,32 @@ contract PredictionPoolFactory is AbstractFactory {
     string public constant FACTORY_CONTRACT_NAME = "PREDICTION_POOL";
     address public _proxyAddress;
 
+    uint256 public _governanceFee = 0.30 * 1e18;
+    uint256 public _controllerFee = 0.35 * 1e18;
+    uint256 public _bwAdditionFee = 0.35 * 1e18;
+
+    modifier onlyGovernance() {
+        address governance = IPredictionPoolProxy(_proxyAddress).owner();
+        require(governance == msg.sender, "Caller should be governance");
+        _;
+    }
+
     constructor(address proxyAddress) {
         _proxyAddress = proxyAddress;
     }
 
-    function changeProxyAddress(address proxyAddress) external {
+    function changeProxyAddress(address proxyAddress) external onlyGovernance {
         _proxyAddress = proxyAddress;
+    }
+
+    function changeFeeProportion(
+        uint256 governanceFee,
+        uint256 controllerFee,
+        uint256 bwAdditionFee
+    ) external onlyGovernance {
+        _governanceFee = governanceFee;
+        _controllerFee = controllerFee;
+        _bwAdditionFee = bwAdditionFee;
     }
 
     function createContract(
@@ -94,14 +114,7 @@ contract PredictionPoolFactory is AbstractFactory {
         // 0.1% min - 10% max (by Pool require)
         require(fee > 0.001 * 1e18, "Too low total fee");
 
-        ipp.changeFees(
-            /* solhint-disable prettier/prettier */
-            fee,            // uint256 fee,
-            0.3  * 1e18,    // uint256 governanceFee,
-            0.35 * 1e18,    // uint256 controllerFee,
-            0.35 * 1e18     // uint256 bwAdditionFee
-            /* solhint-enable prettier/prettier */
-        );
+        ipp.changeFees(fee, _governanceFee, _controllerFee, _bwAdditionFee);
 
         ipp.changeGovernanceAddress(globalOwner);
         return true;
