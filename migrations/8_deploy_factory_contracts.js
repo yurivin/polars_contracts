@@ -7,6 +7,7 @@ const WhiteList = artifacts.require("WhiteList");
 const SuiteFactory = artifacts.require("SuiteFactory");
 const SuiteList = artifacts.require("SuiteList");
 const PredictionCollateralFactory = artifacts.require("PredictionCollateralFactory");
+const PredictionPoolProxy = artifacts.require("PredictionPoolProxy");
 const PredictionPoolFactory = artifacts.require("PredictionPoolFactory");
 const EventLifeCycleFactory = artifacts.require("EventLifeCycleFactory");
 const PendingOrdersFactory = artifacts.require("PendingOrdersFactory");
@@ -123,9 +124,22 @@ module.exports = async(deployer, network, accounts) => {
         }
 
 
+        if (!contractsAddresses.predictionPoolProxy || (await web3.eth.getCode(contractsAddresses.predictionPoolProxy) === "0x")) {
+
+            await deployer.deploy(PredictionPoolProxy);
+
+            deployedPredictionPoolProxy = await PredictionPoolProxy.deployed();
+
+            contractsAddresses.predictionPoolProxy = deployedPredictionPoolProxy.address;
+            fs.writeFileSync(deployFactoryContractsFileName, JSON.stringify(contractsAddresses, null, 2));
+        } else {
+            deployedPredictionPoolProxy = await PredictionPoolProxy.at(contractsAddresses.predictionPoolProxy);
+        }
+
+
         if (!contractsAddresses.predictionPoolFactory || (await web3.eth.getCode(contractsAddresses.predictionPoolFactory) === "0x")) {
 
-            await deployer.deploy(PredictionPoolFactory);
+            await deployer.deploy(PredictionPoolFactory, deployedPredictionPoolProxy.address);
 
             deployedPredictionPoolFactory = await PredictionPoolFactory.deployed();
 
@@ -169,7 +183,9 @@ module.exports = async(deployer, network, accounts) => {
          * deployedWhiteList.add(1, deployedPredictionPoolFactory.address)          // 1 - PREDICTION_POOL
          * deployedWhiteList.add(2, deployedEventLifeCycleFactory.address)          // 2 - EVENT_LIFE_CYCLE
          * deployedWhiteList.add(3, deployedPendingOrdersFactory.address)           // 3 - PENDING_ORDERS
+         * deployedPredictionPoolProxy.setDeployer(contractsAddresses.predictionPoolFactory)
         /* Need manual init */
+
 
     } catch(e) {
         console.log('\x1b[33m%s\x1b[33m\x1b[0m',

@@ -25,10 +25,12 @@ const {
   ETHER_SCAN_API_KEY,
   BSC_SCAN_API_KEY,
   HECO_SCAN_API_KEY,
+  POLY_SCAN_API_KEY,
   SEED_ADDRESS_BSC,
   SEED_ADDRESS_KOVAN,
   SEED_ADDRESS_RINKEBY,
   SEED_ADDRESS_HECO,
+  SEED_ADDRESS_MUMBAI,
   mnemonic
 } = require('./.env.json');
 
@@ -90,8 +92,10 @@ module.exports = {
      ),
      network_id: 97,
      port: 8545,
+     networkCheckTimeout: 10000,
      timeoutBlocks: 200,
      confirmations: 5,
+     skipDryRun: true,
      production: true    // Treats this network as if it was a public net. (default: false)
     },
     heco_testnet: {
@@ -123,6 +127,16 @@ module.exports = {
      // gasLimit: 8 * 1e6, // 8,000,000
      network_id: 4,
      confirmations: 1,
+     skipDryRun: true,
+     production: true
+    },
+    mumbai: {
+     provider: () => new HDWalletProvider(
+      mnemonic, SEED_ADDRESS_MUMBAI,
+     ),
+     timeoutBlocks: 200,
+     network_id: 80001,
+     confirmations: 5,
      skipDryRun: true,
      production: true
     },
@@ -183,7 +197,7 @@ module.exports = {
     // arbiscan: 'MY_API_KEY',
     // bscscan: 'MY_API_KEY',
     // snowtrace: 'MY_API_KEY',
-    // polygonscan: 'MY_API_KEY',
+    polygonscan: POLY_SCAN_API_KEY,
     // ftmscan: 'MY_API_KEY',
     // moonscan: 'MY_API_KEY'
   },

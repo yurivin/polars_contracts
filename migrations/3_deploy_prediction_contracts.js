@@ -101,7 +101,7 @@ module.exports = async(deployer, network, accounts) => {
                 initialBlackOrWhitePrice
             );
             const deployedPredictionPool = await PredictionPool.deployed();
-            let result = await deployedPredictionPool.init(deployerAddress, deployerAddress, deployerAddress)
+            let result = await deployedPredictionPool.init(deployerAddress, deployerAddress, deployerAddress, deployerAddress, false)
 
             await deployedCollateralToken.approve(deployedPredictionPool.address, approveValue);
 

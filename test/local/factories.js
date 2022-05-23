@@ -367,7 +367,7 @@ contract("DEV: Factories", (accounts) => {
   });
 
   describe("PredictionCollateral, PredictionPool and EventLifeCycle Factories", () => {
-    it('should create PredictionCollateral, PredictionPool and EventLifeCycle contracts and add its to user`s suite', async () => {
+    it('should change PredictionPool fee proportions', async () => {
       await setWhiteList();
 
       await addToWhiteList(
@@ -383,42 +383,8 @@ contract("DEV: Factories", (accounts) => {
 
       const _suites0 = await deployedSuiteList._suites(0);
 
-      await expectRevert(
-        deployedPendingOrdersFactory.createContract(
-          _suites0,                                       // address suiteAddress,
-          { from: someUser1 }
-        ), "You must create Prediction Pool before PendingOrders contract"
-      );
-
-      await expectRevert(
-        deployedEventLifeCycleFactory.createContract(
-          _suites0,                                       // address suiteAddress,
-          someUser1,                                      // address oracleAddress
-          { from: someUser1 }
-        ), "You must create Prediction Pool before EventLifeCycle contract"
-      );
-
-      await deployedPredictionPoolFactory.changeProxyAddress(deployedPredictionPoolProxy.address)
-
-      await expectRevert(
-        deployedPredictionPoolFactory.createContract(
-          _suites0,                                       // address suiteAddress,
-          new BN("500000000000000000"),                   // uint256 whitePrice
-          new BN("500000000000000000"),                   // uint256 blackPrice
-          { from: someUser1 }
-        ), "Caller should be allowed deployer"
-      );
-
+      await deployedPredictionPoolFactory.changeProxyAddress(deployedPredictionPoolProxy.address);
       await deployedPredictionPoolProxy.setDeployer(deployedPredictionPoolFactory.address);
-
-      await expectRevert(
-        deployedPredictionPoolFactory.createContract(
-          _suites0,                                       // address suiteAddress,
-          new BN("500000000000000000"),                   // uint256 whitePrice
-          new BN("500000000000000000"),                   // uint256 blackPrice
-          { from: someUser1 }
-        ), "You must create Prediction Collateralization before PredictionPool contract"
-      );
 
       const createCollateralContractTx = await deployedPredictionCollateralFactory.createContract(
         _suites0,                           // address suiteAddress,
@@ -438,16 +404,67 @@ contract("DEV: Factories", (accounts) => {
         contractType: "PREDICTION_COLLATERAL"
       });
 
-      await expectRevert(
-        deployedPredictionCollateralFactory.createContract(
-          _suites0,                           // address suiteAddress,
-          "testWhiteName",                    // string memory whiteName,
-          "testWhiteSymbol",                  // string memory whiteSymbol,
-          "testBlackName",                    // string memory blackName,
-          "testBlackSymbol",                  // string memory blackSymbol
-          { from: someUser1 }
-        ), "Contract already exist"
+      await addToWhiteList(
+        1, // "PREDICTION_POOL",
+        deployedPredictionPoolFactory.address
       );
+
+      expect(await deployedPredictionPoolFactory._governanceFee()).to.be.bignumber.equal(ntob(0.3));
+      expect(await deployedPredictionPoolFactory._controllerFee()).to.be.bignumber.equal(ntob(0.35));
+      expect(await deployedPredictionPoolFactory._bwAdditionFee()).to.be.bignumber.equal(ntob(0.35));
+
+      await deployedPredictionPoolFactory.changeFeeProportion(
+        ntob(0.2),                // uint256 governanceFee,
+        ntob(0.33),               // uint256 controllerFee,
+        ntob(0.37),               // uint256 bwAdditionFee
+      );
+
+      expect(await deployedPredictionPoolFactory._governanceFee()).to.be.bignumber.equal(ntob(0.2));
+      expect(await deployedPredictionPoolFactory._controllerFee()).to.be.bignumber.equal(ntob(0.33));
+      expect(await deployedPredictionPoolFactory._bwAdditionFee()).to.be.bignumber.equal(ntob(0.37));
+
+      const createPoolContractTx = await deployedPredictionPoolFactory.createContract(
+        _suites0,                                       // address suiteAddress,
+        new BN("500000000000000000"),                   // uint256 whitePrice
+        new BN("500000000000000000"),                   // uint256 blackPrice
+        { from: someUser1 }
+      );
+
+      const { logs: createPoolContractTxLog } = createPoolContractTx;
+
+      assert.equal(createPoolContractTxLog.length, eventCount, `triggers must be ${eventCount} event`);
+
+      expectEvent.inLogs(createPoolContractTxLog, 'ContractCreated', {
+        suiteAddress: _suites0,
+        contractType: "PREDICTION_POOL"
+      });
+
+      const poolContractAddress = createPoolContractTx.logs[0].args.contractAddress;
+
+
+      const deployedPredictionPool = await PredictionPool.at(
+        poolContractAddress
+      );
+
+      await addToWhiteList(
+        2, // "EVENT_LIFE_CYCLE",
+        deployedEventLifeCycleFactory.address
+      );
+      await deployedEventLifeCycleFactory.createContract(
+        _suites0,                                       // address suiteAddress,
+        someUser1,                                      // address oracleAddress
+        { from: someUser1 }
+      );
+
+      await deployedPredictionPoolFactory.initPredictionPool(
+        _suites0,                             // address suiteAddress
+        ntob(0.002),
+        { from: someUser1 }
+      )
+
+      expect(await deployedPredictionPool._governanceFee()).to.be.bignumber.equal(ntob(0.2));
+      expect(await deployedPredictionPool._controllerFee()).to.be.bignumber.equal(ntob(0.33));
+      expect(await deployedPredictionPool._bwAdditionFee()).to.be.bignumber.equal(ntob(0.37));
     });
 
     it('should create PredictionCollateral, PredictionPool and EventLifeCycle contracts and add its to user`s suite', async () => {

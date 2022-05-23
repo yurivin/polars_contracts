@@ -8,4 +8,6 @@ interface IPredictionPoolProxy {
         uint256 whitePrice,
         uint256 blackPrice
     ) external returns (address);
+
+    function owner() external view returns (address);
 }
