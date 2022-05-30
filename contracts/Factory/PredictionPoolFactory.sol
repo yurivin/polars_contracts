@@ -51,7 +51,7 @@ contract PredictionPoolFactory is AbstractFactory {
         uint256 whitePrice,
         uint256 blackPrice
     )
-        public
+        external
         noExist(suiteAddress, FACTORY_CONTRACT_TYPE)
         returns (bool success)
     {
@@ -71,7 +71,7 @@ contract PredictionPoolFactory is AbstractFactory {
     }
 
     function initPredictionPool(address suiteAddress, uint256 fee)
-        public
+        external
         returns (bool success)
     {
         ISuite suite = ISuite(suiteAddress);
@@ -116,7 +116,70 @@ contract PredictionPoolFactory is AbstractFactory {
 
         ipp.changeFees(fee, _governanceFee, _controllerFee, _bwAdditionFee);
 
-        ipp.changeGovernanceAddress(globalOwner);
+        // ipp.changeGovernanceAddress(globalOwner);
+        return true;
+    }
+
+    function changeGovernanceAddress(address suiteAddress)
+        external
+        onlyGovernance
+        returns (bool success)
+    {
+        ISuite suite = ISuite(suiteAddress);
+        address predictionPoolAddress = suite.contracts(
+            1 // id for PREDICTION_POOL
+        );
+
+        require(
+            predictionPoolAddress != address(0),
+            "You must create PredictionPool contract"
+        );
+
+        IPredictionPool ipp = IPredictionPool(predictionPoolAddress);
+
+        address governance = IPredictionPoolProxy(_proxyAddress).owner();
+        ipp.changeGovernanceAddress(governance);
+        return true;
+    }
+
+    function enablePendingOrders(address suiteAddress)
+        external
+        returns (bool success)
+    {
+        ISuite suite = ISuite(suiteAddress);
+        address suiteOwner = suite.owner();
+
+        require(suiteOwner == msg.sender, "Caller should be suite owner");
+
+        address predictionPoolAddress = suite.contracts(
+            1 // id for PREDICTION_POOL
+        );
+
+        require(
+            predictionPoolAddress != address(0),
+            "You must create PredictionPool contract"
+        );
+
+        address pendingOrdersAddress = suite.contracts(
+            3 // id for PENDING_ORDERS
+        );
+
+        require(
+            pendingOrdersAddress != address(0),
+            "You must create PendingOrders contract"
+        );
+
+        IPredictionPool ipp = IPredictionPool(predictionPoolAddress);
+
+        require(
+            (ipp._blackBought() == 0 && ipp._whiteBought() == 0),
+            "The action is not available while there are orders in the PredictionPool"
+        );
+
+        ipp.changeOrderer(pendingOrdersAddress);
+        ipp.setOnlyOrderer(true);
+        // address governance = IPredictionPoolProxy(_proxyAddress).owner();
+        // ipp.changeGovernanceAddress(governance);
         return true;
     }
 }

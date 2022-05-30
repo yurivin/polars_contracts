@@ -74,7 +74,7 @@ contract("DEV: PendingOrders", function (accounts) {
     return assert.equal(await deployedEventLifeCycle._usePendingOrders(), true);
   });
 
-  it("test suite for cancel order on event in progress", async () => {
+  it("test suite for cancel order on event in progress or already finalazed", async () => {
 
     await addLiquidityToPrediction(50000);
     const userColTotal = 100000;
@@ -106,10 +106,27 @@ contract("DEV: PendingOrders", function (accounts) {
       cancelOrder(accounts[bid.account], bid.id), "EVENT IN PROGRESS"
     );
 
+    // Alternative to previous revert test
+    await expectRevert(
+      deployedPendingOrders.cancelOrder(
+        bid.id,
+        { from: accounts[bid.account] }
+      ),
+      "- EVENT IN PROGRESS"
+    );
+
     await time.increase(eventDuration);
 
     const endEvent = await deployedEventLifeCycle.endEvent(
       someEventsArray2[0].eventResult
+    );
+
+    await expectRevert(
+      deployedPendingOrders.cancelOrder(
+        bid.id,
+        { from: accounts[bid.account] }
+      ),
+      "- ALREADY EXECUTED"
     );
 
     await withdrawAmount(accounts[bid.account], new BN("944450619658606827"));
@@ -137,7 +154,7 @@ contract("DEV: PendingOrders", function (accounts) {
     await expectRevert(
       deployedPendingOrders.withdrawCollateral({
         from: accounts[bid.account]
-      }), "YOU DON'T HAVE ORDERS"
+      }), "YOU DONT HAVE ORDERS"
     );
   });
 
@@ -171,15 +188,9 @@ contract("DEV: PendingOrders", function (accounts) {
 
     const eventDuration = time.duration.seconds(5);
 
-    cancelOrder(accounts[bid.account], bid.id)
+    await cancelOrder(accounts[bid.account], bid.id)
 
     await withdrawAmount(accounts[ordersApplied[0].account], new BN("0"));
-
-    // await expectRevert(
-    //   deployedPendingOrders.withdrawCollateral({
-    //     from: accounts[ordersApplied[0].account]
-    //   }), "YOU DON'T HAVE ORDERS"
-    // );
   });
 
   it("test suite for Aider case (create order after event done)", async () => {
@@ -240,7 +251,7 @@ contract("DEV: PendingOrders", function (accounts) {
     await expectRevert(
       deployedPendingOrders.withdrawCollateral({
         from: accounts[ordersApplied[0].account]
-      }), "YOU DON'T HAVE ORDERS"
+      }), "YOU DONT HAVE ORDERS"
     );
   });
 
@@ -308,60 +319,6 @@ contract("DEV: PendingOrders", function (accounts) {
     expect(colBalanceOwner2).to.be.bignumber.equal(colBalanceOwner.add(ntob(sum)));
   });
 
-  it.skip("test suite for multiple pending orders (8 orders) - ERRORED", async () => {
-
-    await addLiquidityToPrediction(50000);
-    const userColTotal = 100000;
-
-    for (const i of [...Array(accounts.length).keys()]) {
-      if (i > 0) { await sendCollateralTokenToUser(accounts[i], userColTotal) }
-    }
-    const someEventsArray2 = [
-      { eventId: new BN("101"), eventResult: new BN("1")  },
-      { eventId: new BN("102"), eventResult: new BN("1")  },
-      { eventId: new BN("103"), eventResult: new BN("0")  },
-      { eventId: new BN("104"), eventResult: new BN("1")  },
-      { eventId: new BN("105"), eventResult: new BN("-1") },
-      { eventId: new BN("106"), eventResult: new BN("-1") },
-      { eventId: new BN("107"), eventResult: new BN("0")  }
-    ];
-
-    const someBids2 = [
-      { account: 3, isWhite: false, eventId: new BN("3639043"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0xe9d3f501b082ba426b4fb1be6b00be64d486d4d9
-      { account: 3, isWhite: false, eventId: new BN("3639043"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0xe9d3f501b082ba426b4fb1be6b00be64d486d4d9
-      { account: 4, isWhite: false, eventId: new BN("3639043"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0x104be074ad7bb0357258e9afe9b8e0a58c551833
-      { account: 5, isWhite: false, eventId: new BN("3836557"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
-      { account: 5, isWhite: false, eventId: new BN("3639055"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
-      { account: 5, isWhite: false, eventId: new BN("3610190"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
-      { account: 5, isWhite: false, eventId: new BN("3629382"), amount: 1, withdrawAfterEvent: false, cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
-      { account: 5, isWhite: false, eventId: new BN("3639054"), amount: 1, withdrawAfterEvent: true,  cancel: false }, // 0x6ff725c5d3064bb15bd112bdcce634efe38f3622
-    ]
-
-    let ordersApplied = [
-      someBids2[0],
-      someBids2[1],
-      someBids2[2],
-      someBids2[3],
-      someBids2[4],
-      someBids2[5],
-      someBids2[6],
-      someBids2[7]
-    ];
-
-    for (let bid of ordersApplied) {
-      bid.id = await createPendingOrder(bid.isWhite, bid.amount, bid.eventId, accounts[bid.account]); // runner = 0
-      bid.withdrawDone = false;
-    }
-
-    const ordersCount = await deployedPendingOrders._ordersCount();
-    expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
-
-    await runEvents(someEventsArray2, ordersApplied);
-
-    await withdrawAmount(accounts[3], 0);
-    assert.equal(1, 0, `ddddddddddd`);
-  });
-
   it("should REVERT on 'Cannot buyback more than sold from the pool'", async () => {
     const amount = new BN("10");
     const expectedWhiteBuy = new BN("20"); // If whitePrice == 0.5
@@ -420,37 +377,37 @@ contract("DEV: PendingOrders", function (accounts) {
     );
   });
 
-  it.skip("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
+  it("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
 
     await addLiquidityToPrediction(50000);
 
-    const amount = new BN("10");
-    const expectedWhiteBuy = new BN("20"); // If whitePrice == 0.5
+    const amount = 10;
+    const expectedWhiteBuy = 19.94; // If whitePrice == 0.5
     const isWhite = true;
     const eventId = new BN("101");
 
     const eventStartExpected = await time.latest();
     const eventEndExpected = eventStartExpected.add(time.duration.seconds(5));
-    // const eventResult = new BN("0");
     const eventResult = new BN("1");
-    // const eventResult = new BN("-1");
     const eventCount = 1;
 
-    const createOrderLog = await createPendingOrder(isWhite, amount, eventId);
-    expectEvent.inLogs(createOrderLog, 'OrderCreated', {
-      id: new BN("1")
-    });
+    const createOrderLog = await createPendingOrder(
+      isWhite,
+      amount,
+      eventId,
+      deployerAddress
+    );
 
     const ordersCount = await deployedPendingOrders._ordersCount();
     expect(ordersCount).to.be.bignumber.equal(new BN("1"));
 
     const whitePrice = await deployedPredictionPool._whitePrice();
-    console.log("whitePrice:             ", whitePrice.toString());
+    if (debug) console.log("whitePrice:             ", whitePrice.toString());
     // TODO: Check price, assertEquals(new BigInteger("525078986960882648"),bettingPool._whitePrice().send());
     expect(whitePrice).to.be.bignumber.equal(new BN("500000000000000000"));
 
     const whiteBoughtBefore = await deployedPredictionPool._whiteBought();
-    console.log("whiteBoughtBefore:      ", whiteBoughtBefore.toString());
+    if (debug) console.log("whiteBoughtBefore:      ", whiteBoughtBefore.toString());
 
     const eventTx = await deployedEventLifeCycle.addAndStartEvent(
       priceChangePart,
@@ -464,38 +421,38 @@ contract("DEV: PendingOrders", function (accounts) {
       eventId
     );
 
-    console.log("White balanceOf PendOr: ", (await deployedWhiteToken.balanceOf(deployedPendingOrders.address)).toString());
+    if (debug) console.log("White balanceOf PendOr: ", (await deployedWhiteToken.balanceOf(deployedPendingOrders.address)).toString());
 
     const ongoingEvent = await deployedEventLifeCycle._ongoingEvent();
     expect(ongoingEvent.eventId).to.be.bignumber.equal(eventId);
 
     const whiteBoughtDuringEvent = await deployedPredictionPool._whiteBought();
-    console.log("whiteBoughtDuringEvent: ", whiteBoughtDuringEvent.toString());
+    if (debug) console.log("whiteBoughtDuringEvent: ", whiteBoughtDuringEvent.toString());
 
-    console.log("MIN_HOLD:               ", (await deployedPredictionPool.MIN_HOLD()).toString());
+    if (debug) console.log("MIN_HOLD:               ", (await deployedPredictionPool.MIN_HOLD()).toString());
 
-    console.log("WT balanceOf PredPool:  ", (await deployedWhiteToken.balanceOf(deployedPredictionPool.address)).toString());
-    console.log("WT balanceOf WhiteTok:  ", (await deployedWhiteToken.balanceOf(deployedWhiteToken.address)).toString());
-    console.log("WT balanceOf PredColl:  ", (await deployedWhiteToken.balanceOf(deployedPredictionCollateralization.address)).toString());
-    console.log("WT balanceOf deployer:  ", (await deployedWhiteToken.balanceOf(deployerAddress)).toString());
+    if (debug) console.log("WT balanceOf PredPool:  ", (await deployedWhiteToken.balanceOf(deployedPredictionPool.address)).toString());
+    if (debug) console.log("WT balanceOf WhiteTok:  ", (await deployedWhiteToken.balanceOf(deployedWhiteToken.address)).toString());
+    if (debug) console.log("WT balanceOf PredColl:  ", (await deployedWhiteToken.balanceOf(deployedPredictionCollateralization.address)).toString());
+    if (debug) console.log("WT balanceOf deployer:  ", (await deployedWhiteToken.balanceOf(deployerAddress)).toString());
 
-    console.log("BT balanceOf PredPool:  ", (await deployedBlackToken.balanceOf(deployedPredictionPool.address)).toString());
-    console.log("BT balanceOf WhiteTok:  ", (await deployedBlackToken.balanceOf(deployedBlackToken.address)).toString());
-    console.log("BT balanceOf PredColl:  ", (await deployedBlackToken.balanceOf(deployedPredictionCollateralization.address)).toString());
-    console.log("BT balanceOf deployer:  ", (await deployedBlackToken.balanceOf(deployerAddress)).toString());
+    if (debug) console.log("BT balanceOf PredPool:  ", (await deployedBlackToken.balanceOf(deployedPredictionPool.address)).toString());
+    if (debug) console.log("BT balanceOf WhiteTok:  ", (await deployedBlackToken.balanceOf(deployedBlackToken.address)).toString());
+    if (debug) console.log("BT balanceOf PredColl:  ", (await deployedBlackToken.balanceOf(deployedPredictionCollateralization.address)).toString());
+    if (debug) console.log("BT balanceOf deployer:  ", (await deployedBlackToken.balanceOf(deployerAddress)).toString());
 
-    console.log("expectedWhiteBuy:       ", expectedWhiteBuy.toString());
-    expect(whiteBoughtBefore.add(expectedWhiteBuy)).to.be.bignumber.equal(whiteBoughtDuringEvent);
+    if (debug) console.log("expectedWhiteBuy:       ", ntob(expectedWhiteBuy).toString());
+    expect(whiteBoughtBefore.add(ntob(expectedWhiteBuy))).to.be.bignumber.equal(whiteBoughtDuringEvent);
 
     const endEvent = await deployedEventLifeCycle.endEvent(
       eventResult
     );
-    console.log("whitePrice:             ", (await deployedPredictionPool._whitePrice()).toString());
+    if (debug) console.log("whitePrice:             ", (await deployedPredictionPool._whitePrice()).toString());
     const { logs: endEventLog } = endEvent;
     assert.equal(endEventLog.length, eventCount, `triggers must be ${eventCount} event`);
 
     const whiteBoughtAfter = await deployedPredictionPool._whiteBought();
-    console.log("whiteBoughtAfter:       ", whiteBoughtAfter.toString());
+    if (debug) console.log("whiteBoughtAfter:       ", whiteBoughtAfter.toString());
     return expect(whiteBoughtBefore).to.be.bignumber.equal(whiteBoughtAfter);
   });
 
@@ -689,7 +646,7 @@ contract("DEV: PendingOrders", function (accounts) {
     await runEvents(someEventsArray, ordersApplied);
   });
 
-  it("REVERT: pending orders 'NOT ENOUGH COLLATERAL IN USER'S ACCOUNT'", async () => {
+  it("REVERT: pending orders 'NOT ENOUGH COLLATERAL IN USER ACCOUNT'", async () => {
 
     await addLiquidityToPrediction(50000);
     const userColTotal = 99999;
@@ -703,7 +660,7 @@ contract("DEV: PendingOrders", function (accounts) {
         new BN("101"),
         { from: accounts[1] }
       ),
-      "NOT ENOUGH COLLATERAL IN USER'S ACCOUNT",
+      "NOT ENOUGH COLLATERAL IN USER ACCOUNT",
     );
 
     const ordersCount = await deployedPendingOrders._ordersCount();
@@ -739,90 +696,6 @@ contract("DEV: PendingOrders", function (accounts) {
     expect(ordersCount).to.be.bignumber.equal(new BN(ordersApplied.length.toString()));
 
     await runEvents(someEventsArray, ordersApplied);
-  });
-
-  it.skip("should assert PredictionPool whiteBoughtBefore equal whiteBoughtAfter after work pending order", async () => {
-
-    await addLiquidityToPrediction(50000);
-
-    const amount = new BN("10");
-    const expectedWhiteBuy = new BN("20"); // If whitePrice == 0.5
-    const isWhite = true;
-    const eventId = new BN("101");
-
-    const eventStartExpected = await time.latest();
-    const eventEndExpected = eventStartExpected.add(time.duration.seconds(5));
-    // const eventResult = new BN("0");
-    const eventResult = new BN("1");
-    // const eventResult = new BN("-1");
-    const eventCount = 1;
-
-    const createOrderLog = await createPendingOrder(isWhite, amount, eventId);
-    expectEvent.inLogs(createOrderLog, 'OrderCreated', {
-      id: new BN("1")
-    });
-
-    // const createOrderLog = await cretePendingOrder(isWhite, amount, eventId);
-    expectEvent.inLogs((await createPendingOrder(0, 60, eventId)), 'OrderCreated', {
-      id: new BN("2")
-    });
-
-    const ordersCount = await deployedPendingOrders._ordersCount();
-    expect(ordersCount).to.be.bignumber.equal(new BN("2"));
-
-    const whitePrice = await deployedPredictionPool._whitePrice();
-    console.log("whitePrice:             ", whitePrice.toString());
-    // TODO: Check price, assertEquals(new BigInteger("525078986960882648"),bettingPool._whitePrice().send());
-    expect(whitePrice).to.be.bignumber.equal(new BN("500000000000000000"));
-
-    const whiteBoughtBefore = await deployedPredictionPool._whiteBought();
-    console.log("whiteBoughtBefore:      ", whiteBoughtBefore.toString());
-
-    const eventTx = await deployedEventLifeCycle.addAndStartEvent(
-      priceChangePart,
-      eventStartExpected,
-      eventEndExpected,
-      "Test Black team",
-      "Test White team",
-      "Test event type",
-      "Test event series",
-      "test event name ",
-      eventId
-    );
-
-    console.log("White balanceOf PendOr: ", (await deployedWhiteToken.balanceOf(deployedPendingOrders.address)).toString());
-
-    const ongoingEvent = await deployedEventLifeCycle._ongoingEvent();
-    expect(ongoingEvent.eventId).to.be.bignumber.equal(eventId);
-
-    const whiteBoughtDuringEvent = await deployedPredictionPool._whiteBought();
-    console.log("whiteBoughtDuringEvent: ", whiteBoughtDuringEvent.toString());
-
-    console.log("MIN_HOLD:               ", (await deployedPredictionPool.MIN_HOLD()).toString());
-
-    console.log("WT balanceOf PredPool:  ", (await deployedWhiteToken.balanceOf(deployedPredictionPool.address)).toString());
-    console.log("WT balanceOf WhiteTok:  ", (await deployedWhiteToken.balanceOf(deployedWhiteToken.address)).toString());
-    console.log("WT balanceOf PredColl:  ", (await deployedWhiteToken.balanceOf(deployedPredictionCollateralization.address)).toString());
-    console.log("WT balanceOf deployer:  ", (await deployedWhiteToken.balanceOf(deployerAddress)).toString());
-
-    console.log("BT balanceOf PredPool:  ", (await deployedBlackToken.balanceOf(deployedPredictionPool.address)).toString());
-    console.log("BT balanceOf WhiteTok:  ", (await deployedBlackToken.balanceOf(deployedBlackToken.address)).toString());
-    console.log("BT balanceOf PredColl:  ", (await deployedBlackToken.balanceOf(deployedPredictionCollateralization.address)).toString());
-    console.log("BT balanceOf deployer:  ", (await deployedBlackToken.balanceOf(deployerAddress)).toString());
-
-    console.log("expectedWhiteBuy:       ", expectedWhiteBuy.toString());
-    expect(whiteBoughtBefore.add(expectedWhiteBuy)).to.be.bignumber.equal(whiteBoughtDuringEvent);
-
-    const endEvent = await deployedEventLifeCycle.endEvent(
-      eventResult
-    );
-    console.log("whitePrice:             ", (await deployedPredictionPool._whitePrice()).toString());
-    const { logs: endEventLog } = endEvent;
-    assert.equal(endEventLog.length, eventCount, `triggers must be ${eventCount} event`);
-
-    const whiteBoughtAfter = await deployedPredictionPool._whiteBought();
-    console.log("whiteBoughtAfter:       ", whiteBoughtAfter.toString());
-    return expect(whiteBoughtBefore).to.be.bignumber.equal(whiteBoughtAfter);
   });
 
   it("should assert orders count equal 0", async () => {

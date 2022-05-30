@@ -17,6 +17,10 @@ interface IPredictionPool {
 
     function _blackPrice() external returns (uint256);
 
+    function _whiteBought() external returns (uint256);
+
+    function _blackBought() external returns (uint256);
+
     function _whiteToken() external returns (address);
 
     function _blackToken() external returns (address);
@@ -42,4 +46,8 @@ interface IPredictionPool {
         uint256 controllerFee,
         uint256 bwAdditionFee
     ) external;
+
+    function changeOrderer(address newOrderer) external;
+
+    function setOnlyOrderer(bool only) external;
 }

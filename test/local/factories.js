@@ -462,12 +462,13 @@ contract("DEV: Factories", (accounts) => {
         { from: someUser1 }
       )
 
+      expect(await deployedPredictionPool.FEE()).to.be.bignumber.equal(ntob(0.002));
       expect(await deployedPredictionPool._governanceFee()).to.be.bignumber.equal(ntob(0.2));
       expect(await deployedPredictionPool._controllerFee()).to.be.bignumber.equal(ntob(0.33));
       expect(await deployedPredictionPool._bwAdditionFee()).to.be.bignumber.equal(ntob(0.37));
     });
 
-    it('should create PredictionCollateral, PredictionPool and EventLifeCycle contracts and add its to user`s suite', async () => {
+    it('should create PredictionCollateral, PredictionPool, EventLifeCycle and PendingOrders contracts and add its to user`s suite', async () => {
       await setWhiteList();
 
       await addToWhiteList(
@@ -768,7 +769,7 @@ contract("DEV: Factories", (accounts) => {
       assert.equal(deployedEventLifeCycle.address, await deployedPredictionPool._eventContractAddress());
       assert.equal(await deployedSuiteFactory.owner(), await deployedPredictionCollateralization._governanceAddress());
       assert.equal(await deployedSuiteFactory.owner(), await deployedEventLifeCycle._governanceAddress());
-      assert.equal(await deployedSuiteFactory.owner(), await deployedPredictionPool._governanceAddress());
+      assert.equal(deployedPredictionPoolFactory.address, await deployedPredictionPool._governanceAddress());
 
       // -------------------------Pending---------------------------------------
       await expectRevert(
@@ -833,79 +834,518 @@ contract("DEV: Factories", (accounts) => {
       assert.equal(await deployedPendingOrders._predictionPool(), deployedPredictionPool.address);
       assert.equal(await deployedPendingOrders._eventContractAddress(), deployedEventLifeCycle.address);
 
-      //  ---------------------------buyBlack-----------------------------------
-      const addForWhiteAmount = new BN("5000000000000000000");
-      const addForBlackAmount = new BN("3000000000000000000");
+
+      const deployedContracts = {
+        deployedPredictionCollateralization: deployedPredictionCollateralization,
+        deployedWhiteToken: deployedWhiteToken,
+        deployedBlackToken: deployedBlackToken,
+        deployedPredictionPool: deployedPredictionPool,
+        deployedEventLifeCycle: deployedEventLifeCycle,
+        deployedPendingOrders: deployedPendingOrders
+      }
+
+      const buyPayment = new BN("5000000000000000000");
+      const initialBlackOrWhitePrice = new BN("500000000000000000");
+      await buyTokens(deployedContracts, false, buyPayment, initialBlackOrWhitePrice);
+      await buyTokens(deployedContracts, true, buyPayment, initialBlackOrWhitePrice);
+      // await buyBlack(deployedContracts);
+      // await buyWhite(deployedContracts);
+    });
+
+    const deployContracts = async () => {
+      await setWhiteList();
+
+      await addToWhiteList(
+        0, // "PREDICTION_COLLATERAL",
+        deployedPredictionCollateralFactory.address
+      );
+
+      const isSuiteExists = await deployedSuiteList.isSuiteExists(accounts[6]);
+      if (debug) console.log("isSuiteExists       :", isSuiteExists);
+      expect(isSuiteExists).to.be.equals(false);
+
+      const deployedSuiteAddress = await deploySuite(
+        someUser1,
+        "SomeNameSuite",
+        deployedCollateralToken.address
+      );
+
+      const _suites0 = await deployedSuiteList._suites(0);
+      expect(_suites0).to.be.equals(deployedSuiteAddress);
+      const _suiteIndexes = await deployedSuiteList._suiteIndexes(deployedSuiteAddress);
+      const isSuiteExistsAfterCreate = await deployedSuiteList.isSuiteExists(deployedSuiteAddress);
+      if (debug) console.log("_suites0            :", _suites0);
+      if (debug) console.log("_suiteIndexes      :", _suiteIndexes.toString());
+      if (debug) console.log("isSuiteExistsAfterCreate      :", isSuiteExistsAfterCreate);
+
+      expect(isSuiteExistsAfterCreate).to.be.equals(true);
+
+      await expectRevert(
+        deployedPredictionCollateralFactory.createContract(
+          _suites0,                         // address suiteAddress,
+          "testWhiteName",                  // string memory whiteName,
+          "testWhiteSymbol",                // string memory whiteSymbol,
+          "testBlackName",                  // string memory blackName,
+          "testBlackSymbol"                 // string memory blackSymbol
+        ), "Caller should be suite owner"
+      );
+
+      const createCollateralContractTx = await deployedPredictionCollateralFactory.createContract(
+        _suites0,                           // address suiteAddress,
+        "testWhiteName",                    // string memory whiteName,
+        "testWhiteSymbol",                  // string memory whiteSymbol,
+        "testBlackName",                    // string memory blackName,
+        "testBlackSymbol",                  // string memory blackSymbol
+        { from: someUser1 }
+      );
+
+      const { logs: createCollateralContractTxLog } = createCollateralContractTx;
+      const eventCount = 1;
+      assert.equal(createCollateralContractTxLog.length, eventCount, `triggers must be ${eventCount} event`);
+
+      expectEvent.inLogs(createCollateralContractTxLog, 'ContractCreated', {
+        suiteAddress: _suites0,
+        contractType: "PREDICTION_COLLATERAL"
+      });
+
+
+      const collateralContractAddress = createCollateralContractTx.logs[0].args.contractAddress;
+
+      if (debug) console.log("contractCollAddress:", collateralContractAddress);
+
+      const factoryCollateralContractType = await deployedPredictionCollateralFactory.FACTORY_CONTRACT_TYPE();
+      if (debug) console.log("factoryContractType :", factoryCollateralContractType);
+      const deployedSuite = await Suite.at(_suites0);
+      expect(await deployedSuite.contracts(factoryCollateralContractType)).to.be.equals(collateralContractAddress);
+
+
+      const deployedPredictionCollateralization = await PredictionCollateralization.at(
+        collateralContractAddress
+      );
+
+      expect(
+        await deployedPredictionCollateralization._governanceAddress()
+      ).to.be.equals(deployedPredictionCollateralFactory.address);
+
+      if (debug) console.log("_poolAddress        :", (await deployedPredictionCollateralization._poolAddress()));
+      assert.equal(deployedPredictionCollateralFactory.address, await deployedPredictionCollateralization._poolAddress());
+
+      const deployedWhiteToken = await TokenTemplate.at(await deployedPredictionCollateralization._whiteToken());
+
+      const deployedBlackToken = await TokenTemplate.at(await deployedPredictionCollateralization._blackToken());
+
+      if (debug) console.log("PredictionCollateral:", deployedPredictionCollateralization.address);
+      if (debug) console.log("WhiteToken          :", deployedWhiteToken.address);
+      if (debug) console.log("BlackToken          :", deployedBlackToken.address);
+
+      const whiteTokenAllowance = await deployedWhiteToken.allowance(
+        deployerAddress,                                // address owner,
+        deployedPredictionCollateralization.address     // address spender
+      )
+      if (debug) console.log("whiteTokenAllowance :", whiteTokenAllowance.toString());
+
+      const blackTokenAllowance = await deployedBlackToken.allowance(
+        deployerAddress,                                // address owner,
+        deployedPredictionCollateralization.address     // address spender
+      )
+      if (debug) console.log("blackTokenAllowance :", blackTokenAllowance.toString());
+
+      // ------------------------Pool-------------------------------------------
+      await expectRevert(
+        deployedPredictionPoolFactory.createContract(
+          _suites0,                                     // address suiteAddress,
+          new BN("500000000000000000"),                 // uint256 whitePrice
+          new BN("500000000000000000")                  // uint256 blackPrice
+        ), "Caller should be suite owner"
+      );
+
+      await deployedPredictionPoolFactory.changeProxyAddress(deployedPredictionPoolProxy.address);
+
+      await expectRevert(
+        deployedPredictionPoolFactory.createContract(
+          _suites0,                                     // address suiteAddress,
+          new BN("500000000000000000"),                 // uint256 whitePrice
+          new BN("500000000000000000"),                 // uint256 blackPrice
+          { from: someUser1 }
+        ), "Caller should be allowed deployer"
+      );
+
+      await deployedPredictionPoolProxy.setDeployer(deployedPredictionPoolFactory.address);
+
+      await expectRevert(
+        deployedPredictionPoolFactory.createContract(
+          _suites0,                                     // address suiteAddress,
+          new BN("500000000000000000"),                 // uint256 whitePrice
+          new BN("500000000000000000"),                 // uint256 blackPrice
+          { from: someUser1 }
+        ), "Caller should be in White List"
+      );
+
+      await addToWhiteList(
+        1, // "PREDICTION_POOL",
+        deployedPredictionPoolFactory.address
+      );
+
+      const createPoolContractTx = await deployedPredictionPoolFactory.createContract(
+        _suites0,                                       // address suiteAddress,
+        new BN("500000000000000000"),                   // uint256 whitePrice
+        new BN("500000000000000000"),                   // uint256 blackPrice
+        { from: someUser1 }
+      );
+
+      const { logs: createPoolContractTxLog } = createPoolContractTx;
+
+      assert.equal(createPoolContractTxLog.length, eventCount, `triggers must be ${eventCount} event`);
+
+      expectEvent.inLogs(createPoolContractTxLog, 'ContractCreated', {
+        suiteAddress: _suites0,
+        contractType: "PREDICTION_POOL"
+      });
+
+      const poolContractAddress = createPoolContractTx.logs[0].args.contractAddress;
+
+      if (debug) console.log("contractPoolAddress :", poolContractAddress);
+
+      const factoryPoolContractType = await deployedPredictionPoolFactory.FACTORY_CONTRACT_TYPE();
+      if (debug) console.log("factoryPContractType:", factoryPoolContractType);
+
+      expect(await deployedSuite.contracts(factoryPoolContractType)).to.be.equals(poolContractAddress);
+
+
+      const deployedPredictionPool = await PredictionPool.at(
+        poolContractAddress
+      );
+
+      expect(
+        await deployedPredictionPool._governanceAddress()
+      ).to.be.equals(deployedPredictionPoolFactory.address);
+
+      expect(await deployedPredictionPool._thisCollateralization()).to.be.equals(deployedPredictionCollateralization.address);
+      expect(await deployedPredictionPool._whiteToken()).to.be.equals(deployedWhiteToken.address);
+      expect(await deployedPredictionPool._blackToken()).to.be.equals(deployedBlackToken.address);
+
+      await expectRevert(
+        deployedPredictionCollateralFactory.changePoolAddress(
+          _suites0,
+        ), "Caller should be suite owner"
+      );
+
+      await deployedPredictionCollateralFactory.changePoolAddress(
+        _suites0,
+        { from: someUser1 }
+      );
+
+      if (debug) console.log("_poolAddress        :", (await deployedPredictionCollateralization._poolAddress()));
+      assert.equal(deployedPredictionPool.address, await deployedPredictionCollateralization._poolAddress());
+
+      expect(await deployedPredictionPool.inited()).to.be.equals(false);
+
+      const suiteOwner = await deployedSuite.owner();
+      if (debug) console.log("gov                 :", (await deployedPredictionPool._governanceAddress()));
+
+      await expectRevert(
+        deployedPredictionPool.init(
+          suiteOwner, suiteOwner, suiteOwner, suiteOwner, false
+        ), "CALLER SHOULD BE GOVERNANCE"
+      );
+
+
+      // -------------------------ELC-------------------------------------------
+      await expectRevert(
+        deployedEventLifeCycleFactory.createContract(
+          _suites0,                                     // address suiteAddress,
+          suiteOwner                                    // address oracleAddress
+        ), "Caller should be suite owner"
+      );
+
+      await expectRevert(
+        deployedEventLifeCycleFactory.createContract(
+          _suites0,                                     // address suiteAddress,
+          suiteOwner,                                   // address oracleAddress
+          { from: someUser1 }
+        ), "Caller should be in White List"
+      );
+
+      await addToWhiteList(
+        2, // "EVENT_LIFE_CYCLE",
+        deployedEventLifeCycleFactory.address
+      );
+
+      const createEventLifeCycleContractTx = await deployedEventLifeCycleFactory.createContract(
+        _suites0,                                       // address suiteAddress,
+        suiteOwner,                                     // address oracleAddress
+        { from: someUser1 }
+      );
+
+      const { logs: createEventLifeCycleContractTxLog } = createEventLifeCycleContractTx;
+
+      assert.equal(createEventLifeCycleContractTxLog.length, eventCount, `triggers must be ${eventCount} event`);
+
+      expectEvent.inLogs(createEventLifeCycleContractTxLog, 'ContractCreated', {
+        suiteAddress: _suites0,
+        contractType: "EVENT_LIFE_CYCLE"
+      });
+
+      const elcContractAddress = createEventLifeCycleContractTx.logs[0].args.contractAddress;
+
+      if (debug) console.log("contractElcAddress  :", elcContractAddress);
+
+      const factoryELCContractType = await deployedEventLifeCycleFactory.FACTORY_CONTRACT_TYPE();
+      if (debug) console.log("factoryEContractType:", factoryELCContractType);
+
+      expect(await deployedSuite.contracts(factoryELCContractType)).to.be.equals(elcContractAddress);
+
+
+      const deployedEventLifeCycle = await EventLifeCycle.at(
+        elcContractAddress
+      );
+
+      expect(
+        await deployedEventLifeCycle._governanceAddress()
+      ).to.be.equals(await deployedSuiteFactory.owner());
+
+      await expectRevert(
+        deployedPredictionPoolFactory.initPredictionPool(
+          _suites0,                           // address suiteAddress,
+          ntob(0.002)
+        ), "Caller should be suite owner"
+      );
+
+      await expectRevert(
+        deployedPredictionPoolFactory.initPredictionPool(
+          _suites0,                           // address suiteAddress,
+          ntob(0.0009),
+        { from: suiteOwner }
+        ), "Too low total fee"
+      );
+
+      await expectRevert(
+        deployedPredictionPoolFactory.initPredictionPool(
+          _suites0,                           // address suiteAddress,
+          ntob(0.11),
+        { from: suiteOwner }
+        ), "Too high total fee"
+      );
+
+      if (debug) console.log("deployerAddress     :", deployerAddress);
+      if (debug) console.log("suiteOwner          :", suiteOwner);
+      if (debug) console.log("ppf address         :", deployedPredictionPoolFactory.address);
+      if (debug) console.log("elc address         :", (await deployedPredictionPool._eventContractAddress()));
+      if (debug) console.log("elc gov             :", (await deployedEventLifeCycle._governanceAddress()));
+      if (debug) console.log("pp gov              :", (await deployedPredictionPool._governanceAddress()));
+
+      await deployedPredictionPoolFactory.initPredictionPool(
+        _suites0,                             // address suiteAddress
+        ntob(0.002),
+        { from: suiteOwner }
+      )
+
+      if (debug) console.log("deployerAddress     :", deployerAddress);
+      if (debug) console.log("suiteOwner          :", suiteOwner);
+      if (debug) console.log("ppf address         :", deployedPredictionPoolFactory.address);
+      if (debug) console.log("elc gov             :", (await deployedEventLifeCycle._governanceAddress()));
+      if (debug) console.log("elc address         :", (await deployedPredictionPool._eventContractAddress()));
+      if (debug) console.log("pp gov              :", (await deployedPredictionPool._governanceAddress()));
+
+      expect(await deployedPredictionPool.FEE()).to.be.bignumber.equal(ntob(0.002));
+      expect(await deployedPredictionPool.inited()).to.be.equals(true);
+
+      assert.equal(deployedEventLifeCycle.address, await deployedPredictionPool._eventContractAddress());
+      assert.equal(await deployedSuiteFactory.owner(), await deployedPredictionCollateralization._governanceAddress());
+      assert.equal(await deployedSuiteFactory.owner(), await deployedEventLifeCycle._governanceAddress());
+      assert.equal(deployedPredictionPoolFactory.address, await deployedPredictionPool._governanceAddress());
+
+      // -------------------------Pending---------------------------------------
+      await expectRevert(
+        deployedPendingOrdersFactory.createContract(
+          _suites0,                                     // address suiteAddress,
+        ), "Caller should be suite owner"
+      );
+
+      await expectRevert(
+        deployedPendingOrdersFactory.createContract(
+          _suites0,                                     // address suiteAddress,
+          { from: someUser1 }
+        ), "Caller should be in White List"
+      );
+
+      await addToWhiteList(
+        3, // "PENDING_ORDERS",
+        deployedPendingOrdersFactory.address
+      );
+
+      const createPendingOrdersContractTx = await deployedPendingOrdersFactory.createContract(
+        _suites0,                                       // address suiteAddress,
+        { from: someUser1 }
+      );
+
+      const { logs: createPendingOrdersContractTxLog } = createPendingOrdersContractTx;
+
+      assert.equal(createPendingOrdersContractTxLog.length, eventCount, `triggers must be ${eventCount} event`);
+
+      expectEvent.inLogs(createPendingOrdersContractTxLog, 'ContractCreated', {
+        suiteAddress: _suites0,
+        contractType: "PENDING_ORDERS"
+      });
+
+      const poContractAddress = createPendingOrdersContractTx.logs[0].args.contractAddress;
+
+      if (debug) console.log("contractPOAddress   :", poContractAddress);
+
+      const factoryPOContractType = await deployedPendingOrdersFactory.FACTORY_CONTRACT_TYPE();
+      if (debug) console.log("factoryPContractType:", factoryPOContractType);
+
+      expect(await deployedSuite.contracts(factoryPOContractType)).to.be.equals(poContractAddress);
+
+
+      const deployedPendingOrders = await PendingOrders.at(
+        poContractAddress
+      );
+
+
+      if (debug) console.log("pof address         :", deployedPendingOrdersFactory.address);
+      if (debug) console.log("po gov              :", (await deployedPendingOrders.owner()));
+      if (debug) console.log("po elc address      :", (await deployedPendingOrders._eventContractAddress()));
+
+      assert.equal(deployedEventLifeCycle.address, await deployedPredictionPool._eventContractAddress());
+      assert.equal(await deployedSuiteFactory.owner(), await deployedPendingOrders.owner());
+
+      expect(
+        await deployedPendingOrders._ordersCount()
+      ).to.be.bignumber.equal(new BN("0"));
+
+      assert.equal(await deployedPendingOrders._collateralToken(), deployedCollateralToken.address);
+      assert.equal(await deployedPendingOrders._predictionPool(), deployedPredictionPool.address);
+      assert.equal(await deployedPendingOrders._eventContractAddress(), deployedEventLifeCycle.address);
+
+      return {
+        suite: _suites0,
+        deployedPredictionCollateralization: deployedPredictionCollateralization,
+        deployedWhiteToken: deployedWhiteToken,
+        deployedBlackToken: deployedBlackToken,
+        deployedPredictionPool: deployedPredictionPool,
+        deployedEventLifeCycle: deployedEventLifeCycle,
+        deployedPendingOrders: deployedPendingOrders
+      }
+    }
+
+    it('should create contracts and cant enable PendingOrders', async () => {
+      const deployedContracts = await deployContracts();
+
+      const buyPayment = new BN("5000000000000000000");
+      const initialBlackOrWhitePrice = new BN("500000000000000000");
+      await buyTokens(deployedContracts, false, buyPayment, initialBlackOrWhitePrice);
+      await buyTokens(deployedContracts, true, buyPayment, initialBlackOrWhitePrice);
+
+      await expectRevert(
+        deployedPredictionPoolFactory.enablePendingOrders(
+          deployedContracts.suite
+        ), "Caller should be suite owner"
+      );
+
+      await expectRevert(
+        deployedPredictionPoolFactory.enablePendingOrders(
+          deployedContracts.suite,
+          { from: someUser1 }
+        ), "The action is not available while there are orders in the PredictionPool"
+      );
+    });
+
+    it('should create contracts and enable PendingOrders', async () => {
+      const deployedContracts = await deployContracts();
+
+      await expectRevert(
+        deployedPredictionPoolFactory.enablePendingOrders(
+          deployedContracts.suite
+        ), "Caller should be suite owner"
+      );
+
+      await deployedPredictionPoolFactory.enablePendingOrders(
+        deployedContracts.suite,
+        { from: someUser1 }
+      );
 
       const buyPayment = new BN("5000000000000000000");
       const initialBlackOrWhitePrice = new BN("500000000000000000");
 
-      let collateralTokenAllowance = await deployedCollateralToken.allowance(
-        someUser3,                                    // address owner,
-        deployedPredictionCollateralization.address   // address spender
-      )
-      if (debug) console.log("collTokenAllowance  :", collateralTokenAllowance.toString());
-
-      await deployedCollateralToken.approve(
-        deployedPredictionCollateralization.address,  // address spender,
-        buyPayment,                                   // uint256 value
-        { from: someUser3 }
-      )
-
-      expect(await deployedCollateralToken.allowance(
-        someUser3,                                    // address owner,
-        deployedPredictionCollateralization.address   // address spender
-      )).to.be.bignumber.equal(collateralTokenAllowance.add(buyPayment));
-
       await expectRevert(
-        deployedPredictionPool.buyBlack(
+        deployedContracts.deployedPredictionPool.buyWhite(
           initialBlackOrWhitePrice,
           buyPayment,
           { from: someUser3 }
-        ), "SafeMath: subtraction overflow"
-      ); // No balance on user account
-
-      await deployedCollateralToken.transfer(someUser3, buyPayment);
-
-      let collateralTokenUserBalance = await deployedCollateralToken.balanceOf(someUser3);
-
-      expect(collateralTokenUserBalance).to.be.bignumber.at.least(buyPayment);
-
-      const buyBlack = await deployedPredictionPool.buyBlack(
-        initialBlackOrWhitePrice,
-        buyPayment,
-        { from: someUser3 }
+        ), "Incorrerct orderer"
       );
-      const { logs: buyBlackLog } = buyBlack;
+      await expectRevert(
+        deployedContracts.deployedPredictionPool.buyBlack(
+          initialBlackOrWhitePrice,
+          buyPayment,
+          { from: someUser3 }
+        ), "Incorrerct orderer"
+      );
+    });
+  });
 
-      const eventCountForSellAndBuy = 4;
+  const sellTokens = async (deployedContracts, isWhite, buyPayment, initialBlackOrWhitePrice) => {
+    const {
+      deployedPredictionCollateralization,
+      deployedWhiteToken,
+      deployedBlackToken,
+      deployedPredictionPool,
+      deployedEventLifeCycle,
+      deployedPendingOrders
+    } = deployedContracts;
 
-      assert.equal(buyBlackLog.length, eventCountForSellAndBuy, `triggers must be ${eventCountForSellAndBuy} event`);
-
-      const blackBought = new BN("9980000000000000000");
-
-      expectEvent.inLogs(buyBlackLog, 'BuyBlack', {
-        user: someUser3,
-        amount: blackBought,
-        price: initialBlackOrWhitePrice
-      });
-
-      expect(
-        await deployedBlackToken.balanceOf(someUser3)
-      ).to.be.bignumber.equal(blackBought);
-
-      //  --------------------------buyWhite-----------------------------------\
-
-      collateralTokenUserBalance = await deployedCollateralToken.balanceOf(someUser3);
-
-      expect(collateralTokenUserBalance).to.be.bignumber.at.equal(new BN("0"));
-
-      collateralTokenAllowance = await deployedCollateralToken.allowance(
-        someUser3,                                    // address owner,
-        deployedPredictionCollateralization.address   // address spender
+    if (isWhite) {
+      await deployedWhiteToken.approve(
+        deployedPredictionCollateralization.address,  // address spender,
+        new BN("9980000000000000000"),                // uint256 value
+        { from: someUser3 }
       )
-      if (debug) console.log("collTokenAllowance  :", collateralTokenAllowance.toString());
+    } else {
+      await deployedBlackToken.approve(
+        deployedPredictionCollateralization.address,  // address spender,
+        new BN("9980000000000000000"),                // uint256 value
+        { from: someUser3 }
+      )
+    }
 
+    const eventCountForSellAndBuy = 4;
+    const MIN_HOLD = ntob(2);
+
+    const sellTokenResult = isWhite ? await deployedPredictionPool.sellWhite(
+      new BN("9980000000000000000").sub(MIN_HOLD),
+      initialBlackOrWhitePrice,
+      { from: someUser3 }
+    ) : await deployedPredictionPool.sellBlack(
+      new BN("9980000000000000000").sub(MIN_HOLD),
+      initialBlackOrWhitePrice,
+      { from: someUser3 }
+    );
+    const { logs: sellTokenLog } = sellTokenResult;
+    assert.equal(sellTokenLog.length, eventCountForSellAndBuy, `triggers must be ${eventCountForSellAndBuy} event`);
+  }
+
+  const buyTokens = async (deployedContracts, isWhite, buyPayment, initialBlackOrWhitePrice) => {
+    const {
+      deployedPredictionCollateralization,
+      deployedWhiteToken,
+      deployedBlackToken,
+      deployedPredictionPool,
+      deployedEventLifeCycle,
+      deployedPendingOrders
+    } = deployedContracts;
+
+    let collateralTokenUserBalance = await deployedCollateralToken.balanceOf(someUser3);
+
+    expect(collateralTokenUserBalance).to.be.bignumber.at.equal(new BN("0"));
+
+    const collateralTokenAllowance = await deployedCollateralToken.allowance(
+      someUser3,                                    // address owner,
+      deployedPredictionCollateralization.address   // address spender
+    )
+    if (debug) console.log("collTokenAllowance  :", collateralTokenAllowance.toString());
+
+    if (isWhite) {
       await expectRevert(
         deployedPredictionPool.buyWhite(
           initialBlackOrWhitePrice,
@@ -913,18 +1353,29 @@ contract("DEV: Factories", (accounts) => {
           { from: someUser3 }
         ), "Not enough delegated tokens"
       );
+    } else {
+      await expectRevert(
+        deployedPredictionPool.buyBlack(
+          initialBlackOrWhitePrice,
+          buyPayment,
+          { from: someUser3 }
+        ), "Not enough delegated tokens"
+      );
+    }
 
-      await deployedCollateralToken.approve(
-        deployedPredictionCollateralization.address,  // address spender,
-        buyPayment,                                   // uint256 value
-        { from: someUser3 }
-      )
+    await deployedCollateralToken.approve(
+      deployedPredictionCollateralization.address,  // address spender,
+      buyPayment,                                   // uint256 value
+      { from: someUser3 }
+    )
 
-      expect(await deployedCollateralToken.allowance(
-        someUser3,                                    // address owner,
-        deployedPredictionCollateralization.address   // address spender
-      )).to.be.bignumber.equal(collateralTokenAllowance.add(buyPayment));
+    expect(await deployedCollateralToken.allowance(
+      someUser3,                                    // address owner,
+      deployedPredictionCollateralization.address   // address spender
+    )).to.be.bignumber.equal(collateralTokenAllowance.add(buyPayment));
 
+
+    if (isWhite) {
       await expectRevert(
         deployedPredictionPool.buyWhite(
           initialBlackOrWhitePrice,
@@ -932,36 +1383,61 @@ contract("DEV: Factories", (accounts) => {
           { from: someUser3 }
         ), "SafeMath: subtraction overflow"
       ); // No balance on user account
+    } else {
+      await expectRevert(
+        deployedPredictionPool.buyBlack(
+          initialBlackOrWhitePrice,
+          buyPayment,
+          { from: someUser3 }
+        ), "SafeMath: subtraction overflow"
+      ); // No balance on user account
+    }
 
-      await deployedCollateralToken.transfer(someUser3, buyPayment);
+    await deployedCollateralToken.transfer(someUser3, buyPayment);
 
-      collateralTokenUserBalance = await deployedCollateralToken.balanceOf(someUser3);
+    collateralTokenUserBalance = await deployedCollateralToken.balanceOf(someUser3);
 
-      expect(collateralTokenUserBalance).to.be.bignumber.at.least(buyPayment);
+    expect(collateralTokenUserBalance).to.be.bignumber.at.least(buyPayment);
 
-      const buyWhite = await deployedPredictionPool.buyWhite(
-        initialBlackOrWhitePrice,
-        buyPayment,
-        { from: someUser3 }
-      );
-      const { logs: buyWhiteLog } = buyWhite;
+    const eventCountForSellAndBuy = 4;
+
+    const buyTokenResult = isWhite ? await deployedPredictionPool.buyWhite(
+      initialBlackOrWhitePrice,
+      buyPayment,
+      { from: someUser3 }
+    ) : await deployedPredictionPool.buyBlack(
+      initialBlackOrWhitePrice,
+      buyPayment,
+      { from: someUser3 }
+    );
+    const { logs: buyTokenLog } = buyTokenResult;
+    assert.equal(buyTokenLog.length, eventCountForSellAndBuy, `triggers must be ${eventCountForSellAndBuy} event`);
 
 
-      assert.equal(buyWhiteLog.length, eventCountForSellAndBuy, `triggers must be ${eventCountForSellAndBuy} event`);
 
+    if (isWhite) {
       const whiteBought = new BN("9980000000000000000");
-
-      expectEvent.inLogs(buyWhiteLog, 'BuyWhite', {
+      expectEvent.inLogs(buyTokenLog, 'BuyWhite', {
         user: someUser3,
         amount: whiteBought,
         price: initialBlackOrWhitePrice
       });
-
       expect(
         await deployedWhiteToken.balanceOf(someUser3)
       ).to.be.bignumber.equal(whiteBought);
-    });
-  });
+    } else {
+      const blackBought = new BN("9980000000000000000");
+      expectEvent.inLogs(buyTokenLog, 'BuyBlack', {
+        user: someUser3,
+        amount: blackBought,
+        price: initialBlackOrWhitePrice
+      });
+      expect(
+        await deployedBlackToken.balanceOf(someUser3)
+      ).to.be.bignumber.equal(blackBought);
+
+    }
+  }
 
   describe("SuiteList", () => {
     it('getSuitesByPage test', async () => {
