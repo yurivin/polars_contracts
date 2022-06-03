@@ -221,7 +221,7 @@ contract PendingOrders is DSMath, Ownable {
     }
 
     function withdrawCollateral() external returns (uint256) {
-        require(_ordersOfUser[msg.sender].length > 0, "YOU DONT HAVE ORDERS");
+        require(_ordersOfUser[msg.sender].length > 0, "Account has no orders");
 
         // total amount of collateral token that should be returned to user
         // feeAmount should be subtracted before actual return
