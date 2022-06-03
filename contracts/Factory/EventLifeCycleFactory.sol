@@ -18,7 +18,6 @@ contract EventLifeCycleFactory is AbstractFactory {
     function createContract(address suiteAddress, address oracleAddress)
         public
         noExist(suiteAddress, FACTORY_CONTRACT_TYPE)
-        returns (bool success)
     {
         ISuite suite = ISuite(suiteAddress);
         require(suite.owner() == msg.sender, "Caller should be suite owner");
@@ -45,6 +44,5 @@ contract EventLifeCycleFactory is AbstractFactory {
         suite.addContract(FACTORY_CONTRACT_TYPE, address(elc));
 
         emit ContractCreated(suiteAddress, address(elc), FACTORY_CONTRACT_NAME);
-        return true;
     }
 }

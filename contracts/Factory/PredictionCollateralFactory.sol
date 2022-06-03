@@ -25,7 +25,6 @@ contract PredictionCollateralFactory is AbstractFactory {
     )
         public
         noExist(suiteAddress, FACTORY_CONTRACT_TYPE)
-        returns (bool success)
     {
         ISuite suite = ISuite(suiteAddress);
         require(suite.owner() == msg.sender, "Caller should be suite owner");
@@ -48,13 +47,9 @@ contract PredictionCollateralFactory is AbstractFactory {
         suite.addContract(FACTORY_CONTRACT_TYPE, address(pc));
 
         emit ContractCreated(suiteAddress, address(pc), FACTORY_CONTRACT_NAME);
-        return true;
     }
 
-    function changePoolAddress(address suiteAddress)
-        public
-        returns (bool success)
-    {
+    function changePoolAddress(address suiteAddress) public {
         ISuite suite = ISuite(suiteAddress);
         address suiteOwner = suite.owner();
 
@@ -86,7 +81,5 @@ contract PredictionCollateralFactory is AbstractFactory {
         ISuiteFactory isf = ISuiteFactory(suite._suiteFactoryAddress());
 
         ipc.changeGovernanceAddress(isf.owner());
-
-        return true;
     }
 }

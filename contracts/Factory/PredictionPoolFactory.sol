@@ -50,11 +50,7 @@ contract PredictionPoolFactory is AbstractFactory {
         address suiteAddress,
         uint256 whitePrice,
         uint256 blackPrice
-    )
-        external
-        noExist(suiteAddress, FACTORY_CONTRACT_TYPE)
-        returns (bool success)
-    {
+    ) external noExist(suiteAddress, FACTORY_CONTRACT_TYPE)  {
         ISuite suite = ISuite(suiteAddress);
         require(suite.owner() == msg.sender, "Caller should be suite owner");
 
@@ -67,13 +63,9 @@ contract PredictionPoolFactory is AbstractFactory {
         suite.addContract(FACTORY_CONTRACT_TYPE, pp);
 
         emit ContractCreated(suiteAddress, pp, FACTORY_CONTRACT_NAME);
-        return true;
     }
 
-    function initPredictionPool(address suiteAddress, uint256 fee)
-        external
-        returns (bool success)
-    {
+    function initPredictionPool(address suiteAddress, uint256 fee) external {
         ISuite suite = ISuite(suiteAddress);
         address suiteOwner = suite.owner();
 
@@ -117,13 +109,11 @@ contract PredictionPoolFactory is AbstractFactory {
         ipp.changeFees(fee, _governanceFee, _controllerFee, _bwAdditionFee);
 
         // ipp.changeGovernanceAddress(globalOwner);
-        return true;
     }
 
     function changeGovernanceAddress(address suiteAddress)
         external
         onlyGovernance
-        returns (bool success)
     {
         ISuite suite = ISuite(suiteAddress);
         address predictionPoolAddress = suite.contracts(
@@ -139,13 +129,9 @@ contract PredictionPoolFactory is AbstractFactory {
 
         address governance = IPredictionPoolProxy(_proxyAddress).owner();
         ipp.changeGovernanceAddress(governance);
-        return true;
     }
 
-    function enablePendingOrders(address suiteAddress)
-        external
-        returns (bool success)
-    {
+    function enablePendingOrders(address suiteAddress) external {
         ISuite suite = ISuite(suiteAddress);
         address suiteOwner = suite.owner();
 
@@ -180,6 +166,5 @@ contract PredictionPoolFactory is AbstractFactory {
         ipp.setOnlyOrderer(true);
         // address governance = IPredictionPoolProxy(_proxyAddress).owner();
         // ipp.changeGovernanceAddress(governance);
-        return true;
     }
 }
