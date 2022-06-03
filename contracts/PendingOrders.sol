@@ -44,8 +44,8 @@ contract PendingOrders is DSMath, Ownable {
         uint256 blackPriceBefore;   // price of black token before the event
         uint256 whitePriceAfter;    // price of white token after the event
         uint256 blackPriceAfter;    // price of black token after the event
-        bool isExecuted;            // FALSE before the event, TRUE after the event
-        bool isStarted;             // FALSE before the event, TRUE after the event
+        bool isExecuted;            // FALSE before the event, TRUE after the event end
+        bool isStarted;             // FALSE before the event, TRUE after the event start
         /* solhint-enable prettier/prettier */
     }
 
@@ -114,7 +114,7 @@ contract PendingOrders is DSMath, Ownable {
         require(!_detailForEvent[_eventId].isStarted, "EVENT ALREADY STARTED");
         require(
             _collateralToken.balanceOf(msg.sender) >= _amount,
-            "NOT ENOUGH COLLATERAL IN USER'S ACCOUNT"
+            "NOT ENOUGH COLLATERAL IN USER ACCOUNT"
         );
         require(
             _collateralToken.allowance(msg.sender, address(this)) >= _amount,
@@ -159,11 +159,14 @@ contract PendingOrders is DSMath, Ownable {
 
         require(order.isPending, "ORDER HAS ALREADY BEEN CANCELED");
 
-        require(!_detailForEvent[order.eventId].isStarted, "EVENT IN PROGRESS");
-
         require(
             !_detailForEvent[order.eventId].isExecuted,
-            "ORDER HAS ALREADY BEEN EXECUTED"
+            "The order cannot be canceled - ALREADY EXECUTED"
+        );
+
+        require(
+            !_detailForEvent[order.eventId].isStarted,
+            "The order cannot be canceled - EVENT IN PROGRESS"
         );
 
         /* solhint-disable prettier/prettier */
@@ -218,7 +221,7 @@ contract PendingOrders is DSMath, Ownable {
     }
 
     function withdrawCollateral() external returns (uint256) {
-        require(_ordersOfUser[msg.sender].length > 0, "YOU DON'T HAVE ORDERS");
+        require(_ordersOfUser[msg.sender].length > 0, "Account has no orders");
 
         // total amount of collateral token that should be returned to user
         // feeAmount should be subtracted before actual return

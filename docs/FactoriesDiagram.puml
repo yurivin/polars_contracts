@@ -23,8 +23,12 @@ end box
 
 
 group Create Suite
-user -[#blue]> sf: deploySuite(\n\tsuiteName,\n\tcollateralTokenAddress,\n\twhiteList\n)
-sf -[#purple]> sf: create SuiteInstance
+user -[#blue]> sf: deploySuite(\n\tsuiteName,\n\tcollateralTokenAddress\n)
+note right
+charge commission
+(for example 1POL)
+end note
+sf -[#purple]> sf: new Suite(\n\tsuiteName,\n\tcollateralTokenAddress,\n\twhiteList\n)
 sf -[#purple]> sl: addSuite(\nSuiteInstanceAddress,\nmsg.sender)
 sf -[#purple]> suite: transferOwnership(msg.sender)
 sf -[#green]> user: SuiteInstanceAddress
@@ -52,8 +56,6 @@ end
 
 user -[#blue]> pcf: changePoolAddress(suiteAddress)
 
-user -[#blue]> ppf: initPredictionPool(suiteAddress, fee)
-
 group Event Life Cycle
 user -[#blue]> wl: getFactoryAddressByType(2)
 wl -[#green]> user: eventLifeCycleFactoryAddress
@@ -61,6 +63,8 @@ user -[#blue]> elcf: createContract(\n\tsuiteAddress,\n\toracleAddress\n)
 elcf -[#green]> elcf: EventLifeCycle\n.new(parameters)
 elcf -[#purple]> suite: addContract(2, eventLifeCycleAddress)
 end
+
+user -[#blue]> ppf: initPredictionPool(suiteAddress, fee)
 
 group Pending Orders
 user -[#blue]> wl: getFactoryAddressByType(3)

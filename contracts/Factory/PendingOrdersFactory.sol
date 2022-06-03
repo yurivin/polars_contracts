@@ -18,7 +18,6 @@ contract PendingOrdersFactory is AbstractFactory {
     function createContract(address suiteAddress)
         public
         noExist(suiteAddress, FACTORY_CONTRACT_TYPE)
-        returns (bool success)
     {
         ISuite suite = ISuite(suiteAddress);
         require(suite.owner() == msg.sender, "Caller should be suite owner");
@@ -54,6 +53,5 @@ contract PendingOrdersFactory is AbstractFactory {
         suite.addContract(FACTORY_CONTRACT_TYPE, address(poc));
 
         emit ContractCreated(suiteAddress, address(poc), FACTORY_CONTRACT_NAME);
-        return true;
     }
 }
