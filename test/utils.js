@@ -172,8 +172,15 @@ const ntob = (number) => {
   return new BN(amountBD);
 }
 
+const getLogs = a => {
+  return Object.assign(...Object.keys(a).map(function(b) {
+    if (isNaN(b)) return { [b]: BN.isBN(a[b]) ? a[b].toString() : a[b] };
+  }).filter((k) => k));
+}
+
 module.exports = {
   deployContracts,
   ntob,
+  getLogs,
   BONE
 };

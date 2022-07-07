@@ -94,7 +94,9 @@ module.exports = {
      port: 8545,
      networkCheckTimeout: 10000,
      timeoutBlocks: 200,
-     confirmations: 5,
+     confirmations: 1,
+     gasPrice: 50e9, // 1 gwei
+     gasLimit: 50 * 1e6, // 8,000,000
      skipDryRun: true,
      production: true    // Treats this network as if it was a public net. (default: false)
     },
@@ -134,6 +136,8 @@ module.exports = {
      provider: () => new HDWalletProvider(
       mnemonic, SEED_ADDRESS_MUMBAI,
      ),
+     gasPrice: 60e9, // 60 gwei
+     gasLimit: 4.2 * 1e6, // 4,200,000
      timeoutBlocks: 200,
      network_id: 80001,
      confirmations: 5,
@@ -186,6 +190,7 @@ module.exports = {
 
   plugins: [
     "solidity-coverage",
+    "truffle-contract-size",
     "truffle-plugin-verify"
   ],
 
@@ -219,7 +224,8 @@ module.exports = {
        optimizer: {
          enabled: true,
          // enabled: false,
-         runs: 200
+         runs: 1
+         // runs: 200
        },
       //  evmVersion: "byzantium"
       }
