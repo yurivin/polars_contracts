@@ -20,13 +20,12 @@ const OracleSwapEventManager = artifacts.require("OracleSwapEventManager");
 const OracleChainlinkEventManager = artifacts.require("OracleChainLinkEventManager");
 const OraclePayableChainLinkEventManager = artifacts.require("OraclePayableChainLinkEventManager");
 
-const deployContracts = async (deployerAddress, debug=0) => {
-  const collateralTokenDecimals = "18";
-  const initialBlackOrWhitePrice = new BN("500000000000000000");
+const deployContracts = async (deployerAddress, collateralTokenDecimals="18", debug=0) => {
+  const multiplier = 10 ** parseInt(collateralTokenDecimals);
+  const initialBlackOrWhitePrice = mntob(0.5, multiplier);
   const collateralTokenName = "Collateral Token";
   const collateralTokenSymbol = "COL";
-  const collateralTokenSupply = new BN("10000000000000000000000000000000");
-
+  const collateralTokenSupply = mntob(1e13, multiplier);
   const whiteName = "Polars White";
   const whiteSymbol = "WHITE";
   const blackName = "Polars Black";
@@ -171,6 +170,12 @@ const ntob = (number) => {
     .getValue();
   return new BN(amountBD);
 }
+const mntob = (number, multiplier) => {
+  const amountBD = new bigDecimal(number.toString(10))
+    .multiply(new bigDecimal(multiplier.toString(10)))
+    .getValue();
+  return new BN(amountBD);
+}
 
 const getLogs = a => {
   return Object.assign(...Object.keys(a).map(function(b) {
@@ -181,6 +186,7 @@ const getLogs = a => {
 module.exports = {
   deployContracts,
   ntob,
+  mntob,
   getLogs,
   BONE
 };
