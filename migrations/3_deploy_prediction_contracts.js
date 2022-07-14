@@ -15,7 +15,7 @@ const whiteSymbol = "WHITE";
 const blackName = "Polars Black";
 const blackSymbol = "BLACK";
 
-const initialBlackOrWhitePrice = new BN("500000000000000000");
+const initialBlackOrWhitePrice = 0.5;
 
 const approveValue = constants.MAX_UINT256;
 
@@ -91,14 +91,17 @@ module.exports = async(deployer, network, accounts) => {
         }
 
         if (!contractsAddresses.predictionPool || (await web3.eth.getCode(contractsAddresses.predictionPool) === "0x")) {
+            const initBWPrice = new BN(initialBlackOrWhitePrice * (10**(await deployedCollateralToken.decimals()).toNumber()));
+            console.log("initialBlackOrWhitePrice:", initBWPrice.toString());
+
             await deployer.deploy(
                 PredictionPool,
                 deployedPredictionCollateralization.address,
                 deployedCollateralToken.address,
                 whiteToken.address,
                 blackToken.address,
-                initialBlackOrWhitePrice,
-                initialBlackOrWhitePrice
+                initBWPrice,
+                initBWPrice
             );
             const deployedPredictionPool = await PredictionPool.deployed();
             let result = await deployedPredictionPool.init(deployerAddress, deployerAddress, deployerAddress, deployerAddress, false)

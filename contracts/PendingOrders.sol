@@ -23,6 +23,7 @@ contract PendingOrders is DSMath, Ownable {
 
     // ordersCount count number of orders so far, and is id of very last order
     uint256 public _ordersCount;
+    uint256 public MAX_ORDERS_ALLOWED = 10;
 
     IERC20 public _collateralToken;
     IPredictionPool public _predictionPool;
@@ -121,7 +122,7 @@ contract PendingOrders is DSMath, Ownable {
             "NOT ENOUGHT DELEGATED TOKENS"
         );
         require(
-            _ordersOfUser[msg.sender].length <= 10,
+            _ordersOfUser[msg.sender].length <= MAX_ORDERS_ALLOWED,
             "CANNOT HAVE MORE THAN 10 ORDERS FOR A USER SIMULTANEOUSLY"
         );
 
@@ -221,7 +222,7 @@ contract PendingOrders is DSMath, Ownable {
     }
 
     function withdrawCollateral() external returns (uint256) {
-        require(_ordersOfUser[msg.sender].length > 0, "Account has no orders");
+        require(_ordersOfUser[msg.sender].length > 0, "ACCOUNT HAS NO ORDERS");
 
         // total amount of collateral token that should be returned to user
         // feeAmount should be subtracted before actual return
@@ -302,6 +303,11 @@ contract PendingOrders is DSMath, Ownable {
         );
         _eventContractAddress = _newEventAddress;
         emit EventContractAddressChanged(_eventContractAddress);
+    }
+
+    function changeMaxOrdersCount(uint256 count) external onlyOwner {
+        require(count != 0, "NEW MAX ORDERS COUNT SHOULD NOT BE NULL");
+        MAX_ORDERS_ALLOWED = count;
     }
 
     function emergencyWithdrawCollateral() public onlyOwner {

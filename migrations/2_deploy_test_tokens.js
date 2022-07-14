@@ -22,11 +22,14 @@ const {
 
 const approveValue = constants.MAX_UINT256;
 
+// const collateralTokenDecimals = "6";
 const collateralTokenDecimals = "18";
-const initialBlackOrWhitePrice = new BN("500000000000000000");
+
+const multiplier = 10 ** parseInt(collateralTokenDecimals);
+
 const collateralTokenName = "Collateral Token";
 const collateralTokenSymbol = "COL";
-const collateralTokenSupply = new BN("10000000000000000000000000000000");
+const collateralTokenSupply = new BN((1e13 * multiplier).toString(10));
 
 module.exports = async(deployer, network, accounts) => {
     const deployerAddress = accounts[0];
@@ -41,7 +44,7 @@ module.exports = async(deployer, network, accounts) => {
     if (!fs.existsSync(deployDirectory)) fs.mkdirSync(deployDirectory);
     if (!fs.existsSync(deployTestTokensFileName)) fs.writeFileSync(deployTestTokensFileName, '{}');
 
-    if (network === "bsc_testnet" || network === 'rinkeby' || network === 'rinkeby2') {
+    if (network === "mumbai" || network === "bsc_testnet" || network === 'rinkeby' || network === 'rinkeby2') {
         let deployedSTUsdToken;
         let deployedSTBNBToken;
         let deployedCollateralToken;

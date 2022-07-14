@@ -16,6 +16,7 @@
     "coverage": "truffle run coverage --file=\"test/local/*.js\"",
     "deploy:tokens:rinkeby": "truffle migrate --network rinkeby --f 2 --to 2",
     "deploy:tokens:bsc_testnet": "truffle migrate --network bsc_testnet --f 2 --to 2",
+    "deploy:tokens:mumbai": "truffle migrate --network mumbai --f 2 --to 2",
     "deploy:prediction:rinkeby": "truffle migrate --network rinkeby --f 3 --to 3",
     "deploy:prediction:bsc_testnet": "truffle migrate --network bsc_testnet --f 3 --to 3",
     "verify:prediction:bsc_testnet": "truffle run verify PredictionCollateralization --network bsc_testnet",
@@ -69,6 +70,7 @@
     "truffle-plugin-verify": "^0.5.25"
   },
   "dependencies": {
-    "js-big-decimal": "^1.3.4"
+    "js-big-decimal": "^1.3.4",
+    "truffle-contract-size": "^2.0.1"
   }
 }

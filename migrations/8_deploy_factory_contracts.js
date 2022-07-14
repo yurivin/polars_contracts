@@ -186,6 +186,8 @@ module.exports = async(deployer, network, accounts) => {
          * deployedPredictionPoolProxy.setDeployer(contractsAddresses.predictionPoolFactory)
         /* Need manual init */
 
+        // console.log(await deployedPredictionPoolProxy.setDeployer(contractsAddresses.predictionPoolFactory))
+
 
     } catch(e) {
         console.log('\x1b[33m%s\x1b[33m\x1b[0m',

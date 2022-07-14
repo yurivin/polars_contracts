@@ -154,7 +154,7 @@ contract("DEV: PendingOrders", function (accounts) {
     await expectRevert(
       deployedPendingOrders.withdrawCollateral({
         from: accounts[bid.account]
-      }), "YOU DONT HAVE ORDERS"
+      }), "ACCOUNT HAS NO ORDERS"
     );
   });
 
@@ -251,7 +251,7 @@ contract("DEV: PendingOrders", function (accounts) {
     await expectRevert(
       deployedPendingOrders.withdrawCollateral({
         from: accounts[ordersApplied[0].account]
-      }), "YOU DONT HAVE ORDERS"
+      }), "ACCOUNT HAS NO ORDERS"
     );
   });
 

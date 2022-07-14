@@ -62,7 +62,12 @@ module.exports = async(deployer, network, accounts) => {
 
             await deployedCollateralToken.approve(deployedPendingOrders.address, approveValue);
 
-            // await deployedEventLifeCycle.setPendingOrders(deployedPendingOrders.address, true);
+            /* Init platform to use PendingOrders
+            * await deployedEventLifeCycle.setPendingOrders(deployedPendingOrders.address, true);
+            * await deployedPredictionPool.changeOrderer(deployedPendingOrders.address);
+            * await deployedPredictionPool.setOnlyOrderer(true);
+            *
+            */
 
             contractsAddresses.pendingOrders = deployedPendingOrders.address;
             fs.writeFileSync(deployMainContractsFileName, JSON.stringify(contractsAddresses, null, 2));
