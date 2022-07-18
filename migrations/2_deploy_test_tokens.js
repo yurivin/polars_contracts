@@ -6,9 +6,7 @@ const IPancakePair = artifacts.require("IPancakePair");
 const PendingOrders = artifacts.require("PendingOrders");
 const PredictionPool = artifacts.require("PredictionPool");
 const PredictionCollateralization = artifacts.require("PredictionCollateralization");
-// const TokenTemplate = artifacts.require("TokenTemplate");
 const EventLifeCycle = artifacts.require("EventLifeCycle");
-// const OracleEventManager = artifacts.require("OracleEventManager");
 const OracleSwapEventManager = artifacts.require("OracleSwapEventManager");
 
 const fs = require("fs");
@@ -20,6 +18,8 @@ const {
   constants,    // Common constants, like the zero address and largest integers
 } = require('@openzeppelin/test-helpers');
 
+const { mntob } = require('./../test/utils.js');
+
 const approveValue = constants.MAX_UINT256;
 
 // const collateralTokenDecimals = "6";
@@ -29,7 +29,8 @@ const multiplier = 10 ** parseInt(collateralTokenDecimals);
 
 const collateralTokenName = "Collateral Token";
 const collateralTokenSymbol = "COL";
-const collateralTokenSupply = new BN((1e13 * multiplier).toString(10));
+const collateralTokenSupply = mntob(1e13, multiplier);
+
 
 module.exports = async(deployer, network, accounts) => {
     const deployerAddress = accounts[0];
