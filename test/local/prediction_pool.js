@@ -153,11 +153,64 @@ const { deployContracts, ntob, mntob, BONE } = require('./../utils.js');
       ).to.be.bignumber.equal(blackBought);
     });
 
+    [
+      3, 9, 10, 11
+    ].forEach((amount) => {
+      const anotherOrderer = accounts[7]
+      it(`addLiquidity error on ${amount}`, async function () {
+        const tokensAmount = mntob(amount, multiplier);
+        const startPrice = mntob(0.5, multiplier);
+        const bwTokensAmount = ntob(amount);
+
+        await expectRevert(
+          deployedPredictionPool.addLiquidity(
+            tokensAmount,
+            { from: anotherOrderer }
+          ),
+          "Not enough tokens are delegated",
+        );
+
+        await deployedCollateralToken.approve(
+          deployedPredictionPool.address,
+          tokensAmount,
+          { from: anotherOrderer }
+        );
+
+        await expectRevert(
+          deployedPredictionPool.addLiquidity(
+            tokensAmount,
+            { from: anotherOrderer }
+          ),
+          "Not enough tokens on the user balance",
+        );
+
+        await deployedCollateralToken.transfer(
+          anotherOrderer,
+          tokensAmount,
+          { from: deployerAddress }
+        );
+
+        const addLiquidity = await deployedPredictionPool.addLiquidity(
+          tokensAmount,
+          { from: anotherOrderer }
+        );
+        const { logs: addLiquidityLog } = addLiquidity;
+
+        expectEvent.inLogs(addLiquidityLog, 'AddLiquidity', {
+          user: anotherOrderer,
+          whitePrice: startPrice,              // "0.5",
+          blackPrice: startPrice,              // "0.5",
+          bwAmount: bwTokensAmount,            // "1000",
+          colaterallAmount: tokensAmount       // "1000"
+        });
+      });
+    })
+
     it("addLiquidity and withdrawLiquidity", async function () {
       const tokensAmount = mntob(1000, multiplier);
-      const bwTokensAmount = ntob(1000)
-      const blackTokensAmount = ntob(1000)
-      const whiteTokensAmount = ntob(1000)
+      const bwTokensAmount = ntob(1000);
+      const blackTokensAmount = ntob(1000);
+      const whiteTokensAmount = ntob(1000);
       const totalCollateralTokensAmount = collateralTokenSupply;
 
       const forWhiteAmount = mntob(500, multiplier);

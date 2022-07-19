@@ -12,12 +12,20 @@ const bigDecimal = require('js-big-decimal');
 const chai = require('chai');
 const expect = require('chai').expect;
 
-const { deployContracts, ntob, BONE } = require('./../utils.js');
+const { deployContracts, ntob, mntob, BONE } = require('./../utils.js');
 
 const priceChangePart = ntob(0.05);
 const debug = 0;
 
-contract("DEV: PendingOrders", function (accounts) {
+[
+  "6",
+  "18"
+].forEach((decimals) => {
+  const collateralTokenDecimals = decimals;
+  const multiplier = 10 ** parseInt(collateralTokenDecimals);
+  const collateralTokenSupply = mntob(1e13, multiplier);
+
+  contract(`DEV: PendingOrders ${decimals} Decimals`, function (accounts) {
   "use strict";
 
   let deployedPredictionPool;
@@ -35,7 +43,7 @@ contract("DEV: PendingOrders", function (accounts) {
   });
 
   beforeEach(async () => {
-    const deployedContracts = await deployContracts(deployerAddress);
+    const deployedContracts = await deployContracts(deployerAddress, collateralTokenDecimals);
 
     deployedPredictionPool = deployedContracts.deployedPredictionPool;
     deployedPredictionCollateralization = deployedContracts.deployedPredictionCollateralization;
@@ -49,6 +57,38 @@ contract("DEV: PendingOrders", function (accounts) {
   afterEach(async () => {
 
   });
+
+  const calc = async (bid, multiplier) => {
+    const feePP = new bigDecimal((await deployedPredictionPool.FEE()).toString())
+      .divide(new bigDecimal((1e18).toString(10)));
+    const amountBD = new bigDecimal(bid.amount.toString(10))
+      .multiply(new bigDecimal(multiplier.toString(10)))
+
+    const eventDetail = await deployedPendingOrders._detailForEvent(bid.eventId);
+
+    const priceBefore = bid.isWhite ? (
+      new bigDecimal(eventDetail.whitePriceBefore.toString())
+    ) : (
+      new bigDecimal(eventDetail.blackPriceBefore.toString())
+    );
+
+    const priceAfter = bid.isWhite ? (
+      new bigDecimal(eventDetail.whitePriceAfter.toString())
+    ) : (
+      new bigDecimal(eventDetail.blackPriceAfter.toString())
+    );
+
+    const fee = amountBD.multiply(feePP)
+    if (debug) console.log("fee:                ", fee.getValue());
+    const tmpAmountBD = amountBD
+      .subtract(fee)
+      .divide(priceBefore)
+      .multiply(priceAfter)
+
+    const fee2 = tmpAmountBD.multiply(feePP)
+    if (debug) console.log("fee2:               ", fee2.getValue());
+    return tmpAmountBD.subtract(fee2).round().getValue();
+  }
 
   it('the deployer is the owner', async function () {
     expect(await deployedPendingOrders.owner()).to.equal(deployerAddress);
@@ -129,7 +169,9 @@ contract("DEV: PendingOrders", function (accounts) {
       "- ALREADY EXECUTED"
     );
 
-    await withdrawAmount(accounts[bid.account], new BN("944450619658606827"));
+    const wAmount = await calc(bid, multiplier);
+
+    await withdrawAmount(accounts[bid.account], new BN(wAmount));
 
     const amountBN = ntob(bid.amount);
 
@@ -226,7 +268,9 @@ contract("DEV: PendingOrders", function (accounts) {
       someEventsArray2[0].eventResult
     );
 
-    await withdrawAmount(accounts[ordersApplied[0].account], new BN("944450619658606827"));
+    const wAmount = await calc(ordersApplied[0], multiplier);
+
+    await withdrawAmount(accounts[ordersApplied[0].account], new BN(wAmount));
 
     const amountBN = ntob(ordersApplied[0].amount);
 
@@ -308,7 +352,7 @@ contract("DEV: PendingOrders", function (accounts) {
     .reduce(
       (previousValue, currentValue) => previousValue + currentValue, 0
     );
-    expect(ntob(sum)).to.be.bignumber.equal(colBalancePO);
+    expect(mntob(sum, multiplier)).to.be.bignumber.equal(colBalancePO);
 
     await deployedPendingOrders.emergencyWithdrawCollateral()
 
@@ -316,12 +360,15 @@ contract("DEV: PendingOrders", function (accounts) {
     expect(new BN("0")).to.be.bignumber.equal(colBalancePO2);
 
     const colBalanceOwner2 = await deployedCollateralToken.balanceOf(deployerAddress);
-    expect(colBalanceOwner2).to.be.bignumber.equal(colBalanceOwner.add(ntob(sum)));
+    expect(colBalanceOwner2).to.be.bignumber.equal(colBalanceOwner.add(mntob(sum, multiplier)));
+    // expect(colBalanceOwner2).to.be.bignumber.equal(colBalanceOwner.add(ntob(sum)));
   });
 
   it("should REVERT on 'Cannot buyback more than sold from the pool'", async () => {
-    const amount = new BN("10");
-    const expectedWhiteBuy = new BN("20"); // If whitePrice == 0.5
+    // const amount = new BN("10");
+    const amount = mntob(10, multiplier);
+    const expectedWhiteBuy = ntob(19.94); // If whitePrice == 0.5
+    // const expectedWhiteBuy = new BN("20"); // If whitePrice == 0.5
     const isWhite = true;
     const eventId = new BN("101");
 
@@ -348,7 +395,8 @@ contract("DEV: PendingOrders", function (accounts) {
     expect(ordersCount).to.be.bignumber.equal(new BN("1"));
 
     const whitePrice = await deployedPredictionPool._whitePrice();
-    expect(whitePrice).to.be.bignumber.equal(new BN("500000000000000000"));
+    expect(whitePrice).to.be.bignumber.equal(mntob(0.5, multiplier));
+    // expect(whitePrice).to.be.bignumber.equal(new BN("500000000000000000"));
 
     const whiteBoughtBefore = await deployedPredictionPool._whiteBought();
 
@@ -404,7 +452,8 @@ contract("DEV: PendingOrders", function (accounts) {
     const whitePrice = await deployedPredictionPool._whitePrice();
     if (debug) console.log("whitePrice:             ", whitePrice.toString());
     // TODO: Check price, assertEquals(new BigInteger("525078986960882648"),bettingPool._whitePrice().send());
-    expect(whitePrice).to.be.bignumber.equal(new BN("500000000000000000"));
+    expect(whitePrice).to.be.bignumber.equal(mntob(0.5, multiplier));
+    // expect(whitePrice).to.be.bignumber.equal(new BN("500000000000000000"));
 
     const whiteBoughtBefore = await deployedPredictionPool._whiteBought();
     if (debug) console.log("whiteBoughtBefore:      ", whiteBoughtBefore.toString());
@@ -706,8 +755,8 @@ contract("DEV: PendingOrders", function (accounts) {
   it("should REVERT on 'Actual price is higher than acceptable by the user'", async () => {
     await expectRevert(
       deployedPredictionPool.buyWhite(
-        ntob(0.4),
-        ntob(5),
+        mntob(0.4, multiplier),
+        mntob(5, multiplier),
         { from: deployerAddress }
       ),
       "Actual price is higher than acceptable by the user",
@@ -741,14 +790,13 @@ contract("DEV: PendingOrders", function (accounts) {
   }
 
   const addLiquidityToPrediction = async (amount) => {
-    const collateralAmountToBuy = ntob(100000);
-    const buyPayment = ntob(amount);
+    const buyPayment = mntob(amount, multiplier);
 
-    const initialBlackOrWhitePrice = ntob(0.5);
+    const initialBlackOrWhitePrice = mntob(0.5, multiplier);
 
     const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
 
-    expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(collateralAmountToBuy);
+    expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(buyPayment);
 
     const eventCount = 1;
     const buyWhiteLog = await buyToken("white", initialBlackOrWhitePrice, buyPayment);
@@ -789,9 +837,8 @@ contract("DEV: PendingOrders", function (accounts) {
   }
 
   const createPendingOrder = async (isWhite, amount, eventId, runner) => {
-    const amountBN = ntob(amount);
+    const amountBN = mntob(amount, multiplier);
     const ordersCountExpected = (await deployedPendingOrders._ordersCount());
-    // const ordersCountExpected = (await deployedPendingOrders._ordersCount()).add(new BN("1"));
 
     const createOrder = await deployedPendingOrders.createOrder(
       amountBN,
@@ -818,23 +865,21 @@ contract("DEV: PendingOrders", function (accounts) {
   }
 
   const getExactBuyAmountOut = async (amountIn, buyWhite) => {
-
-    const price0 = buyWhite ? (
-      await deployedPredictionPool._whitePrice()
+    const feePP = new bigDecimal((await deployedPredictionPool.FEE()).toString())
+    const price = buyWhite ? (
+      new bigDecimal((await deployedPredictionPool._whitePrice()).toString())
     ) : (
-      await deployedPredictionPool._blackPrice()
+      new bigDecimal((await deployedPredictionPool._blackPrice()).toString())
     );
-    const price = new bigDecimal(price0.toString(10))
-      .divide(new bigDecimal(BONE.toString(10)), 18);
 
-    const fee = new bigDecimal((await deployedPredictionPool.FEE()).toString())
-      .divide(new bigDecimal(BONE.toString(10)), 18);
+    const amountBD = new bigDecimal(ntob(amountIn).toString());
+    const fee = amountBD.multiply(feePP).divide(new bigDecimal(BONE.toString(10)), 18).round();
+    const tmpAmountBD = amountBD
+      .subtract(fee)
+      .multiply(new bigDecimal(multiplier.toString(10)))
+      .divide(price)
 
-    const amountBDb = new bigDecimal(ntob(amountIn));
-    const f = amountBDb.multiply(fee);
-    const a = amountBDb.subtract(f);
-    const n1 = a.divide(price, 18);
-    return n1.round().getValue();
+    return tmpAmountBD.round().getValue();
   }
 
   const getExactSellAmountOut = async (amountIn, sellWhite) => {
@@ -921,7 +966,7 @@ contract("DEV: PendingOrders", function (accounts) {
   }
 
   const sendCollateralTokenToUser = async (user, amount) => {
-    const collateralAmount = ntob(amount)
+    const collateralAmount = mntob(amount, multiplier);
 
     const collateralTokenUserBalanceBefore = await deployedCollateralToken.balanceOf(user);
 
@@ -1025,12 +1070,19 @@ contract("DEV: PendingOrders", function (accounts) {
 
       const pendingOrdersAfterStart = pendingOrdersBeforeStart
         .filter(el => el.cancel === false)
-        .map((order) => {
+        .map(async (order) => {
           const x = new bigDecimal(
             order.tokens
           ).multiply(order.isWhite ? whitePriceAfter : blackPriceAfter)
-          const aFeeBD = x.multiply(fee).round();
+          const aFeeBD = x.multiply(fee).round(); // ?
           const collateralToSend = x.subtract(aFeeBD).round();
+
+
+          const bid = {
+            amount: order.tokens,
+            eventId: order.eventId,
+            isWhite: order.isWhite
+          }
 
           return {
             "id": order.id,
@@ -1043,7 +1095,7 @@ contract("DEV: PendingOrders", function (accounts) {
             "feeBefore": order.feeBefore,
             "feeAfter": aFeeBD.getValue(),
             "tokens": order.tokens,
-            "amountAfter": collateralToSend.getValue(),
+            "amountAfter": await calc(bid, multiplier),
             "amountAfter2": collateralToSend.divide(new bigDecimal(BONE.toString(10)), 18).getValue(),
             "withdrawDone": order.withdrawDone,
           };
@@ -1164,4 +1216,4 @@ contract("DEV: PendingOrders", function (accounts) {
   }
 
 });
-
+})

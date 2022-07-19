@@ -87,11 +87,11 @@ module.exports = async(deployer, network, accounts) => {
         } else {
             deployedPredictionCollateralization = await PredictionCollateralization.at(contractsAddresses.predictionCollateralization);
             whiteToken = await TokenTemplate.at(await deployedPredictionCollateralization._whiteToken());
-            blackToken = await TokenTemplate.at(await deployedPredictionCollateralization._whiteToken());
+            blackToken = await TokenTemplate.at(await deployedPredictionCollateralization._blackToken());
         }
 
         if (!contractsAddresses.predictionPool || (await web3.eth.getCode(contractsAddresses.predictionPool) === "0x")) {
-            const initBWPrice = new BN(initialBlackOrWhitePrice * (10**(await deployedCollateralToken.decimals()).toNumber()));
+            const initBWPrice = new BN((initialBlackOrWhitePrice * (10**(await deployedCollateralToken.decimals()).toNumber())).toString(10));
             console.log("initialBlackOrWhitePrice:", initBWPrice.toString());
 
             await deployer.deploy(
