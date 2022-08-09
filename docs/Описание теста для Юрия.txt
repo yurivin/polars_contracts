@@ -1,0 +1,102 @@
+Левередж ликвидность
+addLiquidity
+withdrawLiquidity
+
+ordersByEvent вьюшка выводит все ордера по заданному событию
+ordersOfUserByEvent вьюшка выводит все ордера по заданному пользователю в _queuedEvent событии
+ordersOfUserAll вьюшка выводит все ордера по заданному пользователю
+createOrder
+cancelOrder
+withdrawCollateral
+withdrawAmountByUser вьюшка считает amount для вывода по заданному пользователю (используется для просмотра суммы клейма и в функции withdrawCollateral)
+
+тесты
+создание ордера:
+проверка реверта на "LEVERAGE: MAX LOSS PERCENT IS VERY BIG"
+проверка реверта на "LEVERAGE: WRONG EVENT ID"
+проверка началных значений queuedEvent
+проверка реверта на "LEVERAGE: NOT ENOUGH COLLATERAL IN USER ACCOUNT"
+balanceOf(user)
+balanceOf(user) после добавления ему денег
+проверка реверта на "NOT ENOUGHT DELEGATED TOKENS"
+approve user
+проверка реверта на "LEVERAGE: NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
+Leverage.addLiquidity
+balanceOf(deployedLeverage.address) после добавления ликвидности
+создание тестового ордера
+проверка тестового ордера
+cancelOrder с другим пользователем проверка реверта на "LEVERAGE: NOT YOUR ORDER"
+cancelOrder
+inLogs('OrderCanceled')
+balanceOf(deployedLeverage.address)
+
+Update 05.08.22
+проверка множества ордеров
+расчет суммы ownAmount всех ордеров
+расчет суммы totalAmount всех ордеров
+leverageCreateOrder в цикле для всех ордеров
+проверка соответствия количества ордеров по каждому пользователю количеству в контракте
+проверка баланса левередж контракта после создания ордеров
+проверка наличия ордеров от левереджа в пендинг ордерах (должно быть 0)
+старт события
+проверка наличия ордеров от левереджа в пендинг ордерах (должно быть 2, за белые и за черные)
+2 проверки баланса левереджа:
+    1) balance = ownAmountSum + liquidityAmount - totalAmountSum
+    2) balance = liquidityAmount - crossAmountSum
+завершение события
+
+расчет resultAmountSumBlack из массива ордеров
+расчет resultAmountSumWhite из массива ордеров
+
+проверка eventInfo.blackCollateralAmount равно resultAmountSumBlack
+проверка eventInfo.whiteCollateralAmount равно resultAmountSumWhite
+
+прогон по всем аккаунтам, запрос ордеров по пользователям:
+  проверка соответствия количества неотмененных ордеров
+  проверка соответствия количества отмененных ордеров (1 пользователь)
+
+функция withdraw
+  расчет суммы вывода по ордерам пользователя и сравнение с результатом view withdrawAmountByUser контракта
+  withdrawCollateral и проверка событий CollateralWithdrew, Transfer
+    (
+      amount: expectedWithdrawAmountByUser,
+      user: accounts[account],
+      caller: deployerAddress
+    )
+
+проверка суммы вывода пользователя без ордеров на равенство 0 во view withdrawAmountByUser (accounts[0])
+проверка реверта на "LEVERAGE: ACCOUNT HAS NO ORDERS" (accounts[0])
+
+
+тест "calculate _lpRatio"
+проверка _collateralTokens на равенство нулю
+проверка _lpTokens на равенство нулю
+проверка getLpRatio на равенство 1 (BN)
+проверка getLpRatio на равенство 1 (BN) после трансфера 20 usd на контракт левереджа
+проверка реверта на "LEVERAGE: TOKENS AMOUNT CANNOT BE 0" при addLiquidity(0)
+проверка реверта на "LEVERAGE: NOT ENOUGH COLLATERAL TOKENS ARE DELEGATED" при addLiquidity(20)
+апрув 20
+добавление ликвидности (20)
+проверка getLpRatio на равенство 1 (BN)
+проверка _collateralTokens на равенство 20
+проверка _lpTokens на равенство 20
+тестовый хак updateBalances, для проверки lpRatio - collateralAmount(50) lpAmount(10)
+расчет expectedLpRatio после хака
+проверка getLpRatio на равенство expectedLpRatio
+проверка реверта на "LEVERAGE: NOT ENOUGH COLLATERAL TOKENS ARE DELEGATED" при addLiquidity(1530)
+апрув 1530
+добавление ликвидности (20)
+расчет expectedLpTokens после добавления ликвидности
+проверка _collateralTokens на равенство 1600
+проверка _lpTokens на равенство expectedLpTokens
+
+
+04.08.22: не сходились суммы для вывода пользователю из левереджа, нашел ошибку в преобразовании собственной суммы пользователя в 18 (6) значные числа в тесте
+05.08.22: удаление лишнего кода, комментов, переиспользование кода логирование тестов для Юрия)
+
+
+TODO:
+необходимо чистить ордера после withdraw (в контракте)
+убрать лишние переменные состояния из контракта
+добавить проверки в тестах на очищение в переменных состояния
+
