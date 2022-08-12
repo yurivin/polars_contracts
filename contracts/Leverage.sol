@@ -26,6 +26,8 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
     bool public _onlyCurrentEvent = true;
 
+    uint256 public _priceChangePart = 0.05 * 1e18; // Default 0.05%
+
     struct CrossOrder {
         /* solhint-disable prettier/prettier */
         address orderer;        // address of user placing order
@@ -114,7 +116,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         _collateralToken.approve(address(_pendingOrders), type(uint256).max);
     }
 
-    function getQueuedEvent() public view returns (uint256, uint256) {
+    function getOngoingEvent() public view returns (uint256, uint256) {
         /* solhint-disable prettier/prettier */
         (
             uint256 priceChangePart,
@@ -126,7 +128,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             , // string eventSeries
             , // string eventName
             uint256 gameEventId
-        ) = _eventLifeCycle._queuedEvent();
+        ) = _eventLifeCycle._ongoingEvent();
         /* solhint-enable prettier/prettier */
         return (priceChangePart, gameEventId);
     }
@@ -141,13 +143,6 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             maxLoss <= _maxLossThreshold,
             "LEVERAGE: MAX LOSS PERCENT IS VERY BIG"
         );
-        uint256 priceChangePart = 0.05 * 1e18;
-        uint256 gameEventId;
-
-        if (_onlyCurrentEvent == true) {
-            (priceChangePart, gameEventId) = getQueuedEvent();
-        }
-        require(gameEventId == eventId, "LEVERAGE: WRONG EVENT ID");
 
         require(
             _collateralToken.balanceOf(msg.sender) >= amount,
@@ -158,7 +153,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             "LEVERAGE: NOT ENOUGHT DELEGATED TOKENS"
         );
 
-        uint256 cross = wdiv(maxLoss, priceChangePart);
+        uint256 cross = wdiv(maxLoss, _priceChangePart);
         uint256 orderAmount = wmul(amount, cross);
 
         uint256 userBorrowAmount = sub(orderAmount, amount);
@@ -196,7 +191,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         emit OrderCreated(
             msg.sender,
             maxLoss,
-            priceChangePart,
+            _priceChangePart,
             cross,
             amount,
             orderAmount
@@ -229,15 +224,6 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         emit OrderCanceled(orderId, msg.sender);
     }
 
-    event WithdrawCollateralUser(address user, uint256 totalWithdrawAmount);
-    event WithdrawCollateralUser2(
-        address user,
-        uint256 ownAmount,
-        uint256 borrowedAmount,
-        uint256 cross,
-        uint256 eventId
-    );
-
     function withdrawCollateral(address user) external returns (uint256) {
         require(
             _crossOrdersOfUser[user].length > 0,
@@ -246,7 +232,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         // total amount of collateral token that should be returned to user
         // feeAmount should be subtracted before actual return
-        uint256 totalWithdrawAmount;
+        uint256 totalWithdrawAmount = 0;
 
         uint256 i = 0;
         while (i < _crossOrdersOfUser[user].length) {
@@ -312,6 +298,14 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     function eventStart(uint256 eventId) external onlyEventContract {
         _events[eventId].whitePriceBefore = _predictionPool._whitePrice();
         _events[eventId].blackPriceBefore = _predictionPool._blackPrice();
+
+        (uint256 priceChangePart, ) = getOngoingEvent();
+
+        require(
+            priceChangePart == _priceChangePart,
+            "LEVERAGE: WRONG PRICE CHANGE PART"
+        );
+
         _events[eventId].isStarted = true;
         if (_events[eventId].whiteCollateralAmount > 0) {
             _pendingOrders.createOrder(
@@ -418,6 +412,10 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             "LEVERAGE: NEW MAX LOSS THRESHOLD SHOULD BE LESS THAN 50%"
         );
         _maxLossThreshold = percent;
+    }
+
+    function changePriceChangePart(uint256 priceChangePart) external onlyOwner {
+        _priceChangePart = priceChangePart;
     }
 
     function updatePredictionPoolFee() external onlyOwner {

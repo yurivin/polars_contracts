@@ -210,24 +210,24 @@ const debug = 0;
         ), "LEVERAGE: MAX LOSS PERCENT IS VERY BIG"
       );
 
-      await expectRevert(
-        deployedLeverage.createOrder(
-          collateralAmount,     // uint256 amount
-          true,                 // bool isWhite,
-          maxLossUserDefined,   // uint256 maxLoss,
-          userSelectedEventId,  // uint256 eventId
-        ), "LEVERAGE: WRONG EVENT ID"
-      );
+      // await expectRevert(
+      //   deployedLeverage.createOrder(
+      //     collateralAmount,     // uint256 amount
+      //     true,                 // bool isWhite,
+      //     maxLossUserDefined,   // uint256 maxLoss,
+      //     userSelectedEventId,  // uint256 eventId
+      //   ), "LEVERAGE: WRONG EVENT ID"
+      // );
 
-      await expectRevert(
-        deployedLeverage.createOrder(
-          collateralAmount,     // uint256 amount
-          true,                 // bool isWhite,
-          maxLossUserDefined,   // uint256 maxLoss,
-          userSelectedEventId,  // uint256 eventId
-          { from: user }
-        ), "LEVERAGE: WRONG EVENT ID"
-      );
+      // await expectRevert(
+      //   deployedLeverage.createOrder(
+      //     collateralAmount,     // uint256 amount
+      //     true,                 // bool isWhite,
+      //     maxLossUserDefined,   // uint256 maxLoss,
+      //     userSelectedEventId,  // uint256 eventId
+      //     { from: user }
+      //   ), "LEVERAGE: WRONG EVENT ID"
+      // );
 
       await deployedEventLifeCycle.addNewEvent(
         new BN("50000000000000000"),  // uint256 priceChangePart,
@@ -415,23 +415,6 @@ const debug = 0;
         );
       }
 
-      /* Temporary disabled */
-      /*
-      for (const user of [...Array(accounts.length).keys()]) {
-        const ordersOfUserByQueuedEvent = await deployedLeverage.ordersOfUserByQueuedEvent(accounts[user]);
-
-        const expectedOrdersCount = currentOrders
-          .filter(el => el.user === user)
-          .map((el) => el.user )
-          .reduce((map, val) => {map = (map || 0)+1; return map}, 0 );
-
-        if (debug) console.log(`expectedOrdersCount[${user}]:`, expectedOrdersCount);
-        if (debug) console.log(`ordersOfUserByQueuedEvent[${user}]:`, ordersOfUserByQueuedEvent)
-
-        expect(ordersOfUserByQueuedEvent.length).to.equal(expectedOrdersCount);
-      }
-      */
-
       expect(
         await deployedCollateralToken.balanceOf(deployedLeverage.address)
       ).to.be.bignumber.equal(ownAmountSum.add(liquidityAmount));
@@ -614,51 +597,10 @@ const debug = 0;
         if (debug) console.log("balanceOf after withdraw   :", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
       }
 
-
-
-      /* Temporary disabled */
-      /*
-      for (let account of [...Array(accounts.length).keys()]) {
-        const expectedOrdersCountByUser = currentOrders
-          .filter(el => el.user === account)
-          .length
-
-        if (debug) console.log("expectedOrdersCountByUser:", expectedOrdersCountByUser);
-        const ordersOfUserAll = await deployedLeverage.ordersOfUserAll(accounts[account]);
-        if (debug) console.log(
-          "ordersOfUserAll:",
-          accounts[account],
-          ordersOfUserAll
-        )
-        expect(expectedOrdersCountByUser).to.equal(ordersOfUserAll.length);
-      }
-      */
-
       for (let user of users) {
         if (debug) console.log("user:", user, accounts[user]);
         await withdraw(user);
       }
-      /* Temporary disabled */
-      /*
-      for (let account of [...Array(accounts.length).keys()]) {
-        const ordersOfUserAll = await deployedLeverage.ordersOfUserAll(accounts[account]);
-        const nullAmount = await deployedLeverage.withdrawAmountByUser(accounts[account]);
-        if (debug) console.log(
-          "ordersOfUserAll:",
-          account,
-          accounts[account],
-          ordersOfUserAll
-        )
-
-        expect(nullAmount).to.be.bignumber.equal(new BN("0"));
-      }
-
-      const nullAmount = await deployedLeverage.withdrawAmountByUser(accounts[0]);
-      if (debug) console.log("withdrawAmountByUser accounts[0]:", nullAmount.toString());
-
-      expect(nullAmount).to.be.bignumber.equal(new BN("0"));
-
-      */
 
       await expectRevert(
         deployedLeverage.withdrawCollateral(accounts[0]),
@@ -681,23 +623,6 @@ const debug = 0;
         expect(order.isCanceled).to.equal(false);
 
       }
-
-      /* Temporary disabled */
-      /*
-      const ordersByEvent = await deployedLeverage.ordersByEvent(nowEvent.id);
-
-      if (debug) console.log("ordersByEvent:", ordersByEvent);
-      for (let i = 0; i < ordersByEvent.length; i++) {
-        if (debug) console.log("ordersByEvent:", ordersByEvent[i]);
-        expect(ordersByEvent[i].orderer).to.equal('0x0000000000000000000000000000000000000000');
-        expect(ordersByEvent[i].cross).to.be.bignumber.equal(new BN("0"));
-        expect(ordersByEvent[i].ownAmount).to.be.bignumber.equal(new BN("0"));
-        expect(ordersByEvent[i].borrowedAmount).to.be.bignumber.equal(new BN("0"));
-        expect(ordersByEvent[i].isWhite).to.equal(false);
-        expect(ordersByEvent[i].eventId).to.be.bignumber.equal(new BN("0"));
-        expect(ordersByEvent[i].isCanceled).to.equal(false);
-      }
-      */
 
       const _eventsById = await deployedLeverage._events(nowEvent.id);
       if (debug) console.log("_eventsById:", _eventsById);

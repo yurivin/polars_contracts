@@ -46,8 +46,7 @@ interface IEventLifeCycle {
 
     function endEvent(int8 _result) external;
 
-    // function _queuedEvent() external view returns (GameEvent memory);
-    function _queuedEvent()
+    function _ongoingEvent()
         external
         view
         returns (
