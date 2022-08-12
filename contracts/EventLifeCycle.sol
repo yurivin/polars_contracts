@@ -3,6 +3,7 @@ pragma solidity ^0.7.4;
 
 import "./Eventable.sol";
 import "./IPendingOrders.sol";
+import "./ILeverage.sol";
 
 contract EventLifeCycle {
     address public _governanceAddress;
@@ -13,7 +14,9 @@ contract EventLifeCycle {
         GameEvent(0, 0, 0, "q", "q", "q", "q", "q", 0);
     bool public eventIsInProgress = false;
     IPendingOrders public _pendingOrders;
+    ILeverage public _leverage;
     bool public _usePendingOrders;
+    bool public _useLeverage;
 
     event GovernanceAddressChanged(address governance);
     event OracleAddressAdded(address oracle);
@@ -93,6 +96,9 @@ contract EventLifeCycle {
         );
         _ongoingEvent = _queuedEvent;
         GameEvent memory ongoing = _ongoingEvent;
+        if (_useLeverage) {
+            _leverage.eventStart(ongoing.eventId);
+        }
         if (_usePendingOrders) {
             _pendingOrders.eventStart(ongoing.eventId);
         }
@@ -147,6 +153,9 @@ contract EventLifeCycle {
         if (_usePendingOrders) {
             _pendingOrders.eventEnd(eventId);
         }
+        if (_useLeverage) {
+            _leverage.eventEnd(eventId);
+        }
         emit GameEventEnded(_result, eventId);
         eventIsInProgress = false;
     }
@@ -199,5 +208,13 @@ contract EventLifeCycle {
     ) external onlyGovernance {
         _pendingOrders = IPendingOrders(pendingOrdersAddress);
         _usePendingOrders = usePendingOrders;
+    }
+
+    function setLeverage(address leverageAddress, bool useLeverage)
+        external
+        onlyGovernance
+    {
+        _leverage = ILeverage(leverageAddress);
+        _useLeverage = useLeverage;
     }
 }
