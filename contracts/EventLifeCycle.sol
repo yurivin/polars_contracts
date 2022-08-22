@@ -98,8 +98,8 @@ contract EventLifeCycle {
         GameEvent memory ongoing = _ongoingEvent;
         if (_useLeverage) {
             _leverage.eventStart(ongoing.eventId);
-        }
-        if (_usePendingOrders) {
+            _pendingOrders.eventStart(ongoing.eventId);
+        } else if (_usePendingOrders) {
             _pendingOrders.eventStart(ongoing.eventId);
         }
         _predictionPool.submitEventStarted(ongoing.priceChangePart);
@@ -150,11 +150,12 @@ contract EventLifeCycle {
         );
         _predictionPool.submitEventResult(_result);
         uint256 eventId = _ongoingEvent.eventId;
-        if (_usePendingOrders) {
-            _pendingOrders.eventEnd(eventId);
-        }
+
         if (_useLeverage) {
+            _pendingOrders.eventEnd(eventId);
             _leverage.eventEnd(eventId);
+        } else if (_usePendingOrders) {
+            _pendingOrders.eventEnd(eventId);
         }
         emit GameEventEnded(_result, eventId);
         eventIsInProgress = false;
