@@ -324,10 +324,17 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     }
 
     function eventEnd(uint256 eventId) external onlyEventContract {
-        _events[eventId].whitePriceAfter = _predictionPool._whitePrice();
-        _events[eventId].blackPriceAfter = _predictionPool._blackPrice();
-        _events[eventId].isEnded = true;
-        _pendingOrders.withdrawCollateral();
+        CrossEvent memory nowEvent = _events[eventId];
+        nowEvent.whitePriceAfter = _predictionPool._whitePrice();
+        nowEvent.blackPriceAfter = _predictionPool._blackPrice();
+        nowEvent.isEnded = true;
+        if (
+            (nowEvent.whiteCollateralAmount > 0) ||
+            (nowEvent.blackCollateralAmount > 0)
+        ) {
+            _pendingOrders.withdrawCollateral();
+        }
+        _events[eventId] = nowEvent;
     }
 
     function getLpRatio() public view returns (uint256) {
