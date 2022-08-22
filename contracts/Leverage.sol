@@ -428,4 +428,12 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     function updatePredictionPoolFee() external onlyOwner {
         _predictionPoolFee = _predictionPool.FEE();
     }
+
+    function emergencyWithdrawCollateral() public onlyOwner {
+        uint256 balance = _collateralToken.balanceOf(address(this));
+        require(
+            _collateralToken.transfer(msg.sender, balance),
+            "Unable to transfer"
+        );
+    }
 }
