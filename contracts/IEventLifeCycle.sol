@@ -61,6 +61,10 @@ interface IEventLifeCycle {
             uint256 gameEventId
         );
 
+    function _usePendingOrders() external view returns (bool);
+
+    function _pendingOrders() external view returns (address);
+
     function setPendingOrders(
         address pendingOrdersAddress,
         bool usePendingOrders

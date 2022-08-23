@@ -133,6 +133,11 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         return (priceChangePart, gameEventId);
     }
 
+    function isPendingEnabled() public view returns (bool) {
+        return (_eventLifeCycle._usePendingOrders() &&
+            _eventLifeCycle._pendingOrders() == address(_pendingOrders));
+    }
+
     function createOrder(
         uint256 amount,
         bool isWhite,
@@ -300,6 +305,8 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         _events[eventId].blackPriceBefore = _predictionPool._blackPrice();
 
         (uint256 priceChangePart, ) = getOngoingEvent();
+
+        require(isPendingEnabled(), "LEVERAGE: PENDING ORDERS DISABLED");
 
         require(
             priceChangePart == _priceChangePart,
