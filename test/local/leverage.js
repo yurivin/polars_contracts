@@ -76,10 +76,10 @@ const debug = 0;
 
 
       await expectRevert(
-        deployedLeverage.addLiquidity(mntob(0, multiplier), { from: deployerAddress }), "LEVERAGE: TOKENS AMOUNT CANNOT BE 0"
+        deployedLeverage.addLiquidity(mntob(0, multiplier), { from: deployerAddress }), "TOKENS AMOUNT CANNOT BE 0"
       );
       await expectRevert(
-        deployedLeverage.addLiquidity(mntob(20, multiplier), { from: deployerAddress }), "LEVERAGE: NOT ENOUGH COLLATERAL TOKENS ARE DELEGATED"
+        deployedLeverage.addLiquidity(mntob(20, multiplier), { from: deployerAddress }), "NOT ENOUGH COLLATERAL TOKENS ARE DELEGATED"
       );
       await deployedCollateralToken.approve(deployedLeverage.address, mntob(20, multiplier), { from: deployerAddress })
       await deployedLeverage.addLiquidity(mntob(20, multiplier), { from: deployerAddress })
@@ -114,7 +114,7 @@ const debug = 0;
           mntob(1530, multiplier),
           { from: deployerAddress }
         ),
-        "LEVERAGE: NOT ENOUGH COLLATERAL TOKENS ARE DELEGATED"
+        "NOT ENOUGH COLLATERAL TOKENS ARE DELEGATED"
       );
 
       await deployedCollateralToken.approve(
@@ -207,7 +207,7 @@ const debug = 0;
           true,                 // bool isWhite,
           ntob(25),             // uint256 maxLoss,
           userSelectedEventId,  // uint256 eventId
-        ), "LEVERAGE: MAX LOSS PERCENT IS VERY BIG"
+        ), "MAX LOSS PERCENT IS VERY BIG"
       );
 
       await deployedEventLifeCycle.addNewEvent(
@@ -241,7 +241,7 @@ const debug = 0;
           maxLossUserDefined,   // uint256 maxLoss,
           userSelectedEventId,  // uint256 eventId
           { from: user }
-        ), "LEVERAGE: NOT ENOUGH COLLATERAL IN USER ACCOUNT"
+        ), "NOT ENOUGH COLLATERAL IN USER ACCOUNT"
       );
 
       expect(await deployedCollateralToken.balanceOf(user)).to.be.bignumber.equal(new BN("0"));
@@ -275,7 +275,7 @@ const debug = 0;
           maxLossUserDefined,   // uint256 maxLoss,
           userSelectedEventId,  // uint256 eventId
           { from: user }
-        ), "LEVERAGE: NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
+        ), "NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
       );
 
       await deployedLeverage.addLiquidity(liquidityAmount, { from: deployerAddress })
@@ -292,7 +292,7 @@ const debug = 0;
         { from: user }
       )
 
-      const firstOrder = getLogs(await deployedLeverage._crossOrders(0));
+      const firstOrder = getLogs(await deployedLeverage._orders(0));
 
       expect(firstOrder.orderer).to.be.equals(user);
       expect(firstOrder.cross).to.be.bignumber.equal('5000000000000000000');
@@ -302,15 +302,15 @@ const debug = 0;
       expect(firstOrder.eventId).to.be.bignumber.equal(userSelectedEventId);
 
       if (debug) console.log("firstOrder:", firstOrder);
-      if (debug) console.log("_crossOrders(0):", getLogs(await deployedLeverage._crossOrders(0)))
+      if (debug) console.log("_orders(0):", getLogs(await deployedLeverage._orders(0)))
 
-      if (debug) console.log("_crossOrdersOfUser:", getLogs(await deployedLeverage._crossOrdersOfUser(user, 0)))
+      if (debug) console.log("_ordersOfUser:", getLogs(await deployedLeverage._ordersOfUser(user, 0)))
 
       expect((await deployedPendingOrders.ordersOfUser(deployedLeverage.address)).length).to.be.equals(0);
 
       await expectRevert(
         deployedLeverage.cancelOrder(0),
-        "LEVERAGE: NOT YOUR ORDER"
+        "NOT YOUR ORDER"
       );
 
       const cancelOrder = await deployedLeverage.cancelOrder(0, { from: user });
@@ -428,7 +428,7 @@ const debug = 0;
           time.duration.seconds(nowEvent.duration),
           ntob(0.03)
         ),
-        "LEVERAGE: WRONG PRICE CHANGE PART"
+        "WRONG PRICE CHANGE PART"
       );
 
       await addAndStartEvent(
@@ -439,12 +439,12 @@ const debug = 0;
 
       await expectRevert(
         deployedLeverage.cancelOrder(1),
-        "LEVERAGE: NOT YOUR ORDER"
+        "NOT YOUR ORDER"
       );
 
       await expectRevert(
         deployedLeverage.cancelOrder(1, { from: accounts[1]}),
-        "LEVERAGE: EVENT IN PROGRESS"
+        "EVENT IN PROGRESS"
       );
 
       const pendingOrdersCountOfLeverageAfterStart = await deployedPendingOrders.ordersOfUser(deployedLeverage.address);
@@ -606,7 +606,7 @@ const debug = 0;
 
       await expectRevert(
         deployedLeverage.withdrawCollateral(accounts[0]),
-        "LEVERAGE: ACCOUNT HAS NO ORDERS"
+        "ACCOUNT HAS NO ORDERS"
       );
 
       if (debug) console.log("balanceOf after all done   :", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
@@ -614,8 +614,8 @@ const debug = 0;
       const _ordersCounter = await deployedLeverage._ordersCounter();
       if (debug) console.log("_ordersCounter:", _ordersCounter.toNumber());
       for (let orderId of [...Array(_ordersCounter.toNumber()).keys()]) {
-        const order = await deployedLeverage._crossOrders(orderId);
-        if (debug) console.log("_crossOrders:", getLogs(order));
+        const order = await deployedLeverage._orders(orderId);
+        if (debug) console.log("_orders:", getLogs(order));
         expect(order.orderer).to.equal('0x0000000000000000000000000000000000000000');
         expect(order.cross).to.be.bignumber.equal(new BN("0"));
         expect(order.ownAmount).to.be.bignumber.equal(new BN("0"));
@@ -657,7 +657,7 @@ const debug = 0;
           true,                 // bool isWhite,
           ntob(25),             // uint256 maxLoss,
           userSelectedEventId,  // uint256 eventId
-        ), "LEVERAGE: MAX LOSS PERCENT IS VERY BIG"
+        ), "MAX LOSS PERCENT IS VERY BIG"
       );
 
       await deployedEventLifeCycle.addNewEvent(
@@ -691,7 +691,7 @@ const debug = 0;
           maxLossUserDefined,   // uint256 maxLoss,
           userSelectedEventId,  // uint256 eventId
           { from: user }
-        ), "LEVERAGE: NOT ENOUGH COLLATERAL IN USER ACCOUNT"
+        ), "NOT ENOUGH COLLATERAL IN USER ACCOUNT"
       );
 
       expect(await deployedCollateralToken.balanceOf(user)).to.be.bignumber.equal(new BN("0"));
@@ -725,7 +725,7 @@ const debug = 0;
           maxLossUserDefined,   // uint256 maxLoss,
           userSelectedEventId,  // uint256 eventId
           { from: user }
-        ), "LEVERAGE: NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
+        ), "NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
       );
 
       await deployedLeverage.addLiquidity(liquidityAmount, { from: deployerAddress })
@@ -742,7 +742,7 @@ const debug = 0;
         { from: user }
       )
 
-      const firstOrder = getLogs(await deployedLeverage._crossOrders(0));
+      const firstOrder = getLogs(await deployedLeverage._orders(0));
 
       expect(firstOrder.orderer).to.be.equals(user);
       expect(firstOrder.cross).to.be.bignumber.equal('5000000000000000000');
@@ -752,15 +752,15 @@ const debug = 0;
       expect(firstOrder.eventId).to.be.bignumber.equal(userSelectedEventId);
 
       if (debug) console.log("firstOrder:", firstOrder);
-      if (debug) console.log("_crossOrders:", getLogs(await deployedLeverage._crossOrders(0)))
+      if (debug) console.log("_orders:", getLogs(await deployedLeverage._orders(0)))
 
-      if (debug) console.log("_crossOrdersOfUser:", getLogs(await deployedLeverage._crossOrdersOfUser(user, 0)))
+      if (debug) console.log("_ordersOfUser:", getLogs(await deployedLeverage._ordersOfUser(user, 0)))
 
       expect((await deployedPendingOrders.ordersOfUser(deployedLeverage.address)).length).to.be.equals(0);
 
       await expectRevert(
         deployedLeverage.cancelOrder(0),
-        "LEVERAGE: NOT YOUR ORDER"
+        "NOT YOUR ORDER"
       );
 
       const cancelOrder = await deployedLeverage.cancelOrder(0, { from: user });
@@ -799,7 +799,7 @@ const debug = 0;
 
       await deployedLeverage.withdrawCollateral(accounts[4]);
 
-      const firstOrderAfterCancel = getLogs(await deployedLeverage._crossOrders(0));
+      const firstOrderAfterCancel = getLogs(await deployedLeverage._orders(0));
       if (debug) console.log("firstOrderAfterCancel:", firstOrderAfterCancel);
 
       const events = [
@@ -914,7 +914,7 @@ const debug = 0;
             time.duration.seconds(nowEvent.duration),
             ntob(0.03)
           ),
-          "LEVERAGE: WRONG PRICE CHANGE PART"
+          "WRONG PRICE CHANGE PART"
         );
 
         await addAndStartEvent(
@@ -1083,7 +1083,7 @@ const debug = 0;
 
         await expectRevert(
           deployedLeverage.withdrawCollateral(accounts[0]),
-          "LEVERAGE: ACCOUNT HAS NO ORDERS"
+          "ACCOUNT HAS NO ORDERS"
         );
 
         if (debug) console.log("balanceOf after all done   :", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
@@ -1091,8 +1091,8 @@ const debug = 0;
         const _ordersCounter = await deployedLeverage._ordersCounter();
         if (debug) console.log("_ordersCounter:", _ordersCounter.toNumber());
         for (let orderId of [...Array(_ordersCounter.toNumber()).keys()]) {
-          const order = await deployedLeverage._crossOrders(orderId);
-          if (debug) console.log("_crossOrders:", getLogs(order));
+          const order = await deployedLeverage._orders(orderId);
+          if (debug) console.log("_orders:", getLogs(order));
             expect(order.orderer).to.equal('0x0000000000000000000000000000000000000000');
             expect(order.cross).to.be.bignumber.equal(new BN("0"));
             expect(order.ownAmount).to.be.bignumber.equal(new BN("0"));
@@ -1139,7 +1139,7 @@ const debug = 0;
           true,                 // bool isWhite,
           ntob(25),             // uint256 maxLoss,
           userSelectedEventId,  // uint256 eventId
-        ), "LEVERAGE: MAX LOSS PERCENT IS VERY BIG"
+        ), "MAX LOSS PERCENT IS VERY BIG"
       );
 
       await deployedEventLifeCycle.addNewEvent(
@@ -1171,7 +1171,7 @@ const debug = 0;
           userSelectedEventId,
           time.duration.seconds(5),
           new BN("50000000000000000")
-        ), "LEVERAGE: PENDING ORDERS DISABLED"
+        ), "PENDING ORDERS DISABLED"
       );
 
       await expectRevert(
@@ -1181,7 +1181,7 @@ const debug = 0;
           maxLossUserDefined,   // uint256 maxLoss,
           userSelectedEventId,  // uint256 eventId
           { from: user }
-        ), "LEVERAGE: NOT ENOUGH COLLATERAL IN USER ACCOUNT"
+        ), "NOT ENOUGH COLLATERAL IN USER ACCOUNT"
       );
 
       expect(await deployedCollateralToken.balanceOf(user)).to.be.bignumber.equal(new BN("0"));
@@ -1215,7 +1215,7 @@ const debug = 0;
           maxLossUserDefined,   // uint256 maxLoss,
           userSelectedEventId,  // uint256 eventId
           { from: user }
-        ), "LEVERAGE: NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
+        ), "NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
       );
 
       await deployedLeverage.addLiquidity(liquidityAmount, { from: deployerAddress })
@@ -1232,7 +1232,7 @@ const debug = 0;
         { from: user }
       )
 
-      const firstOrder = getLogs(await deployedLeverage._crossOrders(0));
+      const firstOrder = getLogs(await deployedLeverage._orders(0));
 
       expect(firstOrder.orderer).to.be.equals(user);
       expect(firstOrder.cross).to.be.bignumber.equal('5000000000000000000');
@@ -1242,15 +1242,15 @@ const debug = 0;
       expect(firstOrder.eventId).to.be.bignumber.equal(userSelectedEventId);
 
       if (debug) console.log("firstOrder:", firstOrder);
-      if (debug) console.log("_crossOrders:", getLogs(await deployedLeverage._crossOrders(0)))
+      if (debug) console.log("_orders:", getLogs(await deployedLeverage._orders(0)))
 
-      if (debug) console.log("_crossOrdersOfUser:", getLogs(await deployedLeverage._crossOrdersOfUser(user, 0)))
+      if (debug) console.log("_ordersOfUser:", getLogs(await deployedLeverage._ordersOfUser(user, 0)))
 
       expect((await deployedPendingOrders.ordersOfUser(deployedLeverage.address)).length).to.be.equals(0);
 
       await expectRevert(
         deployedLeverage.cancelOrder(0),
-        "LEVERAGE: NOT YOUR ORDER"
+        "NOT YOUR ORDER"
       );
 
       const cancelOrder = await deployedLeverage.cancelOrder(0, { from: user });
@@ -1295,7 +1295,7 @@ const debug = 0;
 
       await deployedLeverage.withdrawCollateral(accounts[4]);
 
-      const firstOrderAfterCancel = getLogs(await deployedLeverage._crossOrders(0));
+      const firstOrderAfterCancel = getLogs(await deployedLeverage._orders(0));
       if (debug) console.log("firstOrderAfterCancel:", firstOrderAfterCancel);
 
       const events = [
@@ -1410,7 +1410,7 @@ const debug = 0;
             time.duration.seconds(nowEvent.duration),
             ntob(0.03)
           ),
-          "LEVERAGE: WRONG PRICE CHANGE PART"
+          "WRONG PRICE CHANGE PART"
         );
 
         await addAndStartEvent(
@@ -1579,7 +1579,7 @@ const debug = 0;
 
         await expectRevert(
           deployedLeverage.withdrawCollateral(accounts[0]),
-          "LEVERAGE: ACCOUNT HAS NO ORDERS"
+          "ACCOUNT HAS NO ORDERS"
         );
 
         if (debug) console.log("balanceOf after all done   :", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
@@ -1587,8 +1587,8 @@ const debug = 0;
         const _ordersCounter = await deployedLeverage._ordersCounter();
         if (debug) console.log("_ordersCounter:", _ordersCounter.toNumber());
         for (let orderId of [...Array(_ordersCounter.toNumber()).keys()]) {
-          const order = await deployedLeverage._crossOrders(orderId);
-          if (debug) console.log("_crossOrders:", getLogs(order));
+          const order = await deployedLeverage._orders(orderId);
+          if (debug) console.log("_orders:", getLogs(order));
             expect(order.orderer).to.equal('0x0000000000000000000000000000000000000000');
             expect(order.cross).to.be.bignumber.equal(new BN("0"));
             expect(order.ownAmount).to.be.bignumber.equal(new BN("0"));

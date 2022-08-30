@@ -28,7 +28,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
     uint256 public _priceChangePart = 0.05 * 1e18; // Default 0.05%
 
-    struct CrossOrder {
+    struct Order {
         /* solhint-disable prettier/prettier */
         address orderer;        // address of user placing order
         uint256 cross;          // multiplicator
@@ -43,12 +43,12 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     uint256 public _ordersCounter = 0;
 
     // mapping from order ID to Cross Order detail
-    mapping(uint256 => CrossOrder) public _crossOrders;
+    mapping(uint256 => Order) public _orders;
 
     // // mapping from user address to order IDs for that user
-    mapping(address => uint256[]) public _crossOrdersOfUser;
+    mapping(address => uint256[]) public _ordersOfUser;
 
-    struct CrossEvent {
+    struct LeverageEvent {
         /* solhint-disable prettier/prettier */
         uint256 eventId;
         uint256 whitePriceBefore;       // price of white token before the event
@@ -62,13 +62,13 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         /* solhint-enable prettier/prettier */
     }
 
-    mapping(uint256 => CrossEvent) public _events;
+    mapping(uint256 => LeverageEvent) public _events;
 
     // Modifier to ensure call has been made by event contract
     modifier onlyEventContract() {
         require(
             msg.sender == address(_eventLifeCycle),
-            "LEVERAGE: CALLER SHOULD BE EVENT CONTRACT"
+            "CALLER SHOULD BE EVENT CONTRACT"
         );
         _;
     }
@@ -144,18 +144,15 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         uint256 maxLoss,
         uint256 eventId
     ) external {
-        require(
-            maxLoss <= _maxLossThreshold,
-            "LEVERAGE: MAX LOSS PERCENT IS VERY BIG"
-        );
+        require(maxLoss <= _maxLossThreshold, "MAX LOSS PERCENT IS VERY BIG");
 
         require(
             _collateralToken.balanceOf(msg.sender) >= amount,
-            "LEVERAGE: NOT ENOUGH COLLATERAL IN USER ACCOUNT"
+            "NOT ENOUGH COLLATERAL IN USER ACCOUNT"
         );
         require(
             _collateralToken.allowance(msg.sender, address(this)) >= amount,
-            "LEVERAGE: NOT ENOUGHT DELEGATED TOKENS"
+            "NOT ENOUGHT DELEGATED TOKENS"
         );
 
         uint256 cross = wdiv(maxLoss, _priceChangePart);
@@ -165,11 +162,11 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         require(
             _collateralToken.balanceOf(address(this)) >= userBorrowAmount,
-            "LEVERAGE: NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
+            "NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
         );
 
         /* solhint-disable prettier/prettier */
-        _crossOrders[_ordersCounter] = CrossOrder(
+        _orders[_ordersCounter] = Order(
             msg.sender,         // address orderer
             cross,              // uint256 cross
             amount,             // uint256 ownAmount
@@ -182,7 +179,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         _events[eventId].eventId = eventId;
 
-        _crossOrdersOfUser[msg.sender].push(_ordersCounter);
+        _ordersOfUser[msg.sender].push(_ordersCounter);
 
         _ordersCounter += 1;
 
@@ -204,16 +201,16 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     }
 
     function cancelOrder(uint256 orderId) external {
-        CrossOrder memory order = _crossOrders[orderId];
-        require(msg.sender == order.orderer, "LEVERAGE: NOT YOUR ORDER");
+        Order memory order = _orders[orderId];
+        require(msg.sender == order.orderer, "NOT YOUR ORDER");
 
-        require(!order.isCanceled, "LEVERAGE: ORDER HAS ALREADY BEEN CANCELED");
+        require(!order.isCanceled, "ORDER HAS ALREADY BEEN CANCELED");
 
-        CrossEvent memory eventById = _events[order.eventId];
+        LeverageEvent memory eventById = _events[order.eventId];
 
-        require(!eventById.isEnded, "LEVERAGE: EVENT ALREADY ENDED");
+        require(!eventById.isEnded, "EVENT ALREADY ENDED");
 
-        require(!eventById.isStarted, "LEVERAGE: EVENT IN PROGRESS");
+        require(!eventById.isStarted, "EVENT IN PROGRESS");
 
         uint256 totalAmount = add(order.ownAmount, order.borrowedAmount);
 
@@ -223,28 +220,25 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             : _events[order.eventId].blackCollateralAmount = sub(eventById.blackCollateralAmount, totalAmount);
         /* solhint-enable prettier/prettier */
 
-        _crossOrders[orderId].isCanceled = true;
+        _orders[orderId].isCanceled = true;
 
         _collateralToken.transfer(order.orderer, order.ownAmount);
         emit OrderCanceled(orderId, msg.sender);
     }
 
     function withdrawCollateral(address user) external returns (uint256) {
-        require(
-            _crossOrdersOfUser[user].length > 0,
-            "LEVERAGE: ACCOUNT HAS NO ORDERS"
-        );
+        require(_ordersOfUser[user].length > 0, "ACCOUNT HAS NO ORDERS");
 
         // total amount of collateral token that should be returned to user
         // feeAmount should be subtracted before actual return
         uint256 totalWithdrawAmount = 0;
 
         uint256 i = 0;
-        while (i < _crossOrdersOfUser[user].length) {
-            uint256 _oId = _crossOrdersOfUser[user][i]; // order ID
-            CrossOrder memory order = _crossOrders[_oId];
+        while (i < _ordersOfUser[user].length) {
+            uint256 _oId = _ordersOfUser[user][i]; // order ID
+            Order memory order = _orders[_oId];
             uint256 _eId = order.eventId; // event ID
-            CrossEvent memory eventDetail = _events[_eId];
+            LeverageEvent memory eventDetail = _events[_eId];
 
             // calculate and sum up collaterals to be returned
             // exclude canceled orders, only include executed orders
@@ -281,14 +275,14 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             }
 
             // pop IDs of canceled or executed orders from ordersOfUser array
-            if (_crossOrders[_oId].isCanceled || eventDetail.isEnded) {
-                delete _crossOrdersOfUser[user][i];
-                _crossOrdersOfUser[user][i] = _crossOrdersOfUser[user][
-                    _crossOrdersOfUser[user].length - 1
+            if (_orders[_oId].isCanceled || eventDetail.isEnded) {
+                delete _ordersOfUser[user][i];
+                _ordersOfUser[user][i] = _ordersOfUser[user][
+                    _ordersOfUser[user].length - 1
                 ];
-                _crossOrdersOfUser[user].pop();
+                _ordersOfUser[user].pop();
 
-                delete _crossOrders[_oId];
+                delete _orders[_oId];
             } else {
                 i++;
             }
@@ -306,12 +300,9 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         (uint256 priceChangePart, ) = getOngoingEvent();
 
-        require(isPendingEnabled(), "LEVERAGE: PENDING ORDERS DISABLED");
+        require(isPendingEnabled(), "PENDING ORDERS DISABLED");
 
-        require(
-            priceChangePart == _priceChangePart,
-            "LEVERAGE: WRONG PRICE CHANGE PART"
-        );
+        require(priceChangePart == _priceChangePart, "WRONG PRICE CHANGE PART");
 
         _events[eventId].isStarted = true;
         if (_events[eventId].whiteCollateralAmount > 0) {
@@ -331,7 +322,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     }
 
     function eventEnd(uint256 eventId) external onlyEventContract {
-        CrossEvent memory nowEvent = _events[eventId];
+        LeverageEvent memory nowEvent = _events[eventId];
         nowEvent.whitePriceAfter = _predictionPool._whitePrice();
         nowEvent.blackPriceAfter = _predictionPool._blackPrice();
         nowEvent.isEnded = true;
@@ -360,15 +351,15 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     }
 
     function addLiquidity(uint256 tokensAmount) public {
-        require(tokensAmount > 0, "LEVERAGE: TOKENS AMOUNT CANNOT BE 0");
+        require(tokensAmount > 0, "TOKENS AMOUNT CANNOT BE 0");
         require(
             _collateralToken.allowance(msg.sender, address(this)) >=
                 tokensAmount,
-            "LEVERAGE: NOT ENOUGH COLLATERAL TOKENS ARE DELEGATED"
+            "NOT ENOUGH COLLATERAL TOKENS ARE DELEGATED"
         );
         require(
             _collateralToken.balanceOf(msg.sender) >= tokensAmount,
-            "LEVERAGE: NOT ENOUGH COLLATERAL TOKENS ON THE USER BALANCE"
+            "NOT ENOUGH COLLATERAL TOKENS ON THE USER BALANCE"
         );
 
         uint256 lpRatio = getLpRatio();
@@ -387,11 +378,11 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     function withdrawLiquidity(uint256 lpTokensAmount) public {
         require(
             balanceOf[msg.sender] >= lpTokensAmount,
-            "LEVERAGE: NOT ENOUGH LIQUIDITY TOKENS ON THE USER BALANCE"
+            "NOT ENOUGH LIQUIDITY TOKENS ON THE USER BALANCE"
         );
         require(
             allowance[msg.sender][address(this)] >= lpTokensAmount,
-            "LEVERAGE: NOT ENOUGH LIQUIDITY TOKENS ARE DELEGATED"
+            "NOT ENOUGH LIQUIDITY TOKENS ARE DELEGATED"
         );
 
         uint256 lpRatio = getLpRatio();
@@ -399,7 +390,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         require(
             _collateralToken.balanceOf(address(this)) >= collateralToSend,
-            "LEVERAGE: NOT ENOUGH COLLATERAL IN THE CONTRACT"
+            "NOT ENOUGH COLLATERAL IN THE CONTRACT"
         );
 
         _collateralTokens = sub(_collateralTokens, collateralToSend);
@@ -415,7 +406,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     function changeMaxUsageThreshold(uint256 percent) external onlyOwner {
         require(
             percent >= 0.1 * 1e18,
-            "LEVERAGE: NEW MAX USAGE THRESHOLD SHOULD BE MORE THAN 10%"
+            "NEW MAX USAGE THRESHOLD SHOULD BE MORE THAN 10%"
         );
         _maxUsageThreshold = percent;
     }
@@ -423,7 +414,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     function changeMaxLossThreshold(uint256 percent) external onlyOwner {
         require(
             percent <= 0.5 * 1e18,
-            "LEVERAGE: NEW MAX LOSS THRESHOLD SHOULD BE LESS THAN 50%"
+            "NEW MAX LOSS THRESHOLD SHOULD BE LESS THAN 50%"
         );
         _maxLossThreshold = percent;
     }
