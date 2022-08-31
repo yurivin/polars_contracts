@@ -1,7 +1,23 @@
 pragma solidity ^0.7.4;
 
+// pragma abicoder v2;
+
 // "SPDX-License-Identifier: MIT"
 interface IEventLifeCycle {
+    struct GameEvent {
+        /* solhint-disable prettier/prettier */
+        uint256 priceChangePart;        // in percent
+        uint256 eventStartTimeExpected; // in seconds since 1970
+        uint256 eventEndTimeExpected;   // in seconds since 1970
+        string blackTeam;
+        string whiteTeam;
+        string eventType;
+        string eventSeries;
+        string eventName;
+        uint256 eventId;
+        /* solhint-enable prettier/prettier */
+    }
+
     function addNewEvent(
         uint256 priceChangePart_,
         uint256 eventStartTimeExpected_,
@@ -29,4 +45,31 @@ interface IEventLifeCycle {
     function startEvent() external returns (uint256);
 
     function endEvent(int8 _result) external;
+
+    function _ongoingEvent()
+        external
+        view
+        returns (
+            uint256 priceChangePart,
+            uint256 eventStartTimeExpected,
+            uint256 eventEndTimeExpected,
+            string calldata blackTeam,
+            string calldata whiteTeam,
+            string calldata eventType,
+            string calldata eventSeries,
+            string calldata eventName,
+            uint256 gameEventId
+        );
+
+    function _usePendingOrders() external view returns (bool);
+
+    function _pendingOrders() external view returns (address);
+
+    function setPendingOrders(
+        address pendingOrdersAddress,
+        bool usePendingOrders
+    ) external;
+
+    function changeGovernanceAddress(address governanceAddress) external;
+    // function _queuedEvent() external view;
 }

@@ -18,25 +18,34 @@ admin -> lc: Set max liquidity usage threshold (percent)
 any -> lc: Get liquidity usage threshold
 lc --> any: Show liquidity usage threshold
 
-newpage Add Liquidity
+'newpage Add Liquidity
 
-provider -> lc: Put liquidity (amount)
+provider -> lc: addLiquidity(tokensAmount)
+note right
+Put liquidity
+(collateral amount)
+end note
+lc --> lc: calculate lpRatio (lpPrice)
 lc --> provider: Liquidity tokens
+note right
+Send liquidity tokens
+to provider (lpAmount)
+end note
 any -> lc: Get liquidity amount by address
 lc --> any: Show liquidity amount
 provider -> lc: Withdraw liquidity (amount)
-lc -> lc: Check available and free(not used in orders) liquidity
+lc -> lc: Check available and\n free(not used in orders) liquidity
 lc --> provider: return liquidity
 any -> lc: Get free liquidity
 lc --> any: Show free liquidity
 
 
-newpage Execute leveraged order
+'newpage Execute leveraged order
 group Create leveraged order
 trader -> lc: Create leveraged order (amount, max loss percent, eventId)
-lc -> lc: Check if liquidity is enough for the max possible order amount
-lc -> lc: Check max order keeps 5% liquidity free threshold
-lc -> lc: Create leverage record (user, leverage, orderId)
+lc -> lc: Check if liquidity is enough\nfor the max possible order amount
+lc -> lc: Check max order keeps\n5% liquidity free threshold
+lc -> lc: Create leverage record\n(user, leverage, orderId)
 lc -> poc: Create Order (amount)
    group leverage response
        alt unsuccessful case
@@ -49,4 +58,5 @@ any -> lc: Get leverage record ids by account
 lc -->: Show leverage record ids array for an account
 any -> lc: Get leverage record details by leverage record id
 lc -->: Show leverage record details
+lc --> poc: withdrawCollateral()
 @enduml

@@ -1,13 +1,4 @@
 const TokenTemplate = artifacts.require("TokenTemplate");
-const IPancakeRouter = artifacts.require("IPancakeRouter");
-const IPancakeFactory = artifacts.require("IPancakeFactory");
-const IPancakePair = artifacts.require("IPancakePair");
-
-const PendingOrders = artifacts.require("PendingOrders");
-const PredictionPool = artifacts.require("PredictionPool");
-const PredictionCollateralization = artifacts.require("PredictionCollateralization");
-const EventLifeCycle = artifacts.require("EventLifeCycle");
-const OracleSwapEventManager = artifacts.require("OracleSwapEventManager");
 
 const fs = require("fs");
 const path = require("path");
@@ -18,7 +9,16 @@ const {
   constants,    // Common constants, like the zero address and largest integers
 } = require('@openzeppelin/test-helpers');
 
-const { mntob } = require('./../test/utils.js');
+const bigDecimal = require('js-big-decimal');
+
+// const { mntob } = require('./../test/utils.js');
+
+const mntob = (number, multiplier) => {
+  const amountBD = new bigDecimal(number.toString(10))
+    .multiply(new bigDecimal(multiplier.toString(10)))
+    .getValue();
+  return new BN(amountBD);
+}
 
 const approveValue = constants.MAX_UINT256;
 

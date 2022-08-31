@@ -19,6 +19,7 @@ const EventLifeCycle = artifacts.require('EventLifeCycle');
 const OracleSwapEventManager = artifacts.require("OracleSwapEventManager");
 const OracleChainlinkEventManager = artifacts.require("OracleChainLinkEventManager");
 const OraclePayableChainLinkEventManager = artifacts.require("OraclePayableChainLinkEventManager");
+const Leverage = artifacts.require("Leverage");
 
 const deployContracts = async (deployerAddress, collateralTokenDecimals="18", debug=0) => {
   const multiplier = 10 ** parseInt(collateralTokenDecimals);
@@ -132,6 +133,11 @@ const deployContracts = async (deployerAddress, collateralTokenDecimals="18", de
     new BN("1800")
   );
 
+  const deployedLeverage = await Leverage.new(
+    deployedCollateralToken.address,  // address collateralTokenAddress
+    deployedPendingOrders.address     // address pendingOrdersAddress
+  );
+
   if (debug) console.log("Collateral token                    :", deployedCollateralToken.address);
   if (debug) console.log("PredictionCollateral                :", deployedPredictionCollateralization.address);
   if (debug) console.log("WhiteToken                          :", deployedWhiteToken.address);
@@ -160,7 +166,8 @@ const deployContracts = async (deployerAddress, collateralTokenDecimals="18", de
     deployedBlackToken,
     deployedOracleSwapEventManager,
     deployedOracleChainlinkEventManager,
-    deployedOraclePayableChainLinkEventManager
+    deployedOraclePayableChainLinkEventManager,
+    deployedLeverage
   }
 }
 
