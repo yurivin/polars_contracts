@@ -45,7 +45,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     // mapping from order ID to Cross Order detail
     mapping(uint256 => Order) public _orders;
 
-    // // mapping from user address to order IDs for that user
+    // mapping from user address to order IDs for that user
     mapping(address => uint256[]) public _ordersOfUser;
 
     struct LeverageEvent {
@@ -114,6 +114,14 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         _predictionPoolFee = _predictionPool.FEE();
 
         _collateralToken.approve(address(_pendingOrders), type(uint256).max);
+    }
+
+    function ordersOfUser(address user)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        return _ordersOfUser[user];
     }
 
     function getOngoingEvent() public view returns (uint256, uint256) {

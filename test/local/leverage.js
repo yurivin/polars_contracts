@@ -552,7 +552,7 @@ const debug = 0;
       const withdraw = async (account) => {
 
         if (debug) console.log("account :", account);
-        if (debug) console.log("currentOrders :", currentOrders.filter(el => el.user === account));
+        if (debug) console.log("currentOrders :", currentOrders.filter(el => el.user === account).map(el => getLogs(el)));
 
         const expectedWithdrawAmountByUser = currentOrders
           .filter(el => el.user === account)
@@ -601,6 +601,11 @@ const debug = 0;
 
       for (let user of users) {
         if (debug) console.log("user:", user, accounts[user]);
+        const ordersOfUser = await deployedLeverage.ordersOfUser(accounts[user]);
+
+
+        expect(ordersOfUser.length).to.equal(currentOrders.filter(el => el.user === user).length);
+        if (debug) console.log(`ordersOfUser[${user}]:`, ordersOfUser.map(el => el.toString()));
         await withdraw(user);
       }
 
@@ -627,8 +632,7 @@ const debug = 0;
       }
 
       const _eventsById = await deployedLeverage._events(nowEvent.id);
-      if (debug) console.log("_eventsById:", _eventsById);
-      if (debug) console.log("_eventsById:", _eventsById.crossOrdersOfUser);
+      if (debug) console.log("_eventsById:", getLogs(_eventsById));
     });
 
     it("Leverage createOrder, more orders and amounts", async () => {
@@ -1029,7 +1033,7 @@ const debug = 0;
         const withdraw = async (account) => {
 
           if (debug) console.log("account :", account);
-          if (debug) console.log("currentOrders :", currentOrders.filter(el => el.user === account));
+          if (debug) console.log("currentOrders :", currentOrders.filter(el => el.user === account).map(el => getLogs(el)));
 
           const expectedWithdrawAmountByUser = currentOrders
             .filter(el => el.user === account)
@@ -1078,6 +1082,11 @@ const debug = 0;
 
         for (let user of users) {
           if (debug) console.log("user:", user, accounts[user]);
+          const ordersOfUser = await deployedLeverage.ordersOfUser(accounts[user]);
+
+
+          expect(ordersOfUser.length).to.equal(currentOrders.filter(el => el.user === user).length);
+          if (debug) console.log(`ordersOfUser[${user}]:`, ordersOfUser.map(el => el.toString()));
           await withdraw(user);
         }
 
@@ -1104,7 +1113,6 @@ const debug = 0;
 
         const _eventsById = await deployedLeverage._events(nowEvent.id);
         if (debug) console.log("_eventsById:", getLogs(_eventsById));
-        if (debug) console.log("_eventsById:", _eventsById.crossOrdersOfUser);
       }
     });
 
@@ -1525,7 +1533,7 @@ const debug = 0;
         const withdraw = async (account) => {
 
           if (debug) console.log("account :", account);
-          if (debug) console.log("currentOrders :", currentOrders.filter(el => el.user === account));
+          if (debug) console.log("currentOrders :", currentOrders.filter(el => el.user === account).map(el => getLogs(el)));
 
           const expectedWithdrawAmountByUser = currentOrders
             .filter(el => el.user === account)
@@ -1574,6 +1582,11 @@ const debug = 0;
 
         for (let user of users) {
           if (debug) console.log("user:", user, accounts[user]);
+          const ordersOfUser = await deployedLeverage.ordersOfUser(accounts[user]);
+
+
+          expect(ordersOfUser.length).to.equal(currentOrders.filter(el => el.user === user).length);
+          if (debug) console.log(`ordersOfUser[${user}]:`, ordersOfUser.map(el => el.toString()));
           await withdraw(user);
         }
 
@@ -1600,7 +1613,6 @@ const debug = 0;
 
         const _eventsById = await deployedLeverage._events(nowEvent.id);
         if (debug) console.log("_eventsById:", getLogs(_eventsById));
-        if (debug) console.log("_eventsById:", _eventsById.crossOrdersOfUser);
       }
     });
 
