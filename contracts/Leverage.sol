@@ -36,7 +36,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         uint256 borrowedAmount; // amount of given collateral tokens
         bool isWhite;           // TRUE for white side, FALSE for black side
         uint256 eventId;        // order target eventId
-        bool isCanceled;        // FALSE when placed, TRUE when canceled
+        bool isPending;        // TRUE when placed, FALSE when canceled
         /* solhint-enable prettier/prettier */
     }
 
@@ -55,10 +55,10 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         uint256 blackPriceBefore;       // price of black token before the event
         uint256 whitePriceAfter;        // price of white token after the event
         uint256 blackPriceAfter;        // price of black token after the event
-        uint256 blackCollateralAmount;  // total amount of collateral for black side of the event
-        uint256 whiteCollateralAmount;  // total amount of collateral for white side of the event
-        bool isStarted;                 // FALSE before the event, TRUE after the event start
-        bool isEnded;                   // FALSE before the event, TRUE after the event end
+        uint256 blackCollateral;        // total amount of collateral for black side of the event
+        uint256 whiteCollateral;        // total amount of collateral for white side of the event
+        bool isExecuted;                // FALSE before the event, TRUE after the event start
+        bool isStarted;                 // FALSE before the event, TRUE after the event end
         /* solhint-enable prettier/prettier */
     }
 
@@ -152,6 +152,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         uint256 maxLoss,
         uint256 eventId
     ) external {
+        require(maxLoss != 0, "MAX LOSS PERCENT CANNOT BE 0");
         require(maxLoss <= _maxLossThreshold, "MAX LOSS PERCENT IS VERY BIG");
 
         require(
@@ -181,7 +182,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             userBorrowAmount,   // uint256 borrowedAmount
             isWhite,            // bool    isWhite
             eventId,            // uint256 eventId
-            false
+            true
         );
         /* solhint-enable prettier/prettier */
 
@@ -193,8 +194,8 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         /* solhint-disable prettier/prettier */
         isWhite
-            ? _events[eventId].whiteCollateralAmount = add(_events[eventId].whiteCollateralAmount, orderAmount)
-            : _events[eventId].blackCollateralAmount = add(_events[eventId].blackCollateralAmount, orderAmount);
+            ? _events[eventId].whiteCollateral = add(_events[eventId].whiteCollateral, orderAmount)
+            : _events[eventId].blackCollateral = add(_events[eventId].blackCollateral, orderAmount);
         /* solhint-enable prettier/prettier */
 
         _collateralToken.transferFrom(msg.sender, address(this), amount);
@@ -212,11 +213,11 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         Order memory order = _orders[orderId];
         require(msg.sender == order.orderer, "NOT YOUR ORDER");
 
-        require(!order.isCanceled, "ORDER HAS ALREADY BEEN CANCELED");
+        require(order.isPending, "ORDER HAS ALREADY BEEN CANCELED");
 
         LeverageEvent memory eventById = _events[order.eventId];
 
-        require(!eventById.isEnded, "EVENT ALREADY ENDED");
+        require(!eventById.isExecuted, "EVENT ALREADY ENDED");
 
         require(!eventById.isStarted, "EVENT IN PROGRESS");
 
@@ -224,11 +225,11 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         /* solhint-disable prettier/prettier */
         order.isWhite
-            ? _events[order.eventId].whiteCollateralAmount = sub(eventById.whiteCollateralAmount, totalAmount)
-            : _events[order.eventId].blackCollateralAmount = sub(eventById.blackCollateralAmount, totalAmount);
+            ? _events[order.eventId].whiteCollateral = sub(eventById.whiteCollateral, totalAmount)
+            : _events[order.eventId].blackCollateral = sub(eventById.blackCollateral, totalAmount);
         /* solhint-enable prettier/prettier */
 
-        _orders[orderId].isCanceled = true;
+        _orders[orderId].isPending = false;
 
         _collateralToken.transfer(order.orderer, order.ownAmount);
         emit OrderCanceled(orderId, msg.sender);
@@ -250,7 +251,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
             // calculate and sum up collaterals to be returned
             // exclude canceled orders, only include executed orders
-            if (!order.isCanceled && eventDetail.isEnded) {
+            if (order.isPending && eventDetail.isExecuted) {
                 uint256 withdrawAmount = 0;
                 uint256 priceAfter = 0;
                 uint256 priceBefore = 0;
@@ -283,7 +284,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             }
 
             // pop IDs of canceled or executed orders from ordersOfUser array
-            if (_orders[_oId].isCanceled || eventDetail.isEnded) {
+            if (!_orders[_oId].isPending || eventDetail.isExecuted) {
                 delete _ordersOfUser[user][i];
                 _ordersOfUser[user][i] = _ordersOfUser[user][
                     _ordersOfUser[user].length - 1
@@ -313,16 +314,16 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         require(priceChangePart == _priceChangePart, "WRONG PRICE CHANGE PART");
 
         _events[eventId].isStarted = true;
-        if (_events[eventId].whiteCollateralAmount > 0) {
+        if (_events[eventId].whiteCollateral > 0) {
             _pendingOrders.createOrder(
-                _events[eventId].whiteCollateralAmount,
+                _events[eventId].whiteCollateral,
                 true,
                 eventId
             );
         }
-        if (_events[eventId].blackCollateralAmount > 0) {
+        if (_events[eventId].blackCollateral > 0) {
             _pendingOrders.createOrder(
-                _events[eventId].blackCollateralAmount,
+                _events[eventId].blackCollateral,
                 false,
                 eventId
             );
@@ -333,11 +334,8 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         LeverageEvent memory nowEvent = _events[eventId];
         nowEvent.whitePriceAfter = _predictionPool._whitePrice();
         nowEvent.blackPriceAfter = _predictionPool._blackPrice();
-        nowEvent.isEnded = true;
-        if (
-            (nowEvent.whiteCollateralAmount > 0) ||
-            (nowEvent.blackCollateralAmount > 0)
-        ) {
+        nowEvent.isExecuted = true;
+        if ((nowEvent.whiteCollateral > 0) || (nowEvent.blackCollateral > 0)) {
             _pendingOrders.withdrawCollateral();
         }
         _events[eventId] = nowEvent;

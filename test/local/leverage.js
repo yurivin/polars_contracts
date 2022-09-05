@@ -210,30 +210,6 @@ const debug = 0;
         ), "MAX LOSS PERCENT IS VERY BIG"
       );
 
-      await deployedEventLifeCycle.addNewEvent(
-        new BN("50000000000000000"),  // uint256 priceChangePart,
-        new BN("1800"),               // uint256 eventStartTimeExpected,
-        new BN("1800"),               // uint256 eventEndTimeExpected,
-        'BNB-DOWN',                   // string calldata blackTeam,
-        'BNB-UP',                     // string calldata whiteTeam,
-        'Crypto',                     // string calldata eventType,
-        'BNB-USDT',                   // string calldata eventSeries,
-        'BNB-USDT',                   // string calldata eventName,
-        userSelectedEventId           // uint256 eventId
-      )
-
-      const queuedEvent = await deployedEventLifeCycle._queuedEvent();
-
-      expect(queuedEvent.priceChangePart).to.be.bignumber.equal(new BN("50000000000000000"));
-      expect(queuedEvent.eventStartTimeExpected).to.be.bignumber.equal(new BN("1800"));
-      expect(queuedEvent.eventEndTimeExpected).to.be.bignumber.equal(new BN("1800"));
-      expect(queuedEvent.blackTeam).to.be.equals('BNB-DOWN');
-      expect(queuedEvent.whiteTeam).to.be.equals('BNB-UP');
-      expect(queuedEvent.eventType).to.be.equals('Crypto');
-      expect(queuedEvent.eventSeries).to.be.equals('BNB-USDT');
-      expect(queuedEvent.eventName).to.be.equals('BNB-USDT');
-      expect(queuedEvent.eventId).to.be.bignumber.equal(userSelectedEventId);
-
       await expectRevert(
         deployedLeverage.createOrder(
           collateralAmount,     // uint256 amount
@@ -283,6 +259,16 @@ const debug = 0;
       expect(
         await deployedCollateralToken.balanceOf(deployedLeverage.address)
       ).to.be.bignumber.equal(liquidityAmount);
+
+      await expectRevert(
+        deployedLeverage.createOrder(
+          collateralAmount,     // uint256 amount
+          true,                 // bool isWhite,
+          ntob(0),             // uint256 maxLoss,
+          userSelectedEventId,  // uint256 eventId
+          { from: user }
+        ), "MAX LOSS PERCENT CANNOT BE 0"
+      );
 
       await deployedLeverage.createOrder(
         collateralAmount,     // uint256 amount
@@ -334,6 +320,35 @@ const debug = 0;
       ).to.be.bignumber.equal(liquidityAmount);
 
       if (debug) console.log("balanceOf only liquidity:", ( await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
+
+      /*
+       * May be not need
+       */
+      /*
+      await deployedEventLifeCycle.addNewEvent(
+        new BN("50000000000000000"),  // uint256 priceChangePart,
+        new BN("1800"),               // uint256 eventStartTimeExpected,
+        new BN("1800"),               // uint256 eventEndTimeExpected,
+        'BNB-DOWN',                   // string calldata blackTeam,
+        'BNB-UP',                     // string calldata whiteTeam,
+        'Crypto',                     // string calldata eventType,
+        'BNB-USDT',                   // string calldata eventSeries,
+        'BNB-USDT',                   // string calldata eventName,
+        userSelectedEventId           // uint256 eventId
+      )
+
+      const queuedEvent = await deployedEventLifeCycle._queuedEvent();
+
+      expect(queuedEvent.priceChangePart).to.be.bignumber.equal(new BN("50000000000000000"));
+      expect(queuedEvent.eventStartTimeExpected).to.be.bignumber.equal(new BN("1800"));
+      expect(queuedEvent.eventEndTimeExpected).to.be.bignumber.equal(new BN("1800"));
+      expect(queuedEvent.blackTeam).to.be.equals('BNB-DOWN');
+      expect(queuedEvent.whiteTeam).to.be.equals('BNB-UP');
+      expect(queuedEvent.eventType).to.be.equals('Crypto');
+      expect(queuedEvent.eventSeries).to.be.equals('BNB-USDT');
+      expect(queuedEvent.eventName).to.be.equals('BNB-USDT');
+      expect(queuedEvent.eventId).to.be.bignumber.equal(userSelectedEventId);
+      */
 
       await addAndStartEvent(
         userSelectedEventId,
@@ -507,10 +522,12 @@ const debug = 0;
       if (debug) console.log("balanceOf after end event  :", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
       if (debug) console.log("_events:", getLogs(eventInfo))
 
-      expect(eventInfo.blackCollateralAmount).to.be.bignumber.equal(resultAmountSumBlack);
-      expect(eventInfo.whiteCollateralAmount).to.be.bignumber.equal(resultAmountSumWhite);
+      expect(eventInfo.blackCollateral).to.be.bignumber.equal(resultAmountSumBlack);
+      expect(eventInfo.whiteCollateral).to.be.bignumber.equal(resultAmountSumWhite);
 
       // ? resultAmountSum
+
+      console.log("EXIT");
 
 
       const fee = new bigDecimal(
@@ -627,7 +644,7 @@ const debug = 0;
         expect(order.borrowedAmount).to.be.bignumber.equal(new BN("0"));
         expect(order.isWhite).to.equal(false);
         expect(order.eventId).to.be.bignumber.equal(new BN("0"));
-        expect(order.isCanceled).to.equal(false);
+        expect(order.isPending).to.equal(false);
 
       }
 
@@ -989,8 +1006,8 @@ const debug = 0;
         if (debug) console.log("balanceOf after end event  :", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
         if (debug) console.log("_events:", getLogs(eventInfo))
 
-        expect(eventInfo.blackCollateralAmount).to.be.bignumber.equal(resultAmountSumBlack);
-        expect(eventInfo.whiteCollateralAmount).to.be.bignumber.equal(resultAmountSumWhite);
+        expect(eventInfo.blackCollateral).to.be.bignumber.equal(resultAmountSumBlack);
+        expect(eventInfo.whiteCollateral).to.be.bignumber.equal(resultAmountSumWhite);
 
         // ? resultAmountSum
 
@@ -1108,7 +1125,7 @@ const debug = 0;
             expect(order.borrowedAmount).to.be.bignumber.equal(new BN("0"));
             expect(order.isWhite).to.equal(false);
             expect(order.eventId).to.be.bignumber.equal(new BN("0"));
-            expect(order.isCanceled).to.equal(false);
+            expect(order.isPending).to.equal(false);
         }
 
         const _eventsById = await deployedLeverage._events(nowEvent.id);
@@ -1489,8 +1506,8 @@ const debug = 0;
         if (debug) console.log("balanceOf after end event  :", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
         if (debug) console.log("_events:", getLogs(eventInfo))
 
-        expect(eventInfo.blackCollateralAmount).to.be.bignumber.equal(resultAmountSumBlack);
-        expect(eventInfo.whiteCollateralAmount).to.be.bignumber.equal(resultAmountSumWhite);
+        expect(eventInfo.blackCollateral).to.be.bignumber.equal(resultAmountSumBlack);
+        expect(eventInfo.whiteCollateral).to.be.bignumber.equal(resultAmountSumWhite);
 
         // ? resultAmountSum
 
@@ -1608,7 +1625,7 @@ const debug = 0;
             expect(order.borrowedAmount).to.be.bignumber.equal(new BN("0"));
             expect(order.isWhite).to.equal(false);
             expect(order.eventId).to.be.bignumber.equal(new BN("0"));
-            expect(order.isCanceled).to.equal(false);
+            expect(order.isPending).to.equal(false);
         }
 
         const _eventsById = await deployedLeverage._events(nowEvent.id);
