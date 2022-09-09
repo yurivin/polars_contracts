@@ -16,11 +16,12 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     IEventLifeCycle public _eventLifeCycle;
     IPredictionPool public _predictionPool;
 
-    uint256 public _maxUsageThreshold = 0.2 * 1e18; // Default 20%
+    uint256 public _maxUsageThreshold = 0.8 * 1e18; // Default 80%
     uint256 public _maxLossThreshold = 0.5 * 1e18; // Default 50%
 
     uint256 public _lpTokens = 0; // in 1e18
     uint256 public _collateralTokens = 0; // in 1e18
+    uint256 public _borrowedCollateral = 0; // in 1e18
 
     uint256 public _predictionPoolFee = 0;
 
@@ -59,6 +60,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         uint256 whiteCollateral;        // total amount of collateral for white side of the event
         bool isExecuted;                // FALSE before the event, TRUE after the event start
         bool isStarted;                 // FALSE before the event, TRUE after the event end
+        uint256 totalBorrowed;             // total borrowed amount of collateral of the event
         /* solhint-enable prettier/prettier */
     }
 
@@ -79,7 +81,9 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         uint256 priceChangePart,
         uint256 cross,
         uint256 ownAmount,
-        uint256 orderAmount
+        uint256 orderAmount,
+        bool isWhite,
+        uint256 eventId
     );
     event OrderCanceled(uint256 id, address user);
     event AddLiquidity(
@@ -146,6 +150,14 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             _eventLifeCycle._pendingOrders() == address(_pendingOrders));
     }
 
+    function allowedBorrowTotal() public view returns (uint256) {
+        return wmul(_collateralTokens, _maxUsageThreshold);
+    }
+
+    function allowedBorrowLeft() public view returns (uint256) {
+        return sub(allowedBorrowTotal(), _borrowedCollateral);
+    }
+
     function createOrder(
         uint256 amount,
         bool isWhite,
@@ -154,6 +166,11 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     ) external {
         require(maxLoss != 0, "MAX LOSS PERCENT CANNOT BE 0");
         require(maxLoss <= _maxLossThreshold, "MAX LOSS PERCENT IS VERY BIG");
+
+        // require(
+        //     _collateralToken.balanceOf(address(this)) == _collateralTokens,
+        //     "WRONG BALANCE"
+        // );
 
         require(
             _collateralToken.balanceOf(msg.sender) >= amount,
@@ -169,8 +186,10 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         uint256 userBorrowAmount = sub(orderAmount, amount);
 
+        uint256 threshold = allowedBorrowLeft();
+
         require(
-            _collateralToken.balanceOf(address(this)) >= userBorrowAmount,
+            userBorrowAmount <= threshold,
             "NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
         );
 
@@ -187,10 +206,16 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         /* solhint-enable prettier/prettier */
 
         _events[eventId].eventId = eventId;
+        _events[eventId].totalBorrowed = add(
+            _events[eventId].totalBorrowed,
+            userBorrowAmount
+        );
 
         _ordersOfUser[msg.sender].push(_ordersCounter);
 
-        _ordersCounter += 1;
+        _ordersCounter = add(_ordersCounter, 1);
+
+        _borrowedCollateral = add(_borrowedCollateral, userBorrowAmount);
 
         /* solhint-disable prettier/prettier */
         isWhite
@@ -205,7 +230,9 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             _priceChangePart,
             cross,
             amount,
-            orderAmount
+            orderAmount,
+            isWhite,
+            eventId
         );
     }
 
@@ -227,6 +254,13 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         order.isWhite
             ? _events[order.eventId].whiteCollateral = sub(eventById.whiteCollateral, totalAmount)
             : _events[order.eventId].blackCollateral = sub(eventById.blackCollateral, totalAmount);
+
+        _borrowedCollateral = sub(_borrowedCollateral, _orders[orderId].borrowedAmount);
+
+        _events[order.eventId].totalBorrowed = sub(
+            eventById.totalBorrowed,
+            order.borrowedAmount
+        );
         /* solhint-enable prettier/prettier */
 
         _orders[orderId].isPending = false;
@@ -304,8 +338,10 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     }
 
     function eventStart(uint256 eventId) external onlyEventContract {
-        _events[eventId].whitePriceBefore = _predictionPool._whitePrice();
-        _events[eventId].blackPriceBefore = _predictionPool._blackPrice();
+        LeverageEvent memory eventById = _events[eventId];
+
+        eventById.whitePriceBefore = _predictionPool._whitePrice();
+        eventById.blackPriceBefore = _predictionPool._blackPrice();
 
         (uint256 priceChangePart, ) = getOngoingEvent();
 
@@ -313,31 +349,38 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         require(priceChangePart == _priceChangePart, "WRONG PRICE CHANGE PART");
 
-        _events[eventId].isStarted = true;
-        if (_events[eventId].whiteCollateral > 0) {
+        eventById.isStarted = true;
+
+        if (eventById.whiteCollateral > 0) {
             _pendingOrders.createOrder(
-                _events[eventId].whiteCollateral,
+                eventById.whiteCollateral,
                 true,
                 eventId
             );
         }
-        if (_events[eventId].blackCollateral > 0) {
+        if (eventById.blackCollateral > 0) {
             _pendingOrders.createOrder(
-                _events[eventId].blackCollateral,
+                eventById.blackCollateral,
                 false,
                 eventId
             );
         }
+        _events[eventId] = eventById;
     }
 
     function eventEnd(uint256 eventId) external onlyEventContract {
         LeverageEvent memory nowEvent = _events[eventId];
+
         nowEvent.whitePriceAfter = _predictionPool._whitePrice();
         nowEvent.blackPriceAfter = _predictionPool._blackPrice();
+
         nowEvent.isExecuted = true;
+
         if ((nowEvent.whiteCollateral > 0) || (nowEvent.blackCollateral > 0)) {
             _pendingOrders.withdrawCollateral();
         }
+
+        _borrowedCollateral = sub(_borrowedCollateral, nowEvent.totalBorrowed);
         _events[eventId] = nowEvent;
     }
 
