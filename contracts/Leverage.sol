@@ -25,6 +25,8 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
     uint256 public _predictionPoolFee = 0;
 
+    uint256 public _leverageFee = 0.001 * 1e18; // Default 0.1%
+
     bool public _onlyCurrentEvent = true;
 
     uint256 public _priceChangePart = 0.05 * 1e18; // Default 0.05%
@@ -166,11 +168,6 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     ) external {
         require(maxLoss != 0, "MAX LOSS PERCENT CANNOT BE 0");
         require(maxLoss <= _maxLossThreshold, "MAX LOSS PERCENT IS VERY BIG");
-
-        // require(
-        //     _collateralToken.balanceOf(address(this)) == _collateralTokens,
-        //     "WRONG BALANCE"
-        // );
 
         require(
             _collateralToken.balanceOf(msg.sender) >= amount,
@@ -381,6 +378,10 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         }
 
         _borrowedCollateral = sub(_borrowedCollateral, nowEvent.totalBorrowed);
+
+        uint256 fee = wmul(nowEvent.totalBorrowed, _leverageFee);
+        _collateralTokens = add(_collateralTokens, fee);
+
         _events[eventId] = nowEvent;
     }
 
@@ -470,6 +471,10 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
     function changePriceChangePart(uint256 priceChangePart) external onlyOwner {
         _priceChangePart = priceChangePart;
+    }
+
+    function changeLeverageFee(uint256 leverageFee) external onlyOwner {
+        _leverageFee = leverageFee;
     }
 
     function updatePredictionPoolFee() external onlyOwner {

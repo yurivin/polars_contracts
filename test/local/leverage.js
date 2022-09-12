@@ -199,6 +199,7 @@ const debug = 0;
       const liquidityAmount = mntob(2000, multiplier);
       const thresholdAmount = mntob(1600, multiplier);
 
+      expect(await deployedLeverage.getLpRatio()).to.be.bignumber.equal(ntob(1));
 
       if (debug) console.log("collateralAmount:  ", collateralAmount.toString())
       if (debug) console.log("maxLossUserDefined:", maxLossUserDefined.toString())
@@ -344,6 +345,10 @@ const debug = 0;
 
       await deployedCollateralToken.approve(deployedLeverage.address, mntob(1800, multiplier));
       await deployedLeverage.addLiquidity(mntob(1800, multiplier), { from: deployerAddress })
+
+      const _collateralTokensLiquidity = new bigDecimal(
+        (await deployedLeverage._collateralTokens()).toString()
+      );
 
       await deployedLeverage.createOrder(
         collateralAmount,     // uint256 amount
@@ -609,6 +614,23 @@ const debug = 0;
         nowEvent.priceChangePart
       );
 
+      if (debug) console.log("balanceOf              :   ", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString());
+      if (debug) console.log("_collateralTokens      :   ", (await deployedLeverage._collateralTokens()).toString());
+      if (debug) console.log("_lpTokens              :   ", (await deployedLeverage._lpTokens()).toString());
+
+      await expectRevert(
+        deployedLeverage.withdrawLiquidity(mntob(2001, multiplier)),
+        "NOT ENOUGH LIQUIDITY TOKENS ON THE USER BALANCE"
+      );
+
+      await expectRevert(
+        deployedLeverage.withdrawLiquidity(mntob(2000, multiplier)),
+        "NOT ENOUGH COLLATERAL IN THE CONTRACT"
+      );
+      await deployedLeverage.withdrawLiquidity(mntob(512.8, multiplier))
+      await deployedCollateralToken.approve(deployedLeverage.address, mntob(512.8, multiplier));
+      await deployedLeverage.addLiquidity(mntob(512.8, multiplier), { from: deployerAddress })
+
       await expectRevert(
         deployedLeverage.cancelOrder(1),
         "NOT YOUR ORDER"
@@ -683,9 +705,6 @@ const debug = 0;
       expect(eventInfo.whiteCollateral).to.be.bignumber.equal(resultAmountSumWhite);
 
       // ? resultAmountSum
-
-      console.log("EXIT");
-
 
       const fee = new bigDecimal(
         (await deployedPredictionPool.FEE()).toString())
@@ -792,6 +811,7 @@ const debug = 0;
 
       const _ordersCounter = await deployedLeverage._ordersCounter();
       if (debug) console.log("_ordersCounter:", _ordersCounter.toNumber());
+
       for (let orderId of [...Array(_ordersCounter.toNumber()).keys()]) {
         const order = await deployedLeverage._orders(orderId);
         if (debug) console.log("_orders:", getLogs(order));
@@ -802,8 +822,30 @@ const debug = 0;
         expect(order.isWhite).to.equal(false);
         expect(order.eventId).to.be.bignumber.equal(new BN("0"));
         expect(order.isPending).to.equal(false);
-
       }
+
+      const _leverageFee = await deployedLeverage._leverageFee();
+
+      const leverageFee = new bigDecimal(_borrowedCollateral.toString()).multiply(
+        new bigDecimal(_leverageFee.toString())
+          .divide(new bigDecimal(BONE.toString(10)), 18)
+      )
+
+      if (debug) console.log("totalBorrowed:", _borrowedCollateral.toString());
+      if (debug) console.log("_leverageFee:", _leverageFee.toString());
+      if (debug) console.log("leverageFee:", leverageFee.getValue());
+
+      const _lpTokens = new bigDecimal(
+        (await deployedLeverage._lpTokens()).toString()
+      );
+
+      const expectedLpRatio = new BN(_collateralTokensLiquidity
+        .add(leverageFee)
+        .divide(_lpTokens, 18)
+        .multiply(new bigDecimal(BONE.toString(10)))
+        .getValue());
+
+      if (debug) console.log("expectedLpRatio:", expectedLpRatio.toString());
 
       const _eventsById = await deployedLeverage._events(nowEvent.id);
       if (debug) console.log("_eventsById:", getLogs(_eventsById));
@@ -811,18 +853,30 @@ const debug = 0;
       if (debug) console.log("totalBorrowed      :   ", getLogs(await deployedLeverage._events(userSelectedEventId)));
       if (debug) console.log("_borrowedCollateral:   ", (await deployedLeverage._borrowedCollateral()).toString());
 
+      if (debug) console.log("getLpRatio:   ", (await deployedLeverage.getLpRatio()).toString());
+      expect(await deployedLeverage.getLpRatio()).to.be.bignumber.equal(expectedLpRatio);
 
       expect(
         await deployedLeverage._borrowedCollateral()
       ).to.be.bignumber.equal(new BN("0"));
 
+      const _maxUsageThreshold = await deployedLeverage._maxUsageThreshold();
+
+      const expectedAllowedBorrowTotal = new BN(_collateralTokensLiquidity
+        .add(leverageFee)
+        .multiply(new bigDecimal(_maxUsageThreshold.toString()).divide(new bigDecimal(BONE.toString(10)), 18))
+        .getValue()
+      );
+
+      if (debug) console.log("expectedAllowedBorrowTotal:", expectedAllowedBorrowTotal.toString());
+
       expect(
         await deployedLeverage.allowedBorrowTotal()
-      ).to.be.bignumber.equal(thresholdAmount);
+      ).to.be.bignumber.equal(expectedAllowedBorrowTotal);
 
       expect(
         await deployedLeverage.allowedBorrowLeft()
-      ).to.be.bignumber.equal(thresholdAmount);
+      ).to.be.bignumber.equal(expectedAllowedBorrowTotal);
 
       if (debug) console.log("======threshold4:   ", (await deployedLeverage.allowedBorrowTotal()).toString())
       if (debug) console.log("======threshold4:   ", (await deployedLeverage.allowedBorrowLeft()).toString())
