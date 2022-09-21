@@ -190,6 +190,9 @@ const debug = 0;
       await addLiquidityToPrediction(50000);
       await deployedEventLifeCycle.setLeverage(deployedLeverage.address, true);
 
+      expect(await deployedEventLifeCycle._useLeverage()).to.be.equals(true);
+      expect(await deployedEventLifeCycle._leverage()).to.be.equals(deployedLeverage.address);
+
       const user = accounts[4];
 
       const collateralAmount = mntob(20, multiplier);
@@ -889,6 +892,9 @@ const debug = 0;
       await addLiquidityToPrediction(50000);
       await deployedEventLifeCycle.setLeverage(deployedLeverage.address, true);
 
+      expect(await deployedEventLifeCycle._useLeverage()).to.be.equals(true);
+      expect(await deployedEventLifeCycle._leverage()).to.be.equals(deployedLeverage.address);
+
       const user = accounts[4];
 
       const collateralAmount = mntob(20, multiplier);
@@ -1369,6 +1375,10 @@ const debug = 0;
 
       await addLiquidityToPrediction(50000);
       await deployedEventLifeCycle.setLeverage(deployedLeverage.address, true);
+
+      expect(await deployedEventLifeCycle._useLeverage()).to.be.equals(true);
+      expect(await deployedEventLifeCycle._leverage()).to.be.equals(deployedLeverage.address);
+
       await deployedEventLifeCycle.setPendingOrders(
         deployedPendingOrders.address,
         false,
