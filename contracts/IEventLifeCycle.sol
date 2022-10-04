@@ -70,6 +70,7 @@ interface IEventLifeCycle {
         bool usePendingOrders
     ) external;
 
+    function setLeverage(address leverageAddress, bool useLeverage) external;
+
     function changeGovernanceAddress(address governanceAddress) external;
-    // function _queuedEvent() external view;
 }

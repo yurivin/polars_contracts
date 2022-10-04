@@ -37,8 +37,8 @@ contract LeverageFactory is AbstractFactory {
             pendingOrdersAddress                // address pendingOrdersAddress
             /* solhint-enable prettier/prettier */
         );
-        ISuiteFactory isf = ISuiteFactory(suite._suiteFactoryAddress());
-        lc.transferOwnership(isf.owner());
+
+        lc.transferOwnership(address(suite._suiteFactoryAddress()));
 
         suite.addContract(FACTORY_CONTRACT_TYPE, address(lc));
 

@@ -153,58 +153,240 @@ const { deployContracts, ntob, mntob, BONE } = require('./../utils.js');
       ).to.be.bignumber.equal(blackBought);
     });
 
-    [
-      3, 9, 10, 11
-    ].forEach((amount) => {
-      const anotherOrderer = accounts[7]
-      it(`addLiquidity error on ${amount}`, async function () {
-        const tokensAmount = mntob(amount, multiplier);
+    Array.from({length: 50}, (_, i) => i + 1).forEach((liqAmount) => {
+      it(`addLiquidity and withdrawLiquidity errors catch on amount ${liqAmount}`, async function () {
+        const tokensAmount = mntob(liqAmount, multiplier);
+        const bwTokensAmount = ntob(liqAmount);
+        const blackTokensAmount = ntob(liqAmount);
+        const whiteTokensAmount = ntob(liqAmount);
+        const totalCollateralTokensAmount = collateralTokenSupply;
+
+        const forWhiteAmount = mntob((liqAmount/2), multiplier);
+        const forBlackAmount = mntob((liqAmount/2), multiplier);
+
         const startPrice = mntob(0.5, multiplier);
-        const bwTokensAmount = ntob(amount);
+        const sPrice = startPrice.add(startPrice);
+        expect(sPrice).to.be.bignumber.equal(mntob(1, multiplier));
+
+        const bwAmnt = new bigDecimal(tokensAmount.toString())
+          .divide(new bigDecimal(sPrice.toString(10)), 18);
+
+        const forWhite = bwAmnt.multiply(new bigDecimal(startPrice.toString(10))).getValue()
+
+        const forBlack = bwAmnt.multiply(new bigDecimal(startPrice.toString(10))).getValue()
+
+        const bwAmount = ntob(liqAmount); // ?????
 
         await expectRevert(
           deployedPredictionPool.addLiquidity(
             tokensAmount,
-            { from: anotherOrderer }
+            { from: accounts[6] }
           ),
           "Not enough tokens are delegated",
         );
 
         await deployedCollateralToken.approve(
-          deployedPredictionPool.address,
-          tokensAmount,
-          { from: anotherOrderer }
-        );
+          deployedPredictionPool.address,     // address spender
+          tokensAmount,                       // uint256 value
+          { from: accounts[6] }
+        )
 
         await expectRevert(
           deployedPredictionPool.addLiquidity(
             tokensAmount,
-            { from: anotherOrderer }
+            { from: accounts[6] }
           ),
           "Not enough tokens on the user balance",
         );
 
-        await deployedCollateralToken.transfer(
-          anotherOrderer,
-          tokensAmount,
-          { from: deployerAddress }
-        );
+        expect(bwAmount).to.be.bignumber.equal(bwTokensAmount);
+        expect(forWhite).to.be.bignumber.equal(forWhiteAmount);
+        expect(forBlack).to.be.bignumber.equal(forBlackAmount);
+
+        expect(await deployedPredictionPool._whitePrice()).to.be.bignumber.equal(startPrice);
+        expect(await deployedPredictionPool._blackPrice()).to.be.bignumber.equal(startPrice);
+
+        expect(await deployedPredictionPool._collateralForWhite()).to.be.bignumber.equal(new BN("0"));
+        expect(await deployedPredictionPool._collateralForBlack()).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedPredictionPool.balanceOf(deployerAddress)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedCollateralToken.balanceOf(deployedPredictionPool.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedCollateralToken.balanceOf(deployerAddress)
+        ).to.be.bignumber.equal(totalCollateralTokensAmount);
+
+        expect(
+          await deployedCollateralToken.balanceOf(deployedPredictionCollateralization.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedWhiteToken.balanceOf(deployedPredictionPool.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedBlackToken.balanceOf(deployedPredictionPool.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedWhiteToken.balanceOf(deployedPredictionCollateralization.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedBlackToken.balanceOf(deployedPredictionCollateralization.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(await deployedPredictionPool._blackBought()).to.be.bignumber.equal(new BN("0"));
+        expect(await deployedPredictionPool._whiteBought()).to.be.bignumber.equal(new BN("0"));
+
 
         const addLiquidity = await deployedPredictionPool.addLiquidity(
           tokensAmount,
-          { from: anotherOrderer }
+          { from: deployerAddress }
         );
         const { logs: addLiquidityLog } = addLiquidity;
 
         expectEvent.inLogs(addLiquidityLog, 'AddLiquidity', {
-          user: anotherOrderer,
+          user: deployerAddress,
           whitePrice: startPrice,              // "0.5",
           blackPrice: startPrice,              // "0.5",
           bwAmount: bwTokensAmount,            // "1000",
           colaterallAmount: tokensAmount       // "1000"
         });
+
+
+        expect(await deployedPredictionPool._whitePrice()).to.be.bignumber.equal(startPrice);
+        expect(await deployedPredictionPool._blackPrice()).to.be.bignumber.equal(startPrice);
+
+        expect(await deployedPredictionPool._collateralForWhite()).to.be.bignumber.equal(forWhiteAmount);
+        expect(await deployedPredictionPool._collateralForBlack()).to.be.bignumber.equal(forBlackAmount);
+
+        expect(
+          await deployedPredictionPool.balanceOf(deployerAddress)
+        ).to.be.bignumber.equal(bwTokensAmount);
+
+        expect(
+          await deployedCollateralToken.balanceOf(deployedPredictionPool.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedCollateralToken.balanceOf(deployerAddress)
+        ).to.be.bignumber.equal(totalCollateralTokensAmount.sub(tokensAmount));
+
+        expect(
+          await deployedCollateralToken.balanceOf(deployedPredictionCollateralization.address)
+        ).to.be.bignumber.equal(tokensAmount);
+
+        expect(
+          await deployedWhiteToken.balanceOf(deployedPredictionPool.address)
+        ).to.be.bignumber.equal(whiteTokensAmount);
+
+        expect(
+          await deployedBlackToken.balanceOf(deployedPredictionPool.address)
+        ).to.be.bignumber.equal(blackTokensAmount);
+
+        expect(
+          await deployedWhiteToken.balanceOf(deployedPredictionCollateralization.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedBlackToken.balanceOf(deployedPredictionCollateralization.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(await deployedPredictionPool._blackBought()).to.be.bignumber.equal(bwTokensAmount);
+        expect(await deployedPredictionPool._whiteBought()).to.be.bignumber.equal(bwTokensAmount);
+
+
+        await expectRevert(
+          deployedPredictionPool.withdrawLiquidity(
+            bwTokensAmount,
+            { from: accounts[6] }
+          ),
+          "Not enough pool tokens are delegated",
+        );
+
+        await deployedPredictionPool.approve(
+          deployedPredictionPool.address,     // address spender
+          bwTokensAmount,                     // uint256 value
+          { from: accounts[6] }
+        )
+
+        await expectRevert(
+          deployedPredictionPool.withdrawLiquidity(
+            bwTokensAmount,
+            { from: accounts[6] }
+          ),
+          "Not enough tokens on the user balance",
+        );
+
+        await deployedPredictionPool.approve(
+          deployedPredictionPool.address,     // address spender
+          bwTokensAmount,                     // uint256 value
+          { from: deployerAddress }
+        )
+
+        const withdrawLiquidity = await deployedPredictionPool.withdrawLiquidity(
+          bwTokensAmount,
+          { from: deployerAddress }
+        );
+
+        const { logs: withdrawLiquidityLog } = withdrawLiquidity;
+
+        expectEvent.inLogs(withdrawLiquidityLog, 'WithdrawLiquidity', {
+          user: deployerAddress,
+          whitePrice: startPrice,              // "0.5",
+          blackPrice: startPrice,              // "0.5",
+          bwAmount: bwTokensAmount,            // "1000",
+          colaterallAmount: tokensAmount       // "1000"
+        });
+
+        expect(await deployedPredictionPool._whitePrice()).to.be.bignumber.equal(startPrice);
+        expect(await deployedPredictionPool._blackPrice()).to.be.bignumber.equal(startPrice);
+
+        expect(await deployedPredictionPool._collateralForWhite()).to.be.bignumber.equal(new BN("0"));
+        expect(await deployedPredictionPool._collateralForBlack()).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedPredictionPool.balanceOf(deployerAddress)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedCollateralToken.balanceOf(deployedPredictionPool.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedCollateralToken.balanceOf(deployerAddress)
+        ).to.be.bignumber.equal(totalCollateralTokensAmount);
+
+        expect(
+          await deployedCollateralToken.balanceOf(deployedPredictionCollateralization.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedWhiteToken.balanceOf(deployedPredictionPool.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedBlackToken.balanceOf(deployedPredictionPool.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedWhiteToken.balanceOf(deployedPredictionCollateralization.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(
+          await deployedBlackToken.balanceOf(deployedPredictionCollateralization.address)
+        ).to.be.bignumber.equal(new BN("0"));
+
+        expect(await deployedPredictionPool._blackBought()).to.be.bignumber.equal(new BN("0"));
+        expect(await deployedPredictionPool._whiteBought()).to.be.bignumber.equal(new BN("0"));
       });
-    })
+    });
 
     it("addLiquidity and withdrawLiquidity", async function () {
       const tokensAmount = mntob(1000, multiplier);

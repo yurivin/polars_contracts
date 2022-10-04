@@ -12,8 +12,6 @@ const bigDecimal = require('js-big-decimal');
 const chai = require('chai');
 const expect = require('chai').expect;
 
-// const { deployContracts, ntob, BONE } = require('./../utils.js');
-// const { ntob, BONE } = require('./../utils.js');
 const { getLogs, mntob, ntob, BONE } = require('./../utils.js');
 
 const TokenTemplate = artifacts.require('TokenTemplate');
@@ -33,8 +31,7 @@ const EventLifeCycle = artifacts.require('EventLifeCycle');
 const PendingOrders = artifacts.require('PendingOrders');
 const Leverage = artifacts.require('Leverage');
 
-// const debug = 0;
-const debug = 1;
+const debug = 0;
 const maxPageSize = 30;
 const polTokenSupply = 1000000000;
 const commissionForCreateSuite = 1; // 1$
@@ -317,7 +314,7 @@ const commissionForCreateSuite = 1; // 1$
       if (debug) console.log("contractCollAddress:", collateralContractAddress);
 
       const factoryCollateralContractType = await deployedPredictionCollateralFactory.FACTORY_CONTRACT_TYPE();
-      if (debug) console.log("factoryContractType :", factoryCollateralContractType);
+      if (debug) console.log("factoryContractType :", factoryCollateralContractType.toString());
       const deployedSuite = await Suite.at(_suites0);
       expect(await deployedSuite.contracts(factoryCollateralContractType)).to.be.equals(collateralContractAddress);
 
@@ -410,7 +407,7 @@ const commissionForCreateSuite = 1; // 1$
       if (debug) console.log("contractPoolAddress :", poolContractAddress);
 
       const factoryPoolContractType = await deployedPredictionPoolFactory.FACTORY_CONTRACT_TYPE();
-      if (debug) console.log("factoryPContractType:", factoryPoolContractType);
+      if (debug) console.log("factoryPContractType:", factoryPoolContractType.toString());
 
       expect(await deployedSuite.contracts(factoryPoolContractType)).to.be.equals(poolContractAddress);
 
@@ -494,7 +491,7 @@ const commissionForCreateSuite = 1; // 1$
       if (debug) console.log("contractElcAddress  :", elcContractAddress);
 
       const factoryELCContractType = await deployedEventLifeCycleFactory.FACTORY_CONTRACT_TYPE();
-      if (debug) console.log("factoryEContractType:", factoryELCContractType);
+      if (debug) console.log("factoryEContractType:", factoryELCContractType.toString());
 
       expect(await deployedSuite.contracts(factoryELCContractType)).to.be.equals(elcContractAddress);
 
@@ -505,7 +502,7 @@ const commissionForCreateSuite = 1; // 1$
 
       expect(
         await deployedEventLifeCycle._governanceAddress()
-      ).to.be.equals(await deployedSuiteFactory.owner());
+      ).to.be.equals(deployedSuiteFactory.address);
 
       await expectRevert(
         deployedPredictionPoolFactory.initPredictionPool(
@@ -555,8 +552,8 @@ const commissionForCreateSuite = 1; // 1$
 
       assert.equal(deployedEventLifeCycle.address, await deployedPredictionPool._eventContractAddress());
       assert.equal(await deployedSuiteFactory.owner(), await deployedPredictionCollateralization._governanceAddress());
-      assert.equal(await deployedSuiteFactory.owner(), await deployedEventLifeCycle._governanceAddress());
-      assert.equal(deployedPredictionPoolFactory.address, await deployedPredictionPool._governanceAddress());
+      assert.equal(deployedSuiteFactory.address, await deployedEventLifeCycle._governanceAddress());
+      assert.equal(deployedSuiteFactory.address, await deployedPredictionPool._governanceAddress());
 
       // -------------------------Pending---------------------------------------
       await expectRevert(
@@ -596,7 +593,7 @@ const commissionForCreateSuite = 1; // 1$
       if (debug) console.log("contractPOAddress   :", poContractAddress);
 
       const factoryPOContractType = await deployedPendingOrdersFactory.FACTORY_CONTRACT_TYPE();
-      if (debug) console.log("factoryPContractType:", factoryPOContractType);
+      if (debug) console.log("factoryPContractType:", factoryPOContractType.toString());
 
       expect(await deployedSuite.contracts(factoryPOContractType)).to.be.equals(poContractAddress);
 
@@ -611,7 +608,7 @@ const commissionForCreateSuite = 1; // 1$
       if (debug) console.log("po elc address      :", (await deployedPendingOrders._eventContractAddress()));
 
       assert.equal(deployedEventLifeCycle.address, await deployedPredictionPool._eventContractAddress());
-      assert.equal(await deployedSuiteFactory.owner(), await deployedPendingOrders.owner());
+      assert.equal(deployedSuiteFactory.address, await deployedPendingOrders.owner());
 
       expect(
         await deployedPendingOrders._ordersCount()
@@ -659,7 +656,7 @@ const commissionForCreateSuite = 1; // 1$
       if (debug) console.log("contractLeverageAddress   :", leverageContractAddress);
 
       const factoryLeverageContractType = await deployedLeverageFactory.FACTORY_CONTRACT_TYPE();
-      if (debug) console.log("factoryLeverageContractType:", factoryLeverageContractType);
+      if (debug) console.log("factoryLeverageContractType:", factoryLeverageContractType.toString());
 
       expect(await deployedSuite.contracts(factoryLeverageContractType)).to.be.equals(leverageContractAddress);
 
@@ -667,6 +664,7 @@ const commissionForCreateSuite = 1; // 1$
       const deployedLeverage = await Leverage.at(
         leverageContractAddress
       );
+      assert.equal(deployedSuiteFactory.address, await deployedLeverage.owner());
 
       return {
         suite: _suites0,
@@ -927,6 +925,7 @@ const commissionForCreateSuite = 1; // 1$
 
       it('should create PredictionCollateral, PredictionPool, EventLifeCycle, PendingOrders and Leverage contracts and add its to user`s suite', async () => {
         const {
+          suite,
           deployedPredictionCollateralization,
           deployedWhiteToken,
           deployedBlackToken,
@@ -938,8 +937,23 @@ const commissionForCreateSuite = 1; // 1$
 
         const eventDuration = time.duration.seconds(5);
 
+        await expectRevert(
+          deployedSuiteFactory.enableLeverage(
+            suite
+          ), "Caller should be suite owner"
+        );
+
+        await deployedSuiteFactory.enablePendingOrders(
+          suite,
+          { from: someUser1 }
+        );
+
+        await deployedSuiteFactory.enableLeverage(
+          suite,
+          { from: someUser1 }
+        );
+
         await addLiquidityToPrediction(deployedPredictionPool, deployedPredictionCollateralization, 50000);
-        await deployedEventLifeCycle.setLeverage(deployedLeverage.address, true);
 
         expect(await deployedEventLifeCycle._useLeverage()).to.be.equals(true);
         expect(await deployedEventLifeCycle._leverage()).to.be.equals(deployedLeverage.address);
@@ -1061,7 +1075,18 @@ const commissionForCreateSuite = 1; // 1$
           await deployedLeverage.allowedBorrowLeft()
         ).to.be.bignumber.equal(mntob(160, multiplier));
 
-        await deployedLeverage.changeMaxUsageThreshold(ntob(0.1));
+        await expectRevert(
+          deployedSuiteFactory.leverageChangeMaxUsageThreshold(
+            suite,
+            ntob(0.1)
+          ), "Caller should be suite owner"
+        );
+
+        await deployedSuiteFactory.leverageChangeMaxUsageThreshold(
+          suite,
+          ntob(0.1),
+          { from: someUser1 }
+        );
 
         expect(
           await deployedLeverage.allowedBorrowTotal()
@@ -1078,13 +1103,24 @@ const commissionForCreateSuite = 1; // 1$
           deployedLeverage.createOrder(
             collateralAmount,     // uint256 amount
             true,                 // bool isWhite,
-            ntob(0.49),   // uint256 maxLoss,
+            ntob(0.49),           // uint256 maxLoss,
             userSelectedEventId,  // uint256 eventId
             { from: user }
           ), "NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
         );
 
-        await deployedLeverage.changeMaxUsageThreshold(ntob(0.8));
+        await expectRevert(
+          deployedSuiteFactory.leverageChangeMaxUsageThreshold(
+            suite,
+            ntob(0.8)
+          ), "Caller should be suite owner"
+        );
+
+        await deployedSuiteFactory.leverageChangeMaxUsageThreshold(
+          suite,
+          ntob(0.8),
+          { from: someUser1 }
+        );
 
         expect(
           await deployedLeverage.allowedBorrowTotal()
@@ -1185,20 +1221,35 @@ const commissionForCreateSuite = 1; // 1$
 
         if (debug) console.log("balanceOf only liquidity:", ( await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
 
+        // await expectRevert(
+        //   addAndStartEvent(
+        //     deployedEventLifeCycle,
+        //     userSelectedEventId,
+        //     time.duration.seconds(5),
+        //     new BN("50000000000000000")
+        //   ),
+        //   "PENDING ORDERS DISABLED"
+        // );
+
         await expectRevert(
-          addAndStartEvent(
-            deployedEventLifeCycle,
-            userSelectedEventId,
-            time.duration.seconds(5),
-            new BN("50000000000000000")
-          ),
-          "PENDING ORDERS DISABLED"
+          deployedEventLifeCycle.setPendingOrders(
+            deployedPendingOrders.address,
+            true,
+            { from: deployerAddress }
+          ), "Caller should be Governance"
         );
 
-        await deployedEventLifeCycle.setPendingOrders(
-          deployedPendingOrders.address,
-          true,
-          { from: deployerAddress }
+        await expectRevert(
+          deployedSuiteFactory.enablePendingOrders(
+            suite
+          ), "Caller should be suite owner"
+        );
+
+        await expectRevert(
+          deployedSuiteFactory.enablePendingOrders(
+            suite,
+            { from: someUser1 }
+          ), "The action is not available while there are orders in the PredictionPool"
         );
 
         await addAndStartEvent(
@@ -1676,6 +1727,39 @@ const commissionForCreateSuite = 1; // 1$
         );
 
         await deployedPredictionPoolFactory.enablePendingOrders(
+          deployedContracts.suite,
+          { from: someUser1 }
+        );
+
+        const buyPayment = new BN("5000000000000000000");
+        const initialBlackOrWhitePrice = new BN("500000000000000000");
+
+        await expectRevert(
+          deployedContracts.deployedPredictionPool.buyWhite(
+            initialBlackOrWhitePrice,
+            buyPayment,
+            { from: someUser3 }
+          ), "Incorrerct orderer"
+        );
+        await expectRevert(
+          deployedContracts.deployedPredictionPool.buyBlack(
+            initialBlackOrWhitePrice,
+            buyPayment,
+            { from: someUser3 }
+          ), "Incorrerct orderer"
+        );
+      });
+
+      it('should create contracts and enable PendingOrders', async () => {
+        const deployedContracts = await deployFactoryContracts();
+
+        await expectRevert(
+          deployedSuiteFactory.enablePendingOrders(
+            deployedContracts.suite
+          ), "Caller should be suite owner"
+        );
+
+        await deployedSuiteFactory.enablePendingOrders(
           deployedContracts.suite,
           { from: someUser1 }
         );

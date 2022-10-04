@@ -4,6 +4,9 @@ pragma solidity ^0.7.6;
 
 import "./Suite.sol";
 import "./ISuiteList.sol";
+import "../IPredictionPool.sol";
+import "../IEventLifeCycle.sol";
+import "../ILeverage.sol";
 import "../Common/IERC20.sol";
 
 contract SuiteFactory is Ownable {
@@ -78,5 +81,126 @@ contract SuiteFactory is Ownable {
             _commissionToken.transfer(msg.sender, balance),
             "Unable to transfer"
         );
+    }
+
+    function enablePendingOrders(address suiteAddress) external {
+        Suite suite = Suite(suiteAddress);
+        address suiteOwner = suite.owner();
+
+        require(suiteOwner == msg.sender, "Caller should be suite owner");
+
+        address predictionPoolAddress = suite.contracts(
+            1 // id for PREDICTION_POOL
+        );
+
+        require(
+            predictionPoolAddress != address(0),
+            "You must create PredictionPool contract"
+        );
+
+        address pendingOrdersAddress = suite.contracts(
+            3 // id for PENDING_ORDERS
+        );
+
+        require(
+            pendingOrdersAddress != address(0),
+            "You must create PendingOrders contract"
+        );
+
+        address eventLifeCycleAddress = suite.contracts(
+            2 // id for EVENT_LIFE_CYCLE
+        );
+
+        require(
+            eventLifeCycleAddress != address(0),
+            "You must create EventLifeCycle contract"
+        );
+
+        IPredictionPool ipp = IPredictionPool(predictionPoolAddress);
+        IEventLifeCycle elc = IEventLifeCycle(eventLifeCycleAddress);
+
+        require(
+            (ipp._blackBought() == 0 && ipp._whiteBought() == 0),
+            "The action is not available while there are orders in the PredictionPool"
+        );
+
+        ipp.changeOrderer(pendingOrdersAddress);
+        ipp.setOnlyOrderer(true);
+
+        elc.setPendingOrders(pendingOrdersAddress, true);
+    }
+
+    function enableLeverage(address suiteAddress) external {
+        Suite suite = Suite(suiteAddress);
+        address suiteOwner = suite.owner();
+
+        require(suiteOwner == msg.sender, "Caller should be suite owner");
+
+        address eventLifeCycleAddress = suite.contracts(
+            2 // id for EVENT_LIFE_CYCLE
+        );
+
+        require(
+            eventLifeCycleAddress != address(0),
+            "You must create EventLifeCycle contract"
+        );
+
+        address leverageAddress = suite.contracts(
+            4 // id for LEVERAGE
+        );
+
+        require(
+            leverageAddress != address(0),
+            "You must create Leverage contract"
+        );
+
+        IEventLifeCycle elc = IEventLifeCycle(eventLifeCycleAddress);
+        elc.setLeverage(leverageAddress, true);
+    }
+
+    function leverageChangeMaxUsageThreshold(
+        address suiteAddress,
+        uint256 percent
+    ) external {
+        Suite suite = Suite(suiteAddress);
+        address suiteOwner = suite.owner();
+
+        require(suiteOwner == msg.sender, "Caller should be suite owner");
+
+        address leverageAddress = suite.contracts(
+            4 // id for LEVERAGE
+        );
+
+        require(
+            leverageAddress != address(0),
+            "You must create Leverage contract"
+        );
+
+        ILeverage levc = ILeverage(leverageAddress);
+
+        levc.changeMaxUsageThreshold(percent);
+    }
+
+    function leverageChangeMaxLossThreshold(
+        address suiteAddress,
+        uint256 percent
+    ) external {
+        Suite suite = Suite(suiteAddress);
+        address suiteOwner = suite.owner();
+
+        require(suiteOwner == msg.sender, "Caller should be suite owner");
+
+        address leverageAddress = suite.contracts(
+            4 // id for LEVERAGE
+        );
+
+        require(
+            leverageAddress != address(0),
+            "You must create Leverage contract"
+        );
+
+        ILeverage levc = ILeverage(leverageAddress);
+
+        levc.changeMaxLossThreshold(percent);
     }
 }

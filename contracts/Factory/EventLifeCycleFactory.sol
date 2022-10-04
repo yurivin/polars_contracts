@@ -31,11 +31,11 @@ contract EventLifeCycleFactory is AbstractFactory {
             "You must create Prediction Pool before EventLifeCycle contract"
         );
 
-        ISuiteFactory isf = ISuiteFactory(suite._suiteFactoryAddress());
-
         EventLifeCycle elc = new EventLifeCycle(
             /* solhint-disable prettier/prettier */
-            isf.owner(),            // address governanceAddress,
+            address(
+                suite._suiteFactoryAddress()
+            ),                      // address governanceAddress,
             oracleAddress,          // address oracleAddress,
             predictionPoolAddress   // address predictionPoolAddress
             /* solhint-enable prettier/prettier */
