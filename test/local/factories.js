@@ -1704,13 +1704,13 @@ const commissionForCreateSuite = 1; // 1$
         await buyTokens(deployedContracts, true, buyPayment, initialBlackOrWhitePrice);
 
         await expectRevert(
-          deployedPredictionPoolFactory.enablePendingOrders(
+          deployedSuiteFactory.enablePendingOrders(
             deployedContracts.suite
           ), "Caller should be suite owner"
         );
 
         await expectRevert(
-          deployedPredictionPoolFactory.enablePendingOrders(
+          deployedSuiteFactory.enablePendingOrders(
             deployedContracts.suite,
             { from: someUser1 }
           ), "The action is not available while there are orders in the PredictionPool"
@@ -1721,12 +1721,12 @@ const commissionForCreateSuite = 1; // 1$
         const deployedContracts = await deployFactoryContracts();
 
         await expectRevert(
-          deployedPredictionPoolFactory.enablePendingOrders(
+          deployedSuiteFactory.enablePendingOrders(
             deployedContracts.suite
           ), "Caller should be suite owner"
         );
 
-        await deployedPredictionPoolFactory.enablePendingOrders(
+        await deployedSuiteFactory.enablePendingOrders(
           deployedContracts.suite,
           { from: someUser1 }
         );
@@ -1942,10 +1942,10 @@ const commissionForCreateSuite = 1; // 1$
       const buyPayment = mntob(amount, multiplier);
 
       const collateralTokenDeployerBalance = await deployedCollateralToken.balanceOf(deployerAddress);
-      console.log("buyPayment                        :", buyPayment.toString())
-      console.log("collateralTokenDeployerBalance    :", collateralTokenDeployerBalance.toString())
+      if (debug) console.log("buyPayment                        :", buyPayment.toString())
+      if (debug) console.log("collateralTokenDeployerBalance    :", collateralTokenDeployerBalance.toString())
       const collateralTokenDeployerAllowance = await deployedCollateralToken.allowance(deployerAddress, deployedPredictionPool.address);
-      console.log("collateralTokenDeployerAllowance  :", collateralTokenDeployerAllowance.toString())
+      if (debug) console.log("collateralTokenDeployerAllowance  :", collateralTokenDeployerAllowance.toString())
       expect(collateralTokenDeployerBalance).to.be.bignumber.at.least(buyPayment);
 
       const collateralTokenPpBefore = await deployedCollateralToken.balanceOf(deployedPredictionPool.address);
@@ -1958,7 +1958,7 @@ const commissionForCreateSuite = 1; // 1$
       expect(
         await deployedCollateralToken.allowance(deployerAddress, deployedPredictionPool.address)
       ).to.be.bignumber.at.least(buyPayment);
-      console.log("collateralTokenDeployerAllowance  :", (await deployedCollateralToken.allowance(deployerAddress, deployedPredictionPool.address)).toString())
+      if (debug) console.log("collateralTokenDeployerAllowance  :", (await deployedCollateralToken.allowance(deployerAddress, deployedPredictionPool.address)).toString())
 
       const addLiquidity = await deployedPredictionPool.addLiquidity(buyPayment);
       const { logs: addLiquidityLog } = addLiquidity;
