@@ -351,11 +351,12 @@ const commissionForCreateSuite = 1; // 1$
       if (debug) console.log("blackTokenAllowance :", blackTokenAllowance.toString());
 
       // ------------------------Pool-------------------------------------------
+      const initialBlackOrWhitePrice = mntob(0.5, multiplier);
       await expectRevert(
         deployedPredictionPoolFactory.createContract(
           _suites0,                                     // address suiteAddress,
-          new BN("500000000000000000"),                 // uint256 whitePrice
-          new BN("500000000000000000")                  // uint256 blackPrice
+          initialBlackOrWhitePrice,                     // uint256 whitePrice
+          initialBlackOrWhitePrice                      // uint256 blackPrice
         ), "Caller should be suite owner"
       );
 
@@ -364,8 +365,8 @@ const commissionForCreateSuite = 1; // 1$
       await expectRevert(
         deployedPredictionPoolFactory.createContract(
           _suites0,                                     // address suiteAddress,
-          new BN("500000000000000000"),                 // uint256 whitePrice
-          new BN("500000000000000000"),                 // uint256 blackPrice
+          initialBlackOrWhitePrice,                     // uint256 whitePrice
+          initialBlackOrWhitePrice,                     // uint256 blackPrice
           { from: someUser1 }
         ), "Caller should be allowed deployer"
       );
@@ -375,8 +376,8 @@ const commissionForCreateSuite = 1; // 1$
       await expectRevert(
         deployedPredictionPoolFactory.createContract(
           _suites0,                                     // address suiteAddress,
-          new BN("500000000000000000"),                 // uint256 whitePrice
-          new BN("500000000000000000"),                 // uint256 blackPrice
+          initialBlackOrWhitePrice,                     // uint256 whitePrice
+          initialBlackOrWhitePrice,                     // uint256 blackPrice
           { from: someUser1 }
         ), "Caller should be in White List"
       );
@@ -388,8 +389,8 @@ const commissionForCreateSuite = 1; // 1$
 
       const createPoolContractTx = await deployedPredictionPoolFactory.createContract(
         _suites0,                                       // address suiteAddress,
-        new BN("500000000000000000"),                   // uint256 whitePrice
-        new BN("500000000000000000"),                   // uint256 blackPrice
+        initialBlackOrWhitePrice,                       // uint256 whitePrice
+        initialBlackOrWhitePrice,                       // uint256 blackPrice
         { from: someUser1 }
       );
 
@@ -923,7 +924,7 @@ const commissionForCreateSuite = 1; // 1$
         // await buyWhite(deployedContracts);
       });
 
-      it('should create PredictionCollateral, PredictionPool, EventLifeCycle, PendingOrders and Leverage contracts and add its to user`s suite', async () => {
+      it.only('should create PredictionCollateral, PredictionPool, EventLifeCycle, PendingOrders and Leverage contracts and add its to user`s suite', async () => {
         const {
           suite,
           deployedPredictionCollateralization,
