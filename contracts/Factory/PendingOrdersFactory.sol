@@ -47,8 +47,8 @@ contract PendingOrdersFactory is AbstractFactory {
             eventContractAddress                // address eventContractAddress
             /* solhint-enable prettier/prettier */
         );
-        ISuiteFactory isf = ISuiteFactory(suite._suiteFactoryAddress());
-        poc.transferOwnership(isf.owner());
+
+        poc.transferOwnership(address(suite._suiteFactoryAddress()));
 
         suite.addContract(FACTORY_CONTRACT_TYPE, address(poc));
 
