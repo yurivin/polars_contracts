@@ -681,6 +681,163 @@ const commissionForCreateSuite = 1; // 1$
 
     describe("Suite", () => {
       it('should create 50 suites for 7 users and print it', async () => {
+        const firstUser = accounts[2];
+        const secondUser = accounts[3];
+        const thirdUser = accounts[4];
+
+        await expectRevert(
+          deployedSuiteList.getUserSuitesByPage(
+            firstUser,
+            0,
+            new BN(maxPageSize.toString(10)),
+            { from: firstUser }
+          ), "Start index must be less than suites length"
+        );
+
+        await expectRevert(
+          deployedSuiteFactory.deploySuite(
+            "SomeSuiteOfFirstUser",
+            deployedCollateralToken.address,
+            { from: firstUser }
+          ), "WhiteList address not defined"
+        );
+
+        expect(await deployedSuiteFactory._suiteList()).to.be.equals(deployedSuiteList.address);
+
+        await deployedSuiteFactory.setSuiteList(deployedSuiteList.address)
+        await deployedSuiteList.setWhiteList(deployedWhiteList.address)
+
+        await deploySuite(firstUser, "SomeSuiteOfFirstUser1", deployedCollateralToken.address);
+        await deploySuite(firstUser, "SomeSuiteOfFirstUser2", deployedCollateralToken.address);
+        await deploySuite(secondUser, "SomeSuiteOfSecondUser1", deployedCollateralToken.address);
+        await deploySuite(firstUser, "SomeSuiteOfFirstUser3", deployedCollateralToken.address);
+        await deploySuite(thirdUser, "SomeSuiteOfThirdUser1", deployedCollateralToken.address);
+        await deploySuite(secondUser, "SomeSuiteOfSecondUser2", deployedCollateralToken.address);
+        await deploySuite(firstUser, "SomeSuiteOfFirstUser4", deployedCollateralToken.address);
+        await deploySuite(thirdUser, "SomeSuiteOfThirdUser2", deployedCollateralToken.address);
+        // await deploySuite(secondUser, "SomeSuiteOfSecondUser2", deployedCollateralToken.address);
+
+
+        const getUserSuitesByPageFirstUser = await deployedSuiteList.getUserSuitesByPage(
+          firstUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageFirstUser  :", getUserSuitesByPageFirstUser);
+
+        const getUserSuitesByPageSecondUser = await deployedSuiteList.getUserSuitesByPage(
+          secondUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageSecondUser :", getUserSuitesByPageSecondUser);
+
+        const getUserSuitesByPageThirdUser = await deployedSuiteList.getUserSuitesByPage(
+          thirdUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageThirdUser :", getUserSuitesByPageThirdUser);
+
+        // if (debug) console.log("getUserSuitesByPageSecondUser :", getUserSuitesByPageFirstUser[0]);
+
+        if (debug) console.log("getUserSuitesCountFirstUser  :", (await deployedSuiteList.getUserSuitesCount(firstUser)).toString());
+        if (debug) console.log("getUserSuitesCountSecondUser :", (await deployedSuiteList.getUserSuitesCount(secondUser)).toString());
+        if (debug) console.log("getUserSuitesCountThirdUser  :", (await deployedSuiteList.getUserSuitesCount(thirdUser)).toString());
+
+
+
+        // for (var i = 0; i < Number(getUserSuitesByPageSecondUser); i++) {
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(firstUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(firstUser, i)
+          if (debug) console.log("_suiteIndexesByUser1Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(secondUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(secondUser, i)
+          if (debug) console.log("_suiteIndexesByUser2Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(thirdUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(thirdUser, i)
+          if (debug) console.log("_suiteIndexesByUser3Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        const getSuitesCountBefore = await deployedSuiteList.getSuitesCount();
+        if (debug) console.log("getSuitesCount:", getSuitesCountBefore.toString());
+
+
+        for (var i = 0; i < Number(getSuitesCountBefore.toString()); i++) {
+          const x = await deployedSuiteList._suites(i)
+          if (debug) console.log(`_suites[${i}]:`, x);
+        }
+
+
+        if (debug) console.log("\n\n-------------delete suite-----------------\n\n");
+
+        await deployedSuiteList.deleteSuite(getUserSuitesByPageFirstUser[1])
+
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(firstUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(firstUser, i)
+          if (debug) console.log("_suiteIndexesByUser1Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(secondUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(secondUser, i)
+          if (debug) console.log("_suiteIndexesByUser2Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(thirdUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(thirdUser, i)
+          if (debug) console.log("_suiteIndexesByUser3Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        const getSuitesCountAfter = await deployedSuiteList.getSuitesCount();
+        if (debug) console.log("getSuitesCount:", getSuitesCountAfter.toString());
+
+
+        for (var i = 0; i < Number(getSuitesCountAfter.toString()); i++) {
+          const x = await deployedSuiteList._suites(i)
+          if (debug) console.log(`_suites[${i}]:`, x);
+        }
+
+        const getUserSuitesByPageFirstUserAfterDelete = await deployedSuiteList.getUserSuitesByPage(
+          firstUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageFirstUser  :", getUserSuitesByPageFirstUserAfterDelete);
+
+        const getUserSuitesByPageSecondUserAfterDelete = await deployedSuiteList.getUserSuitesByPage(
+          secondUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageSecondUser :", getUserSuitesByPageSecondUserAfterDelete);
+
+        const getUserSuitesByPageThirdUserAfterDelete = await deployedSuiteList.getUserSuitesByPage(
+          thirdUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageThirdUser :", getUserSuitesByPageThirdUserAfterDelete);
+
+        if (debug) console.log("getUserSuitesCountFirstUser  :", (await deployedSuiteList.getUserSuitesCount(firstUser)).toString());
+        if (debug) console.log("getUserSuitesCountSecondUser :", (await deployedSuiteList.getUserSuitesCount(secondUser)).toString());
+        if (debug) console.log("getUserSuitesCountThirdUser  :", (await deployedSuiteList.getUserSuitesCount(thirdUser)).toString());
+
+      });
+
+
+
+
+      it('should create 50 suites for 7 users and print it', async () => {
 
         const countSuitesForTest = 50;
         if (debug) console.log("acountSuitesForTest :", countSuitesForTest);
@@ -924,7 +1081,7 @@ const commissionForCreateSuite = 1; // 1$
         // await buyWhite(deployedContracts);
       });
 
-      it.only('should create PredictionCollateral, PredictionPool, EventLifeCycle, PendingOrders and Leverage contracts and add its to user`s suite', async () => {
+      it('should create PredictionCollateral, PredictionPool, EventLifeCycle, PendingOrders and Leverage contracts and add its to user`s suite', async () => {
         const {
           suite,
           deployedPredictionCollateralization,

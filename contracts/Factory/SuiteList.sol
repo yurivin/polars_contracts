@@ -18,6 +18,12 @@ contract SuiteList is Ownable {
     mapping(address => uint256[]) public _suiteIndexesByUserMap;
     mapping(address => address[]) public _suitesMap2;
 
+    uint256 public _index = 0;
+
+    event SuiteAdded(address suiteAddress, address suiteOwner);
+
+    event SuiteDeleted(address suiteAddress, address suiteOwner);
+
     constructor(address suiteFactory) {
         _suiteFactory = ISuiteFactory(suiteFactory);
     }
@@ -52,11 +58,12 @@ contract SuiteList is Ownable {
         external
         onlyOwnerOrSuiteFactory
     {
-        uint256 index = _suites.length;
         _suites.push(suiteAddress);
-        _suiteIndexes[suiteAddress] = index;
+        _suiteIndexes[suiteAddress] = _index;
         _suiteOwners[suiteAddress] = suiteOwner;
-        _suiteIndexesByUserMap[suiteOwner].push(index);
+        _suiteIndexesByUserMap[suiteOwner].push(_index);
+        _index++;
+        emit SuiteAdded(suiteAddress, suiteOwner);
     }
 
     function deleteSuite(address suiteAddress)
@@ -68,19 +75,37 @@ contract SuiteList is Ownable {
         uint256 index = _suiteIndexes[suiteAddress];
         delete _suiteIndexes[suiteAddress];
 
-        if (index >= _suites.length) {
-            return;
-        }
+        require(index < _suites.length, "Suite index overflow");
+
+        require(_suites.length > 0, "No suite in list");
 
         uint256 lastIndex = _suites.length - 1;
 
-        delete _suites[index];
+        // delete _suites[index];
 
         if (index != lastIndex) {
             _suites[index] = _suites[lastIndex];
         }
+        delete _suites[index];
 
-        _suites.pop();
+        // _suites.pop();
+
+        address suiteOwner = ISuite(suiteAddress).owner();
+
+        uint256 i = 0;
+        uint256 length = _suiteIndexesByUserMap[suiteOwner].length;
+
+        while (i < length) {
+            if (_suiteIndexesByUserMap[suiteOwner][i] == index) {
+                uint256 last = _suiteIndexesByUserMap[suiteOwner][length - 1];
+                _suiteIndexesByUserMap[suiteOwner][i] = last;
+                _suiteIndexesByUserMap[suiteOwner].pop();
+                return;
+            } else {
+                i++;
+            }
+        }
+        emit SuiteDeleted(suiteAddress, suiteOwner);
     }
 
     function isSuiteExists(address suiteAddress) external view returns (bool) {
