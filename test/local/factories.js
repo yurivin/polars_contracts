@@ -775,11 +775,6 @@ const commissionForCreateSuite = 1; // 1$
           if (debug) console.log(`_suites[${i}]:`, x);
         }
 
-
-        if (debug) console.log("\n\n-------------delete suite-----------------\n\n");
-
-        await deployedSuiteList.deleteSuite(getUserSuitesByPageFirstUser[1])
-
         for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(firstUser)).toString()); i++) {
           const x = await deployedSuiteList._suiteIndexesByUserMap(firstUser, i)
           if (debug) console.log("_suiteIndexesByUser1Map :",
@@ -1073,12 +1068,10 @@ const commissionForCreateSuite = 1; // 1$
       it('should create PredictionCollateral, PredictionPool, EventLifeCycle and PendingOrders contracts and add its to user`s suite', async () => {
         const deployedContracts = await deployFactoryContracts();
 
-        const buyPayment = new BN("5000000000000000000");
-        const initialBlackOrWhitePrice = new BN("500000000000000000");
+        const buyPayment = mntob(5, multiplier);
+        const initialBlackOrWhitePrice = mntob(0.5, multiplier);
         await buyTokens(deployedContracts, false, buyPayment, initialBlackOrWhitePrice);
         await buyTokens(deployedContracts, true, buyPayment, initialBlackOrWhitePrice);
-        // await buyBlack(deployedContracts);
-        // await buyWhite(deployedContracts);
       });
 
       it('should create PredictionCollateral, PredictionPool, EventLifeCycle, PendingOrders and Leverage contracts and add its to user`s suite', async () => {
@@ -1856,8 +1849,8 @@ const commissionForCreateSuite = 1; // 1$
       it('should create contracts and cant enable PendingOrders', async () => {
         const deployedContracts = await deployFactoryContracts();
 
-        const buyPayment = new BN("5000000000000000000");
-        const initialBlackOrWhitePrice = new BN("500000000000000000");
+        const buyPayment = mntob(5, multiplier);
+        const initialBlackOrWhitePrice = mntob(0.5, multiplier);
         await buyTokens(deployedContracts, false, buyPayment, initialBlackOrWhitePrice);
         await buyTokens(deployedContracts, true, buyPayment, initialBlackOrWhitePrice);
 
@@ -2294,66 +2287,6 @@ const commissionForCreateSuite = 1; // 1$
         if (debug) console.log("isSuiteExistsAfterCreate      :", isSuiteExistsAfterCreate);
 
         expect(isSuiteExistsAfterCreate).to.be.equals(true);
-      });
-
-      it('should delete suite from SuiteList, by Suite owner and SuiteList owner', async () => {
-        const isSuiteExists = await deployedSuiteList.isSuiteExists(accounts[6]); // some address
-        if (debug) console.log("isSuiteExists       :", isSuiteExists);
-        expect(isSuiteExists).to.be.equals(false);
-
-        await setWhiteList(
-          "PREDICTION_COLLATERAL",
-          deployedPredictionCollateralFactory.address
-        );
-
-        const deployedSuiteAddress = await deploySuite(
-          someUser1,
-          "SomeNameSuite",
-          deployedCollateralToken.address
-        );
-
-        const _suites0 = await deployedSuiteList._suites(0);
-        expect(_suites0).to.be.equals(deployedSuiteAddress);
-        const _suiteIndexes = await deployedSuiteList._suiteIndexes(deployedSuiteAddress);
-        const isSuiteExistsAfterCreate = await deployedSuiteList.isSuiteExists(deployedSuiteAddress);
-        if (debug) console.log("_suites0            :", _suites0);
-        if (debug) console.log("_suiteIndexes      :", _suiteIndexes.toString());
-        if (debug) console.log("isSuiteExistsAfterCreate      :", isSuiteExistsAfterCreate);
-
-        expect(isSuiteExistsAfterCreate).to.be.equals(true);
-
-        await expectRevert(
-          deployedSuiteList.deleteSuite(
-            deployedSuiteAddress,
-            { from: accounts[9] }
-          ), "only Gov or suite owner can call"
-        );
-
-        const deleteSuiteByGov = await deployedSuiteList.deleteSuite(
-          deployedSuiteAddress,
-          { from: accounts[0] }
-        );
-
-        const isSuiteExistsAfterDelete = await deployedSuiteList.isSuiteExists(deployedSuiteAddress);
-
-        const deployedSuiteAddress2 = await deploySuite(
-          someUser1,
-          "SomeNameSuite",
-          deployedCollateralToken.address
-        );
-        const isSuiteExists2 = await deployedSuiteList.isSuiteExists(deployedSuiteAddress2);
-        if (debug) console.log("isSuiteExists2      :", isSuiteExists2);
-
-        expect(isSuiteExists2).to.be.equals(true);
-        const deleteSuiteByOwner = await deployedSuiteList.deleteSuite(
-          deployedSuiteAddress2,
-          { from: someUser1 }
-        );
-        const isSuiteExistsAfterDeleteSuiteByOwner = await deployedSuiteList.isSuiteExists(deployedSuiteAddress2);
-        if (debug) console.log("isSuiteExists2      :", isSuiteExistsAfterDeleteSuiteByOwner);
-
-        expect(isSuiteExistsAfterDeleteSuiteByOwner).to.be.equals(false);
-
       });
 
       it('should assert balance of deployer`s Pol tokens equal total supply', async () => {

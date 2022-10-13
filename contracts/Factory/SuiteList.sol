@@ -66,48 +66,6 @@ contract SuiteList is Ownable {
         emit SuiteAdded(suiteAddress, suiteOwner);
     }
 
-    function deleteSuite(address suiteAddress)
-        external
-        onlyOwnerOrSuiteOwner(suiteAddress)
-    {
-        require(_isSuiteExists(suiteAddress), "Suite not exists");
-
-        uint256 index = _suiteIndexes[suiteAddress];
-        delete _suiteIndexes[suiteAddress];
-
-        require(index < _suites.length, "Suite index overflow");
-
-        require(_suites.length > 0, "No suite in list");
-
-        uint256 lastIndex = _suites.length - 1;
-
-        // delete _suites[index];
-
-        if (index != lastIndex) {
-            _suites[index] = _suites[lastIndex];
-        }
-        delete _suites[index];
-
-        // _suites.pop();
-
-        address suiteOwner = ISuite(suiteAddress).owner();
-
-        uint256 i = 0;
-        uint256 length = _suiteIndexesByUserMap[suiteOwner].length;
-
-        while (i < length) {
-            if (_suiteIndexesByUserMap[suiteOwner][i] == index) {
-                uint256 last = _suiteIndexesByUserMap[suiteOwner][length - 1];
-                _suiteIndexesByUserMap[suiteOwner][i] = last;
-                _suiteIndexesByUserMap[suiteOwner].pop();
-                return;
-            } else {
-                i++;
-            }
-        }
-        emit SuiteDeleted(suiteAddress, suiteOwner);
-    }
-
     function isSuiteExists(address suiteAddress) external view returns (bool) {
         return _isSuiteExists(suiteAddress);
     }
