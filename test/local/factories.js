@@ -1074,6 +1074,27 @@ const commissionForCreateSuite = 1; // 1$
         await buyTokens(deployedContracts, true, buyPayment, initialBlackOrWhitePrice);
       });
 
+      it('security check of factories', async () => {
+        const {
+          suite,
+          deployedPredictionCollateralization,
+          deployedWhiteToken,
+          deployedBlackToken,
+          deployedPredictionPool,
+          deployedEventLifeCycle,
+          deployedPendingOrders,
+          deployedLeverage
+        } = await deployFactoryContracts();
+
+        await expectRevert(
+          deployedEventLifeCycleFactory.createContract(
+            suite,                                  // address suiteAddress,
+            deployerAddress,                        // address oracleAddress
+            { from: deployerAddress }
+          ), "Contract already exist"
+        );
+      });
+
       it('should create PredictionCollateral, PredictionPool, EventLifeCycle, PendingOrders and Leverage contracts and add its to user`s suite', async () => {
         const {
           suite,

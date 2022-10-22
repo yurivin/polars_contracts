@@ -11,6 +11,7 @@ const PredictionPoolProxy = artifacts.require("PredictionPoolProxy");
 const PredictionPoolFactory = artifacts.require("PredictionPoolFactory");
 const EventLifeCycleFactory = artifacts.require("EventLifeCycleFactory");
 const PendingOrdersFactory = artifacts.require("PendingOrdersFactory");
+const LeverageFactory = artifacts.require("LeverageFactory");
 
 // const ChainlinkAPIConsumer = artifacts.require("ChainlinkAPIConsumer");
 
@@ -45,6 +46,7 @@ module.exports = async(deployer, network, accounts) => {
 
     console.log("Platform token:             " + PLATFORM_TOKENS);
     console.log("Platform token:             " + PLATFORM_TOKENS[network]);
+
     if (!PLATFORM_TOKENS[network] || (await web3.eth.getCode(PLATFORM_TOKENS[network]) === "0x")) {
         await deployer.deploy(
             TokenTemplate,
@@ -175,6 +177,19 @@ module.exports = async(deployer, network, accounts) => {
             deployedPendingOrdersFactory = await PendingOrdersFactory.at(contractsAddresses.pendingOrdersFactory);
         }
 
+
+        if (!contractsAddresses.leverageFactory || (await web3.eth.getCode(contractsAddresses.leverageFactory) === "0x")) {
+
+            await deployer.deploy(LeverageFactory);
+
+            deployedLeverageFactory = await LeverageFactory.deployed();
+
+            contractsAddresses.leverageFactory = deployedLeverageFactory.address;
+            fs.writeFileSync(deployFactoryContractsFileName, JSON.stringify(contractsAddresses, null, 2));
+        } else {
+            deployedLeverageFactory = await LeverageFactory.at(contractsAddresses.leverageFactory);
+        }
+
         /* Need manual init
          * deployedSuiteFactory.setSuiteList(deployedSuiteList.address)
          * deployedSuiteList.setSuiteFactory(deployedSuiteFactory.address)
@@ -183,10 +198,11 @@ module.exports = async(deployer, network, accounts) => {
          * deployedWhiteList.add(1, deployedPredictionPoolFactory.address)          // 1 - PREDICTION_POOL
          * deployedWhiteList.add(2, deployedEventLifeCycleFactory.address)          // 2 - EVENT_LIFE_CYCLE
          * deployedWhiteList.add(3, deployedPendingOrdersFactory.address)           // 3 - PENDING_ORDERS
+         * deployedWhiteList.add(4, deployedLeverageFactory.address)                // 4 - LEVERGE
          * deployedPredictionPoolProxy.setDeployer(contractsAddresses.predictionPoolFactory)
         /* Need manual init */
 
-        // console.log(await deployedPredictionPoolProxy.setDeployer(contractsAddresses.predictionPoolFactory))
+        console.log(await deployedPredictionPoolProxy.setDeployer(contractsAddresses.predictionPoolFactory))
 
 
     } catch(e) {

@@ -44,7 +44,7 @@
     "verify:chainlinkem:rinkeby": "truffle run verify OraclePayableChainLinkEventManager --network rinkeby",
     "verify:chainlink:rinkeby": "truffle run verify ChainlinkAPIConsumer --network rinkeby",
     "deploy:factory:bsc_testnet": "truffle migrate --network bsc_testnet --f 8 --to 8",
-    "verify:factory:bsc_testnet": "truffle run verify WhiteList SuiteFactory SuiteList PredictionCollateralFactory PredictionPoolFactory EventLifeCycleFactory PendingOrdersFactory --network bsc_testnet"
+    "verify:factory:bsc_testnet": "truffle run verify WhiteList SuiteFactory SuiteList PredictionCollateralFactory PredictionPoolFactory EventLifeCycleFactory PendingOrdersFactory LeverageFactory --network bsc_testnet"
   },
   "repository": {
     "type": "git",
