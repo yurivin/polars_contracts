@@ -179,6 +179,9 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         );
 
         uint256 cross = wdiv(maxLoss, _priceChangePart);
+
+        require(cross > 1 * 1e18, "ERROR BORROWING");
+
         uint256 orderAmount = wmul(amount, cross);
 
         uint256 userBorrowAmount = sub(orderAmount, amount);
