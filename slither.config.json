@@ -1,0 +1,10 @@
+{
+    "detectors_to_exclude": "naming-convention",
+    "exclude_informational": false,
+    "exclude_low": false,
+    "exclude_medium": false,
+    "exclude_high": false,
+    "disable_color": false,
+    "filter_paths": "(mocks/|test/|contracts/Common/|contracts/DexFarming/|contracts/Incentives/)",
+    "legacy_ast": false
+}
