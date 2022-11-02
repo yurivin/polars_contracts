@@ -50,7 +50,7 @@ contract PredictionPoolFactory is AbstractFactory {
         address suiteAddress,
         uint256 whitePrice,
         uint256 blackPrice
-    ) external noExist(suiteAddress, FACTORY_CONTRACT_TYPE)  {
+    ) external noExist(suiteAddress, FACTORY_CONTRACT_TYPE) {
         ISuite suite = ISuite(suiteAddress);
         require(suite.owner() == msg.sender, "Caller should be suite owner");
 
