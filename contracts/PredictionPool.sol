@@ -824,7 +824,7 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         uint256 governanceFee,
         uint256 controllerFee,
         uint256 bwAdditionFee
-    ) external onlyGovernance {
+    ) external noEvent onlyGovernance {
         require(fee <= 0.1 * 1e18, "Too high total fee");
         require(governanceFee <= _maxFeePart, "Too high governance fee");
         require(controllerFee <= _maxFeePart, "Too high controller fee");
@@ -836,11 +836,11 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         _bwAdditionFee = bwAdditionFee;
     }
 
-    function changeOrderer(address newOrderer) external onlyGovernance {
+    function changeOrderer(address newOrderer) external noEvent onlyGovernance {
         _ordererAddress = newOrderer;
     }
 
-    function setOnlyOrderer(bool only) external onlyGovernance {
+    function setOnlyOrderer(bool only) external noEvent onlyGovernance {
         _onlyOrderer = only;
     }
 

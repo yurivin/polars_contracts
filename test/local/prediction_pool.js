@@ -703,6 +703,16 @@ const { deployContracts, ntob, mntob, BONE } = require('./../utils.js');
         { from: deployerAddress }
       );
 
+      await expectRevert(
+        deployedPredictionPool.changeFees(
+          ntob(0.003),  // uint256 fee,
+          ntob(0.4),    // uint256 governanceFee,
+          ntob(0.55),   // uint256 controllerFee,
+          ntob(0.05)    // uint256 bwAdditionFee
+        ),
+        "Function cannot be called during ongoing event",
+      );
+
       await time.increase(eventDuration);
 
       await expectRevert(
