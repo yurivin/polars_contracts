@@ -25,6 +25,8 @@ contract SuiteFactory is Ownable {
         address suiteOwner
     );
 
+    event CommissionChanged(uint256 newValue);
+
     function deploySuite(
         string memory suiteName,
         address collateralTokenAddress
@@ -43,6 +45,15 @@ contract SuiteFactory is Ownable {
                 _commissionAmount,
             "Not enough delegated commission tokens for the action"
         );
+
+        Suite suite = new Suite(
+            suiteName,
+            collateralTokenAddress,
+            _suiteList._whiteList()
+        );
+
+        emit SuiteDeployed(suiteName, address(suite), msg.sender);
+
         require(
             _commissionToken.transferFrom(
                 msg.sender,
@@ -51,13 +62,8 @@ contract SuiteFactory is Ownable {
             ),
             "Transfer commission failed"
         );
-        Suite suite = new Suite(
-            suiteName,
-            collateralTokenAddress,
-            _suiteList._whiteList()
-        );
+
         suite.transferOwnership(msg.sender);
-        emit SuiteDeployed(suiteName, address(suite), msg.sender);
         _suiteList.addSuite(address(suite), msg.sender);
 
         return address(suite);
@@ -69,6 +75,7 @@ contract SuiteFactory is Ownable {
 
     function setCommission(uint256 amount) external onlyOwner {
         _commissionAmount = amount;
+        emit CommissionChanged(amount);
     }
 
     function setComissionToken(address token) external onlyOwner {
