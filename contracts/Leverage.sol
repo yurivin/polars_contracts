@@ -27,8 +27,6 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
     uint256 public _leverageFee = 0.001 * 1e18; // Default 0.1%
 
-    bool public _onlyCurrentEvent = true;
-
     uint256 public _priceChangePart = 0.05 * 1e18; // Default 0.05%
 
     struct Order {
@@ -99,6 +97,9 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         uint256 colaterallAmount
     );
     event CollateralWithdrew(uint256 amount, address user, address caller);
+    event MaxUsageThresholdChanged(uint256 newValue);
+    event MaxLossThresholdChanged(uint256 newValue);
+    event PriceChangePartChanged(uint256 newValue);
 
     constructor(address collateralTokenAddress, address pendingOrdersAddress) {
         require(
@@ -395,7 +396,10 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         nowEvent.isExecuted = true;
 
         if ((nowEvent.whiteCollateral > 0) || (nowEvent.blackCollateral > 0)) {
-            _pendingOrders.withdrawCollateral();
+            require(
+                _pendingOrders.withdrawCollateral() >= 0,
+                "Error withdraw collateral"
+            );
         }
 
         _borrowedCollateral = sub(_borrowedCollateral, nowEvent.totalBorrowed);
@@ -490,6 +494,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             "NEW MAX USAGE THRESHOLD SHOULD BE MORE THAN 10%"
         );
         _maxUsageThreshold = percent;
+        emit MaxUsageThresholdChanged(percent);
     }
 
     function changeMaxLossThreshold(uint256 percent) external onlyOwner {
@@ -498,10 +503,12 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             "NEW MAX LOSS THRESHOLD SHOULD BE LESS THAN 50%"
         );
         _maxLossThreshold = percent;
+        emit MaxLossThresholdChanged(percent);
     }
 
     function changePriceChangePart(uint256 priceChangePart) external onlyOwner {
         _priceChangePart = priceChangePart;
+        emit PriceChangePartChanged(priceChangePart);
     }
 
     function changeLeverageFee(uint256 leverageFee) external onlyOwner {
