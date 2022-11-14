@@ -212,7 +212,8 @@ const commissionForCreateSuite = 1; // 1$
         collateralTokenAddress,
         { from: user }
       );
-      const deployedSuiteAddress = deployedSuiteTx.logs[2].args.suiteAddress;
+      const deployedSuiteAddress = deployedSuiteTx.logs[1].args.suiteAddress;
+      if (debug) console.log("deployedSuiteTx.logs:", deployedSuiteTx.logs);
       if (debug) console.log("deployedSuiteAddress:", deployedSuiteAddress);
 
       const deployedSuite = await Suite.at(deployedSuiteAddress);
