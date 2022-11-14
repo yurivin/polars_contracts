@@ -140,7 +140,7 @@ module.exports = {
      gasLimit: 4.2 * 1e6, // 4,200,000
      timeoutBlocks: 200,
      network_id: 80001,
-     confirmations: 5,
+     confirmations: 0,
      skipDryRun: true,
      production: true
     },

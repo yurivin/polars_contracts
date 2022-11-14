@@ -14,7 +14,7 @@ const expect = require('chai').expect;
 
 const { deployContracts, getLogs, mntob, ntob, BONE } = require('./../utils.js');
 
-const debug = 1;
+const debug = 0;
 
 [
   "6",
