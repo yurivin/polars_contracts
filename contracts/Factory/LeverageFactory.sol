@@ -38,10 +38,10 @@ contract LeverageFactory is AbstractFactory {
             /* solhint-enable prettier/prettier */
         );
 
+        emit ContractCreated(suiteAddress, address(lc), FACTORY_CONTRACT_NAME);
+
         lc.transferOwnership(address(suite._suiteFactoryAddress()));
 
         suite.addContract(FACTORY_CONTRACT_TYPE, address(lc));
-
-        emit ContractCreated(suiteAddress, address(lc), FACTORY_CONTRACT_NAME);
     }
 }
