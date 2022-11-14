@@ -1,5 +1,5 @@
 {
-    "detectors_to_exclude": "naming-convention,solc-version,assembly",
+    "detectors_to_exclude": "naming-convention,solc-version,assembly,arbitrary-send-erc20",
     "exclude_informational": false,
     "exclude_low": false,
     "exclude_medium": false,
