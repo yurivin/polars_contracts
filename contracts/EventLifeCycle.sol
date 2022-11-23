@@ -32,6 +32,10 @@ contract EventLifeCycle {
         address oracleAddress,
         address predictionPoolAddress
     ) {
+        require(
+            governanceAddress != address(0),
+            "Governance Address should not be null"
+        );
         _governanceAddress = governanceAddress;
         _oracleAddresses[oracleAddress] = true;
         _predictionPool = Eventable(predictionPoolAddress);
@@ -46,10 +50,7 @@ contract EventLifeCycle {
     }
 
     modifier onlyOracle() {
-        require(
-            _oracleAddresses[msg.sender] == true,
-            "Caller should be Oracle"
-        );
+        require(_oracleAddresses[msg.sender], "Caller should be Oracle");
         _;
     }
 
@@ -90,12 +91,14 @@ contract EventLifeCycle {
     }
 
     function startEvent() public onlyOracle returns (uint256) {
-        require(
-            eventIsInProgress == false,
-            "FINISH PREVIOUS EVENT TO START NEW EVENT"
-        );
+        require(!eventIsInProgress, "FINISH PREVIOUS EVENT TO START NEW EVENT");
         _ongoingEvent = _queuedEvent;
         GameEvent memory ongoing = _ongoingEvent;
+
+        emit GameEventStarted(block.timestamp, ongoing.eventId);
+
+        eventIsInProgress = true;
+
         if (_useLeverage) {
             _leverage.eventStart(ongoing.eventId);
             _pendingOrders.eventStart(ongoing.eventId);
@@ -103,8 +106,6 @@ contract EventLifeCycle {
             _pendingOrders.eventStart(ongoing.eventId);
         }
         _predictionPool.submitEventStarted(ongoing.priceChangePart);
-        eventIsInProgress = true;
-        emit GameEventStarted(block.timestamp, ongoing.eventId);
         return ongoing.eventId;
     }
 
@@ -119,10 +120,7 @@ contract EventLifeCycle {
         string calldata eventName_,
         uint256 eventId_
     ) external onlyOracle returns (uint256) {
-        require(
-            eventIsInProgress == false,
-            "FINISH PREVIOUS EVENT TO START NEW EVENT"
-        );
+        require(!eventIsInProgress, "FINISH PREVIOUS EVENT TO START NEW EVENT");
         addNewEvent(
             priceChangePart_,
             eventStartTimeExpected_,
@@ -144,12 +142,15 @@ contract EventLifeCycle {
      * Black won,1 means white-won, 0 means draw.
      */
     function endEvent(int8 _result) external onlyOracle {
-        require(
-            eventIsInProgress == true,
-            "There is no ongoing event to finish"
-        );
-        _predictionPool.submitEventResult(_result);
+        require(eventIsInProgress, "There is no ongoing event to finish");
+
+        eventIsInProgress = false;
+
         uint256 eventId = _ongoingEvent.eventId;
+
+        emit GameEventEnded(_result, eventId);
+
+        _predictionPool.submitEventResult(_result);
 
         if (_useLeverage) {
             _pendingOrders.eventEnd(eventId);
@@ -157,8 +158,6 @@ contract EventLifeCycle {
         } else if (_usePendingOrders) {
             _pendingOrders.eventEnd(eventId);
         }
-        emit GameEventEnded(_result, eventId);
-        eventIsInProgress = false;
     }
 
     function changeGovernanceAddress(address governanceAddress)
