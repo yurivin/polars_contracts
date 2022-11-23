@@ -88,3 +88,43 @@ _________________
 
 All scripts automatically check the addresses specified in the files from `deployed` folder for the existence of contract addresses, and skip creating new ones if the contract exists.
 Therefore, if you want to create a new instance of a contract, you first need to remove the address from the file in `deployed` folder.
+
+## Deploy factories
+Make a copy of file `env.json.example` named `.env.json`.<br>
+In this file create constants named:
+PRIVATE_KEY
+  - SEED_ADDRESS_{NETWORK}
+  - mnemonic
+  - {NETWORK}_SCAN_API_KEY
+  - PLATFORM_TOKENS
+PLATFORM_TOKENS is object which keys is network name (in truffle-config.json), and values is token used as suite token.
+
+Remove if exists ```deployed``` folder from root for clean installation.
+
+In root folder run command:
+```
+npm run deploy:factory:mumbai    // PendingOrders contract on Rinkeby
+```
+where mumbai is network name
+
+For example, command ```npm run deploy:factory:rinkeby``` will deploy contracts in rinkeby network.
+
+Addresses in file ./deployed/3_mumbai_factory_contracts_addresses.json is now created contracts.
+
+After deploy is completed, use etherscan to init factories.
+
+```
+/* Need manual init
+ * deployedSuiteFactory.setSuiteList(deployedSuiteList.address)
+ * deployedSuiteList.setSuiteFactory(deployedSuiteFactory.address)
+ * deployedSuiteList.setWhiteList(deployedWhiteList.address)
+ * deployedWhiteList.add(0, deployedPredictionCollateralFactory.address)    // 0 - PREDICTION_COLLATERAL
+ * deployedWhiteList.add(1, deployedPredictionPoolFactory.address)          // 1 - PREDICTION_POOL
+ * deployedWhiteList.add(2, deployedEventLifeCycleFactory.address)          // 2 - EVENT_LIFE_CYCLE
+ * deployedWhiteList.add(3, deployedPendingOrdersFactory.address)           // 3 - PENDING_ORDERS
+ * deployedWhiteList.add(4, deployedLeverageFactory.address)                // 4 - LEVERGE
+ * deployedPredictionPoolProxy.setDeployer(contractsAddresses.predictionPoolFactory)
+/* Need manual init */
+```
+
+Done.
