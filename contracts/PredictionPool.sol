@@ -96,7 +96,7 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
     uint256 public _blackSoldThisCycle;
 
     // Minimum amount of tokens pool should hold after initial actions.
-    uint256 public constant MIN_HOLD = 2 * 1e18;
+    uint256 public constant MIN_HOLD = 2 * 1e6;
 
     bool public inited;
 
