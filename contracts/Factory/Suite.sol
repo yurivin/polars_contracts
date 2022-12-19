@@ -27,6 +27,14 @@ contract Suite is Ownable {
         address collateralTokenAddress,
         address whiteList
     ) {
+        require(
+            collateralTokenAddress != address(0),
+            "Collateral Token Address should not be null"
+        );
+        require(
+            whiteList != address(0),
+            "White List Address should not be null"
+        );
         _suiteName = suiteName;
         _collateralTokenAddress = collateralTokenAddress;
         _suiteFactoryAddress = msg.sender; // suiteFactory

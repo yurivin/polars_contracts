@@ -41,8 +41,8 @@ contract EventLifeCycleFactory is AbstractFactory {
             /* solhint-enable prettier/prettier */
         );
 
-        suite.addContract(FACTORY_CONTRACT_TYPE, address(elc));
-
         emit ContractCreated(suiteAddress, address(elc), FACTORY_CONTRACT_NAME);
+
+        suite.addContract(FACTORY_CONTRACT_TYPE, address(elc));
     }
 }

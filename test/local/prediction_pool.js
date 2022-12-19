@@ -625,7 +625,6 @@ const { deployContracts, ntob, mntob, BONE } = require('./../utils.js');
     });
 
     it("test for create orders without liquidity in pool", async function () {
-    // it.only("test", async function () {
       const runner = accounts[7]
       const runner2 = accounts[8]
 

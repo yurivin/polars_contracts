@@ -140,6 +140,10 @@ contract SuiteList is Ownable {
     }
 
     function setWhiteList(address whiteList) external onlyOwner {
+        require(
+            whiteList != address(0),
+            "white List Address should not be null"
+        );
         _whiteList = whiteList;
     }
 

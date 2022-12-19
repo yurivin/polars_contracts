@@ -23,6 +23,7 @@ contract PendingOrders is DSMath, Ownable {
 
     // ordersCount count number of orders so far, and is id of very last order
     uint256 public _ordersCount;
+    // solhint-disable-next-line var-name-mixedcase
     uint256 public MAX_ORDERS_ALLOWED = 10;
 
     IERC20 public _collateralToken;
@@ -45,6 +46,8 @@ contract PendingOrders is DSMath, Ownable {
         uint256 blackPriceBefore;   // price of black token before the event
         uint256 whitePriceAfter;    // price of white token after the event
         uint256 blackPriceAfter;    // price of black token after the event
+        uint256 poolFeeBefore;      // prediction pool fee percent before the event
+        uint256 poolFeeAfter;       // prediction pool fee percent after the event
         bool isExecuted;            // FALSE before the event, TRUE after the event end
         bool isStarted;             // FALSE before the event, TRUE after the event start
         /* solhint-enable prettier/prettier */
@@ -60,7 +63,7 @@ contract PendingOrders is DSMath, Ownable {
     event EventContractAddressChanged(address eventContract);
     event FeeWithdrawAddressChanged(address feeAddress);
     event FeeWithdrew(uint256 amount);
-    event FeeChanged(uint256 number);
+    event MaxOrdersCountChanged(uint256 number);
     event AmountExecuted(uint256 amount);
 
     constructor(
@@ -84,17 +87,26 @@ contract PendingOrders is DSMath, Ownable {
         _collateralToken = IERC20(collateralTokenAddress);
         _eventContractAddress = eventContractAddress;
 
-        _collateralToken.approve(
-            address(_predictionPool._thisCollateralization()),
-            type(uint256).max
+        require(
+            _collateralToken.approve(
+                address(_predictionPool._thisCollateralization()),
+                type(uint256).max
+            ),
+            "Approve failed"
         );
-        IERC20(_predictionPool._whiteToken()).approve(
-            _predictionPool._thisCollateralization(),
-            type(uint256).max
+        require(
+            IERC20(_predictionPool._whiteToken()).approve(
+                _predictionPool._thisCollateralization(),
+                type(uint256).max
+            ),
+            "Approve failed"
         );
-        IERC20(_predictionPool._blackToken()).approve(
-            _predictionPool._thisCollateralization(),
-            type(uint256).max
+        require(
+            IERC20(_predictionPool._blackToken()).approve(
+                _predictionPool._thisCollateralization(),
+                type(uint256).max
+            ),
+            "Approve failed"
         );
     }
 
@@ -126,6 +138,8 @@ contract PendingOrders is DSMath, Ownable {
             "CANNOT HAVE MORE THAN 10 ORDERS FOR A USER SIMULTANEOUSLY"
         );
 
+        emit OrderCreated(_ordersCount, msg.sender, _amount);
+
         _orders[_ordersCount] = Order(
             msg.sender,
             _amount,
@@ -140,10 +154,12 @@ contract PendingOrders is DSMath, Ownable {
             : _detailForEvent[_eventId].blackCollateral = _detailForEvent[_eventId].blackCollateral.add(_amount);
         /* solhint-enable prettier/prettier */
         _ordersOfUser[msg.sender].push(_ordersCount);
-
-        _collateralToken.transferFrom(msg.sender, address(this), _amount);
-        emit OrderCreated(_ordersCount, msg.sender, _amount);
         _ordersCount += 1;
+
+        require(
+            _collateralToken.transferFrom(msg.sender, address(this), _amount),
+            "Transfer from error"
+        );
     }
 
     function ordersOfUser(address user)
@@ -169,6 +185,7 @@ contract PendingOrders is DSMath, Ownable {
             !_detailForEvent[order.eventId].isStarted,
             "The order cannot be canceled - EVENT IN PROGRESS"
         );
+        emit OrderCanceled(orderId, msg.sender);
 
         /* solhint-disable prettier/prettier */
         order.isWhite
@@ -176,8 +193,10 @@ contract PendingOrders is DSMath, Ownable {
             : _detailForEvent[order.eventId].blackCollateral = _detailForEvent[order.eventId].blackCollateral.sub(order.amount);
         /* solhint-enable prettier/prettier */
         _orders[orderId].isPending = false;
-        _collateralToken.transfer(order.orderer, order.amount);
-        emit OrderCanceled(orderId, msg.sender);
+        require(
+            _collateralToken.transfer(order.orderer, order.amount),
+            "Transfer error"
+        );
     }
 
     function eventStart(uint256 _eventId) external onlyEventContract {
@@ -195,6 +214,7 @@ contract PendingOrders is DSMath, Ownable {
             // solhint-disable-next-line prettier/prettier
             _detailForEvent[_eventId].blackPriceBefore = _predictionPool._blackPrice();
         }
+        _detailForEvent[_eventId].poolFeeBefore = _predictionPool.FEE();
         _detailForEvent[_eventId].isStarted = true;
     }
 
@@ -218,6 +238,7 @@ contract PendingOrders is DSMath, Ownable {
             // solhint-disable-next-line prettier/prettier
             _detailForEvent[_eventId].blackPriceAfter = _predictionPool._blackPrice();
         }
+        _detailForEvent[_eventId].poolFeeAfter = _predictionPool.FEE();
         _detailForEvent[_eventId].isExecuted = true;
     }
 
@@ -226,7 +247,7 @@ contract PendingOrders is DSMath, Ownable {
 
         // total amount of collateral token that should be returned to user
         // feeAmount should be subtracted before actual return
-        uint256 totalWithdrawAmount;
+        uint256 totalWithdrawAmount = 0;
 
         uint256 i = 0;
         while (i < _ordersOfUser[msg.sender].length) {
@@ -251,12 +272,12 @@ contract PendingOrders is DSMath, Ownable {
                 }
 
                 withdrawAmount = order.amount.sub(
-                    wmul(order.amount, _predictionPool.FEE())
+                    wmul(order.amount, eventDetail.poolFeeBefore)
                 );
                 withdrawAmount = wdiv(withdrawAmount, priceBefore);
                 withdrawAmount = wmul(withdrawAmount, priceAfter);
                 withdrawAmount = withdrawAmount.sub(
-                    wmul(withdrawAmount, _predictionPool.FEE())
+                    wmul(withdrawAmount, eventDetail.poolFeeAfter)
                 );
                 totalWithdrawAmount = totalWithdrawAmount.add(withdrawAmount);
             }
@@ -275,11 +296,17 @@ contract PendingOrders is DSMath, Ownable {
             }
         }
 
-        if (totalWithdrawAmount > 0) {
-            _collateralToken.transfer(msg.sender, totalWithdrawAmount.sub(1));
-        }
-
         emit CollateralWithdrew(totalWithdrawAmount, msg.sender);
+
+        if (totalWithdrawAmount > 0) {
+            require(
+                _collateralToken.transfer(
+                    msg.sender,
+                    totalWithdrawAmount.sub(1)
+                ),
+                "Transfer error"
+            );
+        }
 
         return totalWithdrawAmount;
     }
@@ -308,6 +335,7 @@ contract PendingOrders is DSMath, Ownable {
     function changeMaxOrdersCount(uint256 count) external onlyOwner {
         require(count != 0, "NEW MAX ORDERS COUNT SHOULD NOT BE NULL");
         MAX_ORDERS_ALLOWED = count;
+        emit MaxOrdersCountChanged(count);
     }
 
     function emergencyWithdrawCollateral() public onlyOwner {

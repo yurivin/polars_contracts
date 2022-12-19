@@ -22,10 +22,7 @@ contract PredictionCollateralFactory is AbstractFactory {
         string memory whiteSymbol,
         string memory blackName,
         string memory blackSymbol
-    )
-        public
-        noExist(suiteAddress, FACTORY_CONTRACT_TYPE)
-    {
+    ) public noExist(suiteAddress, FACTORY_CONTRACT_TYPE) {
         ISuite suite = ISuite(suiteAddress);
         require(suite.owner() == msg.sender, "Caller should be suite owner");
 
@@ -44,9 +41,10 @@ contract PredictionCollateralFactory is AbstractFactory {
             blackSymbol                         // string memory blackSymbol
             /* solhint-enable prettier/prettier */
         );
-        suite.addContract(FACTORY_CONTRACT_TYPE, address(pc));
 
         emit ContractCreated(suiteAddress, address(pc), FACTORY_CONTRACT_NAME);
+
+        suite.addContract(FACTORY_CONTRACT_TYPE, address(pc));
     }
 
     function changePoolAddress(address suiteAddress) public {

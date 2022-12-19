@@ -27,8 +27,6 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
     uint256 public _leverageFee = 0.001 * 1e18; // Default 0.1%
 
-    bool public _onlyCurrentEvent = true;
-
     uint256 public _priceChangePart = 0.05 * 1e18; // Default 0.05%
 
     struct Order {
@@ -99,6 +97,9 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         uint256 colaterallAmount
     );
     event CollateralWithdrew(uint256 amount, address user, address caller);
+    event MaxUsageThresholdChanged(uint256 newValue);
+    event MaxLossThresholdChanged(uint256 newValue);
+    event PriceChangePartChanged(uint256 newValue);
 
     constructor(address collateralTokenAddress, address pendingOrdersAddress) {
         require(
@@ -119,7 +120,13 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         _predictionPoolFee = _predictionPool.FEE();
 
-        _collateralToken.approve(address(_pendingOrders), type(uint256).max);
+        require(
+            _collateralToken.approve(
+                address(_pendingOrders),
+                type(uint256).max
+            ),
+            "Approve error"
+        );
     }
 
     function ordersOfUser(address user)
@@ -223,7 +230,6 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             : _events[eventId].blackCollateral = add(_events[eventId].blackCollateral, orderAmount);
         /* solhint-enable prettier/prettier */
 
-        _collateralToken.transferFrom(msg.sender, address(this), amount);
         emit OrderCreated(
             msg.sender,
             maxLoss,
@@ -233,6 +239,11 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             orderAmount,
             isWhite,
             eventId
+        );
+
+        require(
+            _collateralToken.transferFrom(msg.sender, address(this), amount),
+            "Error transfer from"
         );
     }
 
@@ -265,8 +276,12 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         _orders[orderId].isPending = false;
 
-        _collateralToken.transfer(order.orderer, order.ownAmount);
         emit OrderCanceled(orderId, msg.sender);
+
+        require(
+            _collateralToken.transfer(order.orderer, order.ownAmount),
+            "Error transfer"
+        );
     }
 
     function withdrawCollateral(address user) external returns (uint256) {
@@ -330,9 +345,13 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
                 i++;
             }
         }
-        _collateralToken.transfer(user, totalWithdrawAmount);
 
         emit CollateralWithdrew(totalWithdrawAmount, user, msg.sender);
+
+        require(
+            _collateralToken.transfer(user, totalWithdrawAmount),
+            "Error transfer"
+        );
 
         return totalWithdrawAmount;
     }
@@ -377,7 +396,10 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         nowEvent.isExecuted = true;
 
         if ((nowEvent.whiteCollateral > 0) || (nowEvent.blackCollateral > 0)) {
-            _pendingOrders.withdrawCollateral();
+            require(
+                _pendingOrders.withdrawCollateral() >= 0,
+                "Error withdraw collateral"
+            );
         }
 
         _borrowedCollateral = sub(_borrowedCollateral, nowEvent.totalBorrowed);
@@ -425,7 +447,14 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         emit AddLiquidity(msg.sender, lpAmount, tokensAmount);
 
-        _collateralToken.transferFrom(msg.sender, address(this), tokensAmount);
+        require(
+            _collateralToken.transferFrom(
+                msg.sender,
+                address(this),
+                tokensAmount
+            ),
+            "Error transfer from"
+        );
     }
 
     function withdrawLiquidity(uint256 lpTokensAmount) public {
@@ -453,7 +482,10 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         emit WithdrawLiquidity(msg.sender, lpTokensAmount, collateralToSend);
 
-        _collateralToken.transfer(msg.sender, collateralToSend);
+        require(
+            _collateralToken.transfer(msg.sender, collateralToSend),
+            "Error transfer"
+        );
     }
 
     function changeMaxUsageThreshold(uint256 percent) external onlyOwner {
@@ -462,6 +494,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             "NEW MAX USAGE THRESHOLD SHOULD BE MORE THAN 10%"
         );
         _maxUsageThreshold = percent;
+        emit MaxUsageThresholdChanged(percent);
     }
 
     function changeMaxLossThreshold(uint256 percent) external onlyOwner {
@@ -470,10 +503,12 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             "NEW MAX LOSS THRESHOLD SHOULD BE LESS THAN 50%"
         );
         _maxLossThreshold = percent;
+        emit MaxLossThresholdChanged(percent);
     }
 
     function changePriceChangePart(uint256 priceChangePart) external onlyOwner {
         _priceChangePart = priceChangePart;
+        emit PriceChangePartChanged(priceChangePart);
     }
 
     function changeLeverageFee(uint256 leverageFee) external onlyOwner {
