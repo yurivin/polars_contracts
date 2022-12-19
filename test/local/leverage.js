@@ -183,6 +183,57 @@ const debug = 0;
       });
     }
 
+    it("Leverage createOrder with 0 or less borrowed", async () => {
+
+      const eventDuration = time.duration.seconds(5);
+
+      await addLiquidityToPrediction(50000);
+      await deployedEventLifeCycle.setLeverage(deployedLeverage.address, true);
+
+      expect(await deployedEventLifeCycle._useLeverage()).to.be.equals(true);
+      expect(await deployedEventLifeCycle._leverage()).to.be.equals(deployedLeverage.address);
+
+      const user = accounts[4];
+
+      const collateralAmount = mntob(20, multiplier);
+      const maxLossUserDefined = ntob(0.25);
+      const userSelectedEventId = new BN("100");
+
+      const liquidityAmount = mntob(2000, multiplier);
+      const thresholdAmount = mntob(1600, multiplier);
+
+      expect(await deployedLeverage.getLpRatio()).to.be.bignumber.equal(ntob(1));
+
+      if (debug) console.log("collateralAmount:  ", collateralAmount.toString())
+      if (debug) console.log("maxLossUserDefined:", maxLossUserDefined.toString())
+      if (debug) console.log("liquidityAmount:   ", liquidityAmount.toString())
+
+      await deployedCollateralToken.transfer(user, collateralAmount, { from: deployerAddress })
+      await deployedCollateralToken.approve(deployedLeverage.address, collateralAmount, { from: user })
+
+      await expectRevert(
+        deployedLeverage.createOrder(
+          collateralAmount,     // uint256 amount
+          true,                 // bool isWhite,
+          ntob(0.04),           // uint256 maxLoss,
+          userSelectedEventId,  // uint256 eventId
+          { from: user },
+        ), "ERROR BORROWING"
+      );
+
+      await expectRevert(
+        deployedLeverage.createOrder(
+          collateralAmount,     // uint256 amount
+          true,                 // bool isWhite,
+          ntob(0.05),           // uint256 maxLoss,
+          userSelectedEventId,  // uint256 eventId
+          { from: user }
+        ), "ERROR BORROWING"
+      );
+
+      expect(await deployedLeverage._ordersCounter()).to.be.bignumber.equal('0');
+    });
+
     it("Leverage createOrder", async () => {
 
       const eventDuration = time.duration.seconds(5);

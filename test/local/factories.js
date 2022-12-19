@@ -681,6 +681,158 @@ const commissionForCreateSuite = 1; // 1$
 
     describe("Suite", () => {
       it('should create 50 suites for 7 users and print it', async () => {
+        const firstUser = accounts[2];
+        const secondUser = accounts[3];
+        const thirdUser = accounts[4];
+
+        await expectRevert(
+          deployedSuiteList.getUserSuitesByPage(
+            firstUser,
+            0,
+            new BN(maxPageSize.toString(10)),
+            { from: firstUser }
+          ), "Start index must be less than suites length"
+        );
+
+        await expectRevert(
+          deployedSuiteFactory.deploySuite(
+            "SomeSuiteOfFirstUser",
+            deployedCollateralToken.address,
+            { from: firstUser }
+          ), "WhiteList address not defined"
+        );
+
+        expect(await deployedSuiteFactory._suiteList()).to.be.equals(deployedSuiteList.address);
+
+        await deployedSuiteFactory.setSuiteList(deployedSuiteList.address)
+        await deployedSuiteList.setWhiteList(deployedWhiteList.address)
+
+        await deploySuite(firstUser, "SomeSuiteOfFirstUser1", deployedCollateralToken.address);
+        await deploySuite(firstUser, "SomeSuiteOfFirstUser2", deployedCollateralToken.address);
+        await deploySuite(secondUser, "SomeSuiteOfSecondUser1", deployedCollateralToken.address);
+        await deploySuite(firstUser, "SomeSuiteOfFirstUser3", deployedCollateralToken.address);
+        await deploySuite(thirdUser, "SomeSuiteOfThirdUser1", deployedCollateralToken.address);
+        await deploySuite(secondUser, "SomeSuiteOfSecondUser2", deployedCollateralToken.address);
+        await deploySuite(firstUser, "SomeSuiteOfFirstUser4", deployedCollateralToken.address);
+        await deploySuite(thirdUser, "SomeSuiteOfThirdUser2", deployedCollateralToken.address);
+        // await deploySuite(secondUser, "SomeSuiteOfSecondUser2", deployedCollateralToken.address);
+
+
+        const getUserSuitesByPageFirstUser = await deployedSuiteList.getUserSuitesByPage(
+          firstUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageFirstUser  :", getUserSuitesByPageFirstUser);
+
+        const getUserSuitesByPageSecondUser = await deployedSuiteList.getUserSuitesByPage(
+          secondUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageSecondUser :", getUserSuitesByPageSecondUser);
+
+        const getUserSuitesByPageThirdUser = await deployedSuiteList.getUserSuitesByPage(
+          thirdUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageThirdUser :", getUserSuitesByPageThirdUser);
+
+        // if (debug) console.log("getUserSuitesByPageSecondUser :", getUserSuitesByPageFirstUser[0]);
+
+        if (debug) console.log("getUserSuitesCountFirstUser  :", (await deployedSuiteList.getUserSuitesCount(firstUser)).toString());
+        if (debug) console.log("getUserSuitesCountSecondUser :", (await deployedSuiteList.getUserSuitesCount(secondUser)).toString());
+        if (debug) console.log("getUserSuitesCountThirdUser  :", (await deployedSuiteList.getUserSuitesCount(thirdUser)).toString());
+
+
+
+        // for (var i = 0; i < Number(getUserSuitesByPageSecondUser); i++) {
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(firstUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(firstUser, i)
+          if (debug) console.log("_suiteIndexesByUser1Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(secondUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(secondUser, i)
+          if (debug) console.log("_suiteIndexesByUser2Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(thirdUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(thirdUser, i)
+          if (debug) console.log("_suiteIndexesByUser3Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        const getSuitesCountBefore = await deployedSuiteList.getSuitesCount();
+        if (debug) console.log("getSuitesCount:", getSuitesCountBefore.toString());
+
+
+        for (var i = 0; i < Number(getSuitesCountBefore.toString()); i++) {
+          const x = await deployedSuiteList._suites(i)
+          if (debug) console.log(`_suites[${i}]:`, x);
+        }
+
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(firstUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(firstUser, i)
+          if (debug) console.log("_suiteIndexesByUser1Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(secondUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(secondUser, i)
+          if (debug) console.log("_suiteIndexesByUser2Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        for (var i = 0; i < Number((await deployedSuiteList.getUserSuitesCount(thirdUser)).toString()); i++) {
+          const x = await deployedSuiteList._suiteIndexesByUserMap(thirdUser, i)
+          if (debug) console.log("_suiteIndexesByUser3Map :",
+            x.toString(),
+            (await deployedSuiteList._suites(x)),
+          );
+        }
+
+        const getSuitesCountAfter = await deployedSuiteList.getSuitesCount();
+        if (debug) console.log("getSuitesCount:", getSuitesCountAfter.toString());
+
+
+        for (var i = 0; i < Number(getSuitesCountAfter.toString()); i++) {
+          const x = await deployedSuiteList._suites(i)
+          if (debug) console.log(`_suites[${i}]:`, x);
+        }
+
+        const getUserSuitesByPageFirstUserAfterDelete = await deployedSuiteList.getUserSuitesByPage(
+          firstUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageFirstUser  :", getUserSuitesByPageFirstUserAfterDelete);
+
+        const getUserSuitesByPageSecondUserAfterDelete = await deployedSuiteList.getUserSuitesByPage(
+          secondUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageSecondUser :", getUserSuitesByPageSecondUserAfterDelete);
+
+        const getUserSuitesByPageThirdUserAfterDelete = await deployedSuiteList.getUserSuitesByPage(
+          thirdUser, 0, new BN(maxPageSize.toString(10))
+        );
+        if (debug) console.log("getUserSuitesByPageThirdUser :", getUserSuitesByPageThirdUserAfterDelete);
+
+        if (debug) console.log("getUserSuitesCountFirstUser  :", (await deployedSuiteList.getUserSuitesCount(firstUser)).toString());
+        if (debug) console.log("getUserSuitesCountSecondUser :", (await deployedSuiteList.getUserSuitesCount(secondUser)).toString());
+        if (debug) console.log("getUserSuitesCountThirdUser  :", (await deployedSuiteList.getUserSuitesCount(thirdUser)).toString());
+
+      });
+
+
+
+
+      it('should create 50 suites for 7 users and print it', async () => {
 
         const countSuitesForTest = 50;
         if (debug) console.log("acountSuitesForTest :", countSuitesForTest);
@@ -916,15 +1068,34 @@ const commissionForCreateSuite = 1; // 1$
       it('should create PredictionCollateral, PredictionPool, EventLifeCycle and PendingOrders contracts and add its to user`s suite', async () => {
         const deployedContracts = await deployFactoryContracts();
 
-        const buyPayment = new BN("5000000000000000000");
-        const initialBlackOrWhitePrice = new BN("500000000000000000");
+        const buyPayment = mntob(5, multiplier);
+        const initialBlackOrWhitePrice = mntob(0.5, multiplier);
         await buyTokens(deployedContracts, false, buyPayment, initialBlackOrWhitePrice);
         await buyTokens(deployedContracts, true, buyPayment, initialBlackOrWhitePrice);
-        // await buyBlack(deployedContracts);
-        // await buyWhite(deployedContracts);
       });
 
-      it.only('should create PredictionCollateral, PredictionPool, EventLifeCycle, PendingOrders and Leverage contracts and add its to user`s suite', async () => {
+      it('security check of factories', async () => {
+        const {
+          suite,
+          deployedPredictionCollateralization,
+          deployedWhiteToken,
+          deployedBlackToken,
+          deployedPredictionPool,
+          deployedEventLifeCycle,
+          deployedPendingOrders,
+          deployedLeverage
+        } = await deployFactoryContracts();
+
+        await expectRevert(
+          deployedEventLifeCycleFactory.createContract(
+            suite,                                  // address suiteAddress,
+            deployerAddress,                        // address oracleAddress
+            { from: deployerAddress }
+          ), "Contract already exist"
+        );
+      });
+
+      it('should create PredictionCollateral, PredictionPool, EventLifeCycle, PendingOrders and Leverage contracts and add its to user`s suite', async () => {
         const {
           suite,
           deployedPredictionCollateralization,
@@ -1699,8 +1870,8 @@ const commissionForCreateSuite = 1; // 1$
       it('should create contracts and cant enable PendingOrders', async () => {
         const deployedContracts = await deployFactoryContracts();
 
-        const buyPayment = new BN("5000000000000000000");
-        const initialBlackOrWhitePrice = new BN("500000000000000000");
+        const buyPayment = mntob(5, multiplier);
+        const initialBlackOrWhitePrice = mntob(0.5, multiplier);
         await buyTokens(deployedContracts, false, buyPayment, initialBlackOrWhitePrice);
         await buyTokens(deployedContracts, true, buyPayment, initialBlackOrWhitePrice);
 
@@ -2137,66 +2308,6 @@ const commissionForCreateSuite = 1; // 1$
         if (debug) console.log("isSuiteExistsAfterCreate      :", isSuiteExistsAfterCreate);
 
         expect(isSuiteExistsAfterCreate).to.be.equals(true);
-      });
-
-      it('should delete suite from SuiteList, by Suite owner and SuiteList owner', async () => {
-        const isSuiteExists = await deployedSuiteList.isSuiteExists(accounts[6]); // some address
-        if (debug) console.log("isSuiteExists       :", isSuiteExists);
-        expect(isSuiteExists).to.be.equals(false);
-
-        await setWhiteList(
-          "PREDICTION_COLLATERAL",
-          deployedPredictionCollateralFactory.address
-        );
-
-        const deployedSuiteAddress = await deploySuite(
-          someUser1,
-          "SomeNameSuite",
-          deployedCollateralToken.address
-        );
-
-        const _suites0 = await deployedSuiteList._suites(0);
-        expect(_suites0).to.be.equals(deployedSuiteAddress);
-        const _suiteIndexes = await deployedSuiteList._suiteIndexes(deployedSuiteAddress);
-        const isSuiteExistsAfterCreate = await deployedSuiteList.isSuiteExists(deployedSuiteAddress);
-        if (debug) console.log("_suites0            :", _suites0);
-        if (debug) console.log("_suiteIndexes      :", _suiteIndexes.toString());
-        if (debug) console.log("isSuiteExistsAfterCreate      :", isSuiteExistsAfterCreate);
-
-        expect(isSuiteExistsAfterCreate).to.be.equals(true);
-
-        await expectRevert(
-          deployedSuiteList.deleteSuite(
-            deployedSuiteAddress,
-            { from: accounts[9] }
-          ), "only Gov or suite owner can call"
-        );
-
-        const deleteSuiteByGov = await deployedSuiteList.deleteSuite(
-          deployedSuiteAddress,
-          { from: accounts[0] }
-        );
-
-        const isSuiteExistsAfterDelete = await deployedSuiteList.isSuiteExists(deployedSuiteAddress);
-
-        const deployedSuiteAddress2 = await deploySuite(
-          someUser1,
-          "SomeNameSuite",
-          deployedCollateralToken.address
-        );
-        const isSuiteExists2 = await deployedSuiteList.isSuiteExists(deployedSuiteAddress2);
-        if (debug) console.log("isSuiteExists2      :", isSuiteExists2);
-
-        expect(isSuiteExists2).to.be.equals(true);
-        const deleteSuiteByOwner = await deployedSuiteList.deleteSuite(
-          deployedSuiteAddress2,
-          { from: someUser1 }
-        );
-        const isSuiteExistsAfterDeleteSuiteByOwner = await deployedSuiteList.isSuiteExists(deployedSuiteAddress2);
-        if (debug) console.log("isSuiteExists2      :", isSuiteExistsAfterDeleteSuiteByOwner);
-
-        expect(isSuiteExistsAfterDeleteSuiteByOwner).to.be.equals(false);
-
       });
 
       it('should assert balance of deployer`s Pol tokens equal total supply', async () => {

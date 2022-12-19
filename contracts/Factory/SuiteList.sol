@@ -18,6 +18,12 @@ contract SuiteList is Ownable {
     mapping(address => uint256[]) public _suiteIndexesByUserMap;
     mapping(address => address[]) public _suitesMap2;
 
+    uint256 public _index = 0;
+
+    event SuiteAdded(address suiteAddress, address suiteOwner);
+
+    event SuiteDeleted(address suiteAddress, address suiteOwner);
+
     constructor(address suiteFactory) {
         _suiteFactory = ISuiteFactory(suiteFactory);
     }
@@ -52,35 +58,12 @@ contract SuiteList is Ownable {
         external
         onlyOwnerOrSuiteFactory
     {
-        uint256 index = _suites.length;
         _suites.push(suiteAddress);
-        _suiteIndexes[suiteAddress] = index;
+        _suiteIndexes[suiteAddress] = _index;
         _suiteOwners[suiteAddress] = suiteOwner;
-        _suiteIndexesByUserMap[suiteOwner].push(index);
-    }
-
-    function deleteSuite(address suiteAddress)
-        external
-        onlyOwnerOrSuiteOwner(suiteAddress)
-    {
-        require(_isSuiteExists(suiteAddress), "Suite not exists");
-
-        uint256 index = _suiteIndexes[suiteAddress];
-        delete _suiteIndexes[suiteAddress];
-
-        if (index >= _suites.length) {
-            return;
-        }
-
-        uint256 lastIndex = _suites.length - 1;
-
-        delete _suites[index];
-
-        if (index != lastIndex) {
-            _suites[index] = _suites[lastIndex];
-        }
-
-        _suites.pop();
+        _suiteIndexesByUserMap[suiteOwner].push(_index);
+        _index++;
+        emit SuiteAdded(suiteAddress, suiteOwner);
     }
 
     function isSuiteExists(address suiteAddress) external view returns (bool) {
