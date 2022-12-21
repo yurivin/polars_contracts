@@ -844,7 +844,7 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         _onlyOrderer = only;
     }
 
-    function addLiquidity(uint256 tokensAmount) public {
+    function addLiquidity(uint256 tokensAmount) external {
         require(
             _collateralToken.allowance(msg.sender, address(this)) >=
                 tokensAmount,
@@ -892,7 +892,7 @@ contract PredictionPool is Eventable, DSMath, PoolTokenERC20 {
         /* solhint-enable prettier/prettier */
     }
 
-    function withdrawLiquidity(uint256 poolTokensAmount) public {
+    function withdrawLiquidity(uint256 poolTokensAmount) external noEvent {
         require(
             allowance[msg.sender][address(this)] >= poolTokensAmount,
             "Not enough pool tokens are delegated"

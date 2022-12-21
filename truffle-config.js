@@ -137,7 +137,7 @@ module.exports = {
       mnemonic, SEED_ADDRESS_MUMBAI,
      ),
      gasPrice: 60e9, // 60 gwei
-     gasLimit: 4.2 * 1e6, // 4,200,000
+     gasLimit: 12 * 1e6, // 12,000,000
      timeoutBlocks: 200,
      network_id: 80001,
      confirmations: 0,
@@ -224,8 +224,8 @@ module.exports = {
        optimizer: {
          enabled: true,
          // enabled: false,
-         runs: 1
-         // runs: 200
+         // runs: 1
+         runs: 200
        },
       //  evmVersion: "byzantium"
       }
