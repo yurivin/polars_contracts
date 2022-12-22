@@ -144,6 +144,18 @@ module.exports = {
      skipDryRun: true,
      production: true
     },
+    matic: {
+     provider: () => new HDWalletProvider(
+      mnemonic, "https://polygon-rpc.com",
+     ),
+     gasPrice: 60e9, // 60 gwei
+     gasLimit: 12 * 1e6, // 12,000,000
+     timeoutBlocks: 200,
+     network_id: 137,
+     confirmations: 0,
+     skipDryRun: true,
+     production: true
+    },
     kovan: {
      provider: () => new HDWalletProvider(
       mnemonic, SEED_ADDRESS_KOVAN,
