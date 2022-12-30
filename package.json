@@ -44,9 +44,11 @@
     "verify:chainlinkem:rinkeby": "truffle run verify OraclePayableChainLinkEventManager --network rinkeby",
     "verify:chainlink:rinkeby": "truffle run verify ChainlinkAPIConsumer --network rinkeby",
     "deploy:factory:mumbai": "truffle migrate --network mumbai --f 8 --to 8",
-    "verify:factory:mumbai": "truffle run verify WhiteList SuiteFactory SuiteList PredictionCollateralFactory PredictionPoolFactory EventLifeCycleFactory PendingOrdersFactory LeverageFactory --network mumbai",
+    "verify:factory:mumbai": "truffle run verify WhiteList SuiteFactory SuiteList PredictionCollateralFactory PredictionPoolFactory PredictionPoolProxy EventLifeCycleFactory PendingOrdersFactory LeverageFactory --network mumbai",
+    "deploy:factory:matic": "truffle migrate --network matic --f 8 --to 8",
+    "verify:factory:matic": "truffle run verify WhiteList SuiteFactory SuiteList PredictionCollateralFactory PredictionPoolFactory PredictionPoolProxy EventLifeCycleFactory PendingOrdersFactory LeverageFactory --network matic",
     "deploy:factory:bsc_testnet": "truffle migrate --network bsc_testnet --f 8 --to 8",
-    "verify:factory:bsc_testnet": "truffle run verify WhiteList SuiteFactory SuiteList PredictionCollateralFactory PredictionPoolFactory EventLifeCycleFactory PendingOrdersFactory LeverageFactory --network bsc_testnet"
+    "verify:factory:bsc_testnet": "truffle run verify WhiteList SuiteFactory SuiteList PredictionCollateralFactory PredictionPoolFactory PredictionPoolProxy EventLifeCycleFactory PendingOrdersFactory LeverageFactory --network bsc_testnet"
   },
   "repository": {
     "type": "git",
