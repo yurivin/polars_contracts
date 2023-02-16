@@ -471,7 +471,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         uint256 collateralToSend = wmul(lpTokensAmount, lpRatio);
 
         require(
-            _collateralTokens - _borrowedCollateral >= collateralToSend,
+            sub(_collateralTokens, _borrowedCollateral) >= collateralToSend,
             "NOT ENOUGH FREE COLLATERAL IN THE CONTRACT"
         );
 
