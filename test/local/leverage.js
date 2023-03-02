@@ -234,6 +234,766 @@ const debug = 0;
       expect(await deployedLeverage._ordersCounter()).to.be.bignumber.equal('0');
     });
 
+    it("Leverage check remove liquidity after borrowed orders and start event", async () => {
+
+      const eventDuration = time.duration.seconds(5);
+
+      await addLiquidityToPrediction(50000);
+      await deployedEventLifeCycle.setLeverage(deployedLeverage.address, true);
+
+      expect(await deployedEventLifeCycle._useLeverage()).to.be.equals(true);
+      expect(await deployedEventLifeCycle._leverage()).to.be.equals(deployedLeverage.address);
+
+      const user = accounts[4];
+
+      const collateralAmount = mntob(20, multiplier);
+      const maxLossUserDefined = ntob(0.25);
+      const userSelectedEventId = new BN("100");
+
+      const liquidityAmount = mntob(2000, multiplier);
+      const thresholdAmount = mntob(1600, multiplier);
+
+      expect(await deployedLeverage.getLpRatio()).to.be.bignumber.equal(ntob(1));
+
+      if (debug) console.log("collateralAmount:  ", collateralAmount.toString())
+      if (debug) console.log("maxLossUserDefined:", maxLossUserDefined.toString())
+      if (debug) console.log("liquidityAmount:   ", liquidityAmount.toString())
+
+      await expectRevert(
+        deployedLeverage.createOrder(
+          collateralAmount,     // uint256 amount
+          true,                 // bool isWhite,
+          ntob(25),             // uint256 maxLoss,
+          userSelectedEventId,  // uint256 eventId
+        ), "MAX LOSS PERCENT IS VERY BIG"
+      );
+
+      await expectRevert(
+        deployedLeverage.createOrder(
+          collateralAmount,     // uint256 amount
+          true,                 // bool isWhite,
+          maxLossUserDefined,   // uint256 maxLoss,
+          userSelectedEventId,  // uint256 eventId
+          { from: user }
+        ), "NOT ENOUGH COLLATERAL IN USER ACCOUNT"
+      );
+
+      expect(await deployedCollateralToken.balanceOf(user)).to.be.bignumber.equal(new BN("0"));
+
+      await deployedCollateralToken.transfer(user, collateralAmount, { from: deployerAddress })
+
+      expect(await deployedCollateralToken.balanceOf(user)).to.be.bignumber.equal(collateralAmount);
+
+      await expectRevert(
+        deployedLeverage.createOrder(
+          collateralAmount,     // uint256 amount
+          true,                 // bool isWhite,
+          maxLossUserDefined,   // uint256 maxLoss,
+          userSelectedEventId,  // uint256 eventId
+          { from: user }
+        ), "NOT ENOUGHT DELEGATED TOKENS"
+      );
+
+      await deployedCollateralToken.approve(deployedLeverage.address, collateralAmount, { from: user })
+
+      expect(
+        await deployedCollateralToken.balanceOf(deployedLeverage.address)
+      ).to.be.bignumber.equal(new BN("0"));
+
+      await deployedCollateralToken.approve(deployedLeverage.address, liquidityAmount, { from: deployerAddress })
+
+      expect(
+        await deployedLeverage.allowedBorrowTotal()
+      ).to.be.bignumber.equal(new BN("0"));
+
+      expect(
+        await deployedLeverage.allowedBorrowLeft()
+      ).to.be.bignumber.equal(new BN("0"));
+
+      if (debug) console.log("======threshold0:   ", (await deployedLeverage.allowedBorrowTotal()).toString())
+      if (debug) console.log("======threshold0:   ", (await deployedLeverage.allowedBorrowLeft()).toString())
+
+      await expectRevert(
+        deployedLeverage.createOrder(
+          collateralAmount,     // uint256 amount
+          true,                 // bool isWhite,
+          maxLossUserDefined,   // uint256 maxLoss,
+          userSelectedEventId,  // uint256 eventId
+          { from: user }
+        ), "NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
+      );
+
+      await deployedLeverage.addLiquidity(liquidityAmount, { from: deployerAddress })
+
+      expect(
+        await deployedCollateralToken.balanceOf(deployedLeverage.address)
+      ).to.be.bignumber.equal(liquidityAmount);
+
+      expect(
+        await deployedLeverage.allowedBorrowTotal()
+      ).to.be.bignumber.equal(thresholdAmount);
+
+      expect(
+        await deployedLeverage.allowedBorrowLeft()
+      ).to.be.bignumber.equal(thresholdAmount);
+
+      if (debug) console.log("======threshold1:   ", (await deployedLeverage.allowedBorrowTotal()).toString())
+      if (debug) console.log("======threshold1:   ", (await deployedLeverage.allowedBorrowLeft()).toString())
+
+      await expectRevert(
+        deployedLeverage.createOrder(
+          collateralAmount,     // uint256 amount
+          true,                 // bool isWhite,
+          ntob(0),             // uint256 maxLoss,
+          userSelectedEventId,  // uint256 eventId
+          { from: user }
+        ), "MAX LOSS PERCENT CANNOT BE 0"
+      );
+
+      await deployedLeverage.approve(deployedLeverage.address, liquidityAmount);
+      await deployedLeverage.withdrawLiquidity(mntob(1800, multiplier))
+
+      expect(
+        await deployedLeverage.allowedBorrowTotal()
+      ).to.be.bignumber.equal(mntob(160, multiplier));
+
+      expect(
+        await deployedLeverage.allowedBorrowLeft()
+      ).to.be.bignumber.equal(mntob(160, multiplier));
+
+      await deployedLeverage.changeMaxUsageThreshold(ntob(0.1));
+
+      expect(
+        await deployedLeverage.allowedBorrowTotal()
+      ).to.be.bignumber.equal(mntob(20, multiplier));
+
+      expect(
+        await deployedLeverage.allowedBorrowLeft()
+      ).to.be.bignumber.equal(mntob(20, multiplier));
+
+      if (debug) console.log("======threshold1:   ", (await deployedLeverage.allowedBorrowTotal()).toString())
+      if (debug) console.log("======threshold1:   ", (await deployedLeverage.allowedBorrowLeft()).toString())
+
+      await expectRevert(
+        deployedLeverage.createOrder(
+          collateralAmount,     // uint256 amount
+          true,                 // bool isWhite,
+          ntob(0.49),   // uint256 maxLoss,
+          userSelectedEventId,  // uint256 eventId
+          { from: user }
+        ), "NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
+      );
+
+      await deployedLeverage.changeMaxUsageThreshold(ntob(0.8));
+
+      expect(
+        await deployedLeverage.allowedBorrowTotal()
+      ).to.be.bignumber.equal(mntob(160, multiplier));
+
+      expect(
+        await deployedLeverage.allowedBorrowLeft()
+      ).to.be.bignumber.equal(mntob(160, multiplier));
+
+      if (debug) console.log("======threshold1:   ", (await deployedLeverage.allowedBorrowTotal()).toString())
+      if (debug) console.log("======threshold1:   ", (await deployedLeverage.allowedBorrowLeft()).toString())
+
+      await deployedCollateralToken.approve(deployedLeverage.address, mntob(1800, multiplier));
+      await deployedLeverage.addLiquidity(mntob(1800, multiplier), { from: deployerAddress })
+
+      const _collateralTokensLiquidity = new bigDecimal(
+        (await deployedLeverage._collateralTokens()).toString()
+      );
+
+      await deployedLeverage.createOrder(
+        collateralAmount,     // uint256 amount
+        true,                 // bool isWhite,
+        maxLossUserDefined,   // uint256 maxLoss,
+        userSelectedEventId,  // uint256 eventId
+        { from: user }
+      )
+
+      // await deployedLeverage.withdrawLiquidity(liquidityAmount);
+      await expectRevert(
+        deployedLeverage.withdrawLiquidity(
+          liquidityAmount
+        ), "NOT ENOUGH FREE COLLATERAL IN THE CONTRACT"
+      );
+      // await deployedLeverage.addLiquidity(liquidityAmount, { from: deployerAddress })
+
+      const firstOrder = getLogs(await deployedLeverage._orders(0));
+
+      expect(firstOrder.orderer).to.be.equals(user);
+      expect(firstOrder.cross).to.be.bignumber.equal('5000000000000000000');
+      expect(firstOrder.ownAmount).to.be.bignumber.equal(mntob(20, multiplier));
+      expect(firstOrder.borrowedAmount).to.be.bignumber.equal(mntob(80, multiplier));
+      expect(firstOrder.isWhite).to.be.equals(true);
+      expect(firstOrder.eventId).to.be.bignumber.equal(userSelectedEventId);
+
+      if (debug) console.log("firstOrder:", firstOrder);
+      if (debug) console.log("_orders(0):", getLogs(await deployedLeverage._orders(0)))
+
+      expect(
+        await deployedLeverage._borrowedCollateral()
+      ).to.be.bignumber.equal(mntob(80, multiplier));
+
+      expect(
+        await deployedLeverage.allowedBorrowTotal()
+      ).to.be.bignumber.equal(thresholdAmount);
+
+      expect(
+        await deployedLeverage.allowedBorrowLeft()
+      ).to.be.bignumber.equal(thresholdAmount.sub(mntob(80, multiplier)));
+
+      if (debug) console.log("======threshold2:   ", (await deployedLeverage.allowedBorrowTotal()).toString())
+      if (debug) console.log("======threshold2:   ", (await deployedLeverage.allowedBorrowLeft()).toString())
+
+      if (debug) console.log("_ordersOfUser:", getLogs(await deployedLeverage._ordersOfUser(user, 0)))
+
+      expect((await deployedPendingOrders.ordersOfUser(deployedLeverage.address)).length).to.be.equals(0);
+
+      await expectRevert(
+        deployedLeverage.cancelOrder(0),
+        "NOT YOUR ORDER"
+      );
+
+      const cancelOrder = await deployedLeverage.cancelOrder(0, { from: user });
+
+      const { logs: cancelOrderLog } = cancelOrder;
+      const eventCount = 2;
+      assert.equal(cancelOrderLog.length, eventCount, `triggers must be ${eventCount} event`);
+      expectEvent.inLogs(cancelOrderLog, 'Transfer', {
+        from: deployedLeverage.address,
+        to: user,
+        value: collateralAmount
+      });
+
+      expectEvent.inLogs(cancelOrderLog, 'OrderCanceled', {
+        id: '0',
+        user: user
+      });
+
+      expect(
+        await deployedLeverage._borrowedCollateral()
+      ).to.be.bignumber.equal(new BN("0"));
+
+      expect(
+        await deployedLeverage.allowedBorrowTotal()
+      ).to.be.bignumber.equal(thresholdAmount);
+
+      expect(
+        await deployedLeverage.allowedBorrowLeft()
+      ).to.be.bignumber.equal(thresholdAmount);
+
+      expect(
+        await deployedCollateralToken.balanceOf(deployedLeverage.address)
+      ).to.be.bignumber.equal(liquidityAmount);
+
+      if (debug) console.log("======threshold3:   ", (await deployedLeverage.allowedBorrowTotal()).toString())
+      if (debug) console.log("======threshold3:   ", (await deployedLeverage.allowedBorrowLeft()).toString())
+
+      if (debug) console.log("balanceOf only liquidity:", ( await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
+
+      /*
+       * May be not need
+       */
+      /*
+      await deployedEventLifeCycle.addNewEvent(
+        new BN("50000000000000000"),  // uint256 priceChangePart,
+        new BN("1800"),               // uint256 eventStartTimeExpected,
+        new BN("1800"),               // uint256 eventEndTimeExpected,
+        'BNB-DOWN',                   // string calldata blackTeam,
+        'BNB-UP',                     // string calldata whiteTeam,
+        'Crypto',                     // string calldata eventType,
+        'BNB-USDT',                   // string calldata eventSeries,
+        'BNB-USDT',                   // string calldata eventName,
+        userSelectedEventId           // uint256 eventId
+      )
+
+      const queuedEvent = await deployedEventLifeCycle._queuedEvent();
+
+      expect(queuedEvent.priceChangePart).to.be.bignumber.equal(new BN("50000000000000000"));
+      expect(queuedEvent.eventStartTimeExpected).to.be.bignumber.equal(new BN("1800"));
+      expect(queuedEvent.eventEndTimeExpected).to.be.bignumber.equal(new BN("1800"));
+      expect(queuedEvent.blackTeam).to.be.equals('BNB-DOWN');
+      expect(queuedEvent.whiteTeam).to.be.equals('BNB-UP');
+      expect(queuedEvent.eventType).to.be.equals('Crypto');
+      expect(queuedEvent.eventSeries).to.be.equals('BNB-USDT');
+      expect(queuedEvent.eventName).to.be.equals('BNB-USDT');
+      expect(queuedEvent.eventId).to.be.bignumber.equal(userSelectedEventId);
+      */
+
+      await deployedLeverage.withdrawLiquidity(liquidityAmount);
+
+      await expectRevert(
+        deployedLeverage.createOrder(
+          collateralAmount,     // uint256 amount
+          true,                 // bool isWhite,
+          maxLossUserDefined,   // uint256 maxLoss,
+          userSelectedEventId,  // uint256 eventId
+          { from: user }
+        ), "NOT ENOUGHT DELEGATED TOKENS"
+      );
+
+      await deployedCollateralToken.approve(deployedLeverage.address, collateralAmount, { from: user })
+
+      await expectRevert(
+        deployedLeverage.createOrder(
+          collateralAmount,     // uint256 amount
+          true,                 // bool isWhite,
+          maxLossUserDefined,   // uint256 maxLoss,
+          userSelectedEventId,  // uint256 eventId
+          { from: user }
+        ), "NOT ENOUGH COLLATERAL BALANCE FOR BORROW"
+      );
+
+      await expectRevert(
+        deployedLeverage.addLiquidity(
+          liquidityAmount,
+          { from: deployerAddress }
+        ),
+        "NOT ENOUGH COLLATERAL TOKENS ARE DELEGATED"
+      );
+
+      await deployedCollateralToken.approve(
+        deployedLeverage.address,
+        liquidityAmount,
+        { from: deployerAddress }
+      )
+
+      await deployedLeverage.addLiquidity(liquidityAmount, { from: deployerAddress })
+
+      /*
+      await deployedLeverage.createOrder(
+        collateralAmount,     // uint256 amount
+        true,                 // bool isWhite,
+        maxLossUserDefined,   // uint256 maxLoss,
+        userSelectedEventId,  // uint256 eventId
+        { from: user }
+      )
+      */
+
+      await addAndStartEvent(
+        userSelectedEventId,
+        time.duration.seconds(5),
+        new BN("50000000000000000")
+      );
+
+      await time.increase(eventDuration);
+
+      if (debug) console.log("START EVENT");
+
+      if (debug) console.log("totalBorrowed      :   ", getLogs(await deployedLeverage._events(userSelectedEventId)));
+      if (debug) console.log("_borrowedCollateral:   ", (await deployedLeverage._borrowedCollateral()).toString());
+
+      expect(
+        await deployedLeverage._borrowedCollateral()
+      ).to.be.bignumber.equal(new BN("0"));
+
+      expect(
+        await deployedLeverage.allowedBorrowTotal()
+      ).to.be.bignumber.equal(thresholdAmount);
+
+      expect(
+        await deployedLeverage.allowedBorrowLeft()
+      ).to.be.bignumber.equal(thresholdAmount);
+
+      await deployedEventLifeCycle.endEvent(
+        new BN("0")
+      );
+      if (debug) console.log("END EVENT");
+
+      await deployedLeverage.withdrawCollateral(accounts[4]);
+
+      if (debug) console.log("======threshold4:   ", (await deployedLeverage.allowedBorrowTotal()).toString())
+      if (debug) console.log("======threshold4:   ", (await deployedLeverage.allowedBorrowLeft()).toString())
+
+      const events = [
+        { id: "102", priceChangePart: '50000000000000000', duration: 5, result: '1' },
+        { id: "103", priceChangePart: '50000000000000000', duration: 15, result: '0' },
+        { id: "104", priceChangePart: '50000000000000000', duration: 25, result: '-1' },
+        { id: "105", priceChangePart: '50000000000000000', duration: 35, result: '1' }
+      ]
+
+      const orders = [                                                                                // ifWhiteWin | ifBlackWin
+        { user: 1, ownAmount: 160, isWhite: false, maxLoss: 0.13, eventId: '102' }, // 2,6 -- 416     - 139,2       |
+        { user: 1, ownAmount: 22,  isWhite: true,  maxLoss: 0.24, eventId: '102' }, // 4,8 -- 105,6   -
+        { user: 3, ownAmount: 100, isWhite: false, maxLoss: 0.37, eventId: '102' }, // 7,4 -- 740     - 63          |
+        { user: 4, ownAmount: 56,  isWhite: true,  maxLoss: 0.42, eventId: '102' }, // 8,4 -- 470,4   -
+        { user: 4, ownAmount: 55,  isWhite: false, maxLoss: 0.11, eventId: '102' }, // 2,2 -- 121     - 48,95       |
+        { user: 5, ownAmount: 34,  isWhite: true,  maxLoss: 0.09, eventId: '102' }, // 1,8 -- 61,2    -
+
+        { user: 4, ownAmount: 34,  isWhite: true,  maxLoss: 0.09, eventId: '103' }, // 1,8 -- 61,2
+        { user: 3, ownAmount: 340, isWhite: false, maxLoss: 0.09, eventId: '104' }, // 1,8 -- 612
+      ]
+
+      const nowEvent = events[0];
+
+      const currentOrders = orders.filter(el => el.eventId === nowEvent.id)
+
+      const ownAmountSum = currentOrders
+        .map((el) => { return mntob(el.ownAmount, multiplier); })
+        .reduce((prev, curr) => prev.add(curr), new BN('0'));
+
+      if (debug) console.log(`ownAmountSum  :`, ownAmountSum.toString())
+
+      const calcTotal = (el) => {
+        const maxLossBD = new bigDecimal(el.maxLoss.toString(10)).multiply(new bigDecimal(BONE.toString(10)));
+        const crossBD = maxLossBD.divide(new bigDecimal(nowEvent.priceChangePart), 18)
+        const ownAmountBD = new bigDecimal(mntob(el.ownAmount, multiplier).toString());
+        const totalAmountBD = ownAmountBD.multiply(crossBD);
+        el.borrowedAmount = new BN(totalAmountBD.subtract(ownAmountBD).getValue());
+        el.total = new BN(totalAmountBD.getValue());
+        return el;
+      }
+
+      const totalAmountSum = currentOrders
+        .map(calcTotal)
+        .reduce((prev, curr) => prev.add(curr.total), new BN('0'));
+
+      const crossAmountSum = totalAmountSum.sub(ownAmountSum);
+
+      if (debug) console.log(`totalAmountSum:`, totalAmountSum.toString())
+      if (debug) console.log(`crossAmountSum:`, crossAmountSum.toString())
+
+      let _borrowedCollateral = new BN("0");
+      let allowedBorrowLeft = await deployedLeverage.allowedBorrowLeft();
+
+      for (const i of [...Array(currentOrders.length).keys()]) {
+        await leverageCreateOrder(
+          accounts[currentOrders[i].user],                // user
+          mntob(currentOrders[i].ownAmount, multiplier),  // collateralAmount
+          currentOrders[i].isWhite,                       // isWhite
+          ntob(currentOrders[i].maxLoss),                 // maxLoss
+          currentOrders[i].eventId                        // eventId
+        );
+
+        const total = new BN(new bigDecimal(ntob(currentOrders[i].maxLoss).toString()).divide(
+          new bigDecimal(ntob(0.05).toString())
+        ).multiply(
+          new bigDecimal(mntob(currentOrders[i].ownAmount, multiplier).toString())
+        ).getValue())
+
+        if (debug) console.log(`ownAmnt: `, mntob(currentOrders[i].ownAmount, multiplier).toString())
+        if (debug) console.log(`total:   `, total.toString())
+        const borrowed = total.sub(mntob(currentOrders[i].ownAmount, multiplier))
+        allowedBorrowLeft = allowedBorrowLeft.sub(borrowed)
+        if (debug) console.log(`borrowed:`, borrowed.toString())
+
+        _borrowedCollateral = _borrowedCollateral.add(borrowed)
+
+        expect(
+          await deployedLeverage._borrowedCollateral()
+        ).to.be.bignumber.equal(_borrowedCollateral);
+
+        expect(
+          await deployedLeverage.allowedBorrowTotal()
+        ).to.be.bignumber.equal(thresholdAmount);
+
+        expect(
+          await deployedLeverage.allowedBorrowLeft()
+        ).to.be.bignumber.equal(allowedBorrowLeft);
+
+        if (debug) console.log(`======threshold5-${i}:   `, (await deployedLeverage.allowedBorrowTotal()).toString())
+        if (debug) console.log(`======threshold5-${i}:   `, (await deployedLeverage.allowedBorrowLeft()).toString())
+      }
+
+      expect(
+        await deployedCollateralToken.balanceOf(deployedLeverage.address)
+      ).to.be.bignumber.equal(ownAmountSum.add(liquidityAmount));
+
+      if (debug) console.log("balanceOf after post orders:", ( await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
+
+      const pendingOrdersCountOfLeverageBeforeStart = await deployedPendingOrders.ordersOfUser(deployedLeverage.address);
+
+      if (debug) console.log("ordersOfLeverageBeforeStart:", pendingOrdersCountOfLeverageBeforeStart)
+
+      expect(pendingOrdersCountOfLeverageBeforeStart.length).to.equal(0);
+
+      if (debug) console.log("_events:", getLogs(await deployedLeverage._events(nowEvent.id)))
+
+      await expectRevert(
+        addAndStartEvent(
+          nowEvent.id,
+          time.duration.seconds(nowEvent.duration),
+          ntob(0.03)
+        ),
+        "WRONG PRICE CHANGE PART"
+      );
+
+      await addAndStartEvent(
+        nowEvent.id,
+        time.duration.seconds(nowEvent.duration),
+        nowEvent.priceChangePart
+      );
+
+      if (debug) console.log("balanceOf              :   ", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString());
+      if (debug) console.log("_collateralTokens      :   ", (await deployedLeverage._collateralTokens()).toString());
+      if (debug) console.log("_lpTokens              :   ", (await deployedLeverage._lpTokens()).toString());
+
+      await expectRevert(
+        deployedLeverage.withdrawLiquidity(mntob(2001, multiplier)),
+        "NOT ENOUGH LIQUIDITY TOKENS ON THE USER BALANCE"
+      );
+
+      await expectRevert(
+        deployedLeverage.withdrawLiquidity(mntob(2000, multiplier)),
+        "NOT ENOUGH FREE COLLATERAL IN THE CONTRACT"
+      );
+      await deployedLeverage.withdrawLiquidity(mntob(512.8, multiplier))
+      await deployedCollateralToken.approve(deployedLeverage.address, mntob(512.8, multiplier));
+      await deployedLeverage.addLiquidity(mntob(512.8, multiplier), { from: deployerAddress })
+
+      await expectRevert(
+        deployedLeverage.cancelOrder(1),
+        "NOT YOUR ORDER"
+      );
+
+      await expectRevert(
+        deployedLeverage.cancelOrder(1, { from: accounts[1]}),
+        "EVENT IN PROGRESS"
+      );
+
+      const pendingOrdersCountOfLeverageAfterStart = await deployedPendingOrders.ordersOfUser(deployedLeverage.address);
+
+      if (debug) console.log(
+        "ordersOfLeverageAfterStart:",
+        pendingOrdersCountOfLeverageAfterStart.map((el) => { return el.toString()})
+      )
+      expect(pendingOrdersCountOfLeverageAfterStart.length).to.equal(2);
+
+      expect(
+        await deployedCollateralToken.balanceOf(deployedLeverage.address)
+      ).to.be.bignumber.equal(
+        ownAmountSum.add(liquidityAmount).sub(totalAmountSum)
+      );
+
+      expect(
+        await deployedCollateralToken.balanceOf(deployedLeverage.address)
+      ).to.be.bignumber.equal(liquidityAmount.sub(crossAmountSum));
+
+      if (debug) console.log("balanceOf after start event:", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
+
+      await time.increase(eventDuration);
+
+      const endEvent = await deployedEventLifeCycle.endEvent(
+        nowEvent.result
+      );
+
+      if (debug) console.log("_events:", (await deployedLeverage._events(nowEvent.id)).orders)
+      if (debug) console.log("_events:", getLogs(await deployedLeverage._events(nowEvent.id)))
+
+      if (debug) console.log("balanceOf:", ( await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
+
+      if (debug) console.log("_whitePrice:", ( await deployedPredictionPool._whitePrice()).toString())
+      if (debug) console.log("_blackPrice:", ( await deployedPredictionPool._blackPrice()).toString())
+
+      const resultAmountSum = currentOrders
+        .map(calcTotal)
+        .reduce(
+          (prev, curr) => prev.add(curr.total), new BN('0')
+        );
+
+      if (debug) console.log("resultAmountSum:", resultAmountSum.toString())
+
+      const resultAmountSumBlack = currentOrders
+        .filter(el => el.isWhite === false)
+        .map(calcTotal)
+        .reduce((prev, curr) => prev.add(curr.total), new BN('0'));
+
+      const resultAmountSumWhite = currentOrders
+        .filter(el => el.isWhite === true)
+        .map(calcTotal)
+        .reduce(
+          (prev, curr) => prev.add(curr.total), new BN('0')
+        );
+
+      const eventInfo = await deployedLeverage._events(nowEvent.id);
+      if (debug) console.log("resultAmountSumBlack:", resultAmountSumBlack.toString())
+      if (debug) console.log("resultAmountSumWhite:", resultAmountSumWhite.toString())
+      if (debug) console.log("balanceOf after end event  :", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
+      if (debug) console.log("_events:", getLogs(eventInfo))
+
+      expect(eventInfo.blackCollateral).to.be.bignumber.equal(resultAmountSumBlack);
+      expect(eventInfo.whiteCollateral).to.be.bignumber.equal(resultAmountSumWhite);
+
+      // ? resultAmountSum
+
+      const fee = new bigDecimal(
+        (await deployedPredictionPool.FEE()).toString())
+          .divide(new bigDecimal(BONE.toString(10)), 18);
+
+      const whitePriceBefore = new bigDecimal(eventInfo.whitePriceBefore.toString())
+          .divide(new bigDecimal(BONE.toString(10)), 18);
+      const blackPriceBefore = new bigDecimal(eventInfo.blackPriceBefore.toString())
+        .divide(new bigDecimal(BONE.toString(10)), 18);
+
+      const whitePriceAfter = new bigDecimal(eventInfo.whitePriceAfter.toString())
+          .divide(new bigDecimal(BONE.toString(10)), 18);
+      const blackPriceAfter = new bigDecimal(eventInfo.blackPriceAfter.toString())
+        .divide(new bigDecimal(BONE.toString(10)), 18);
+
+      const xxx = (el) => {
+        const amountBDb = new bigDecimal(el.total);
+        const f = amountBDb.multiply(fee);
+        const a = amountBDb.subtract(f);
+        const n1 = a.divide(el.isWhite ? whitePriceBefore : blackPriceBefore, 18).round();
+        const x = n1.multiply(el.isWhite ? whitePriceAfter : blackPriceAfter)
+        const aFeeBD = x.multiply(fee).round();
+        const collateralToSend = x.subtract(aFeeBD).round();
+        el.collateralToSend = new BN(collateralToSend.getValue());
+        return el;
+      }
+
+      const tmpUsers = currentOrders
+        .map((el) => {
+          return el.user;
+        })
+      const users = tmpUsers.filter(function(item, pos) {
+        return tmpUsers.indexOf(item) == pos;
+      })
+
+      if (debug) console.log("users:", users);
+
+      const withdraw = async (account) => {
+
+        if (debug) console.log("account :", account);
+        if (debug) console.log("currentOrders :", currentOrders.filter(el => el.user === account).map(el => getLogs(el)));
+
+        const expectedWithdrawAmountByUser = currentOrders
+          .filter(el => el.user === account)
+          .map(calcTotal)
+          .map(xxx)
+          .reduce(
+            (prev, curr) => prev.add(curr.collateralToSend.sub(curr.borrowedAmount)), new BN('0')
+          );
+        if (debug) console.log("expectedWithdrawAmountByUser :", expectedWithdrawAmountByUser.toString());
+
+        const userBalanceBeforeWithdraw = await deployedCollateralToken.balanceOf(accounts[account]);
+
+        if (debug) console.log("balanceOf before withdraw  :", account, userBalanceBeforeWithdraw.toString());
+
+        if (debug) console.log("balanceOf before withdraw  :", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
+
+        const resWithdrawCollateral = await deployedLeverage.withdrawCollateral(accounts[account]);
+
+        const { logs: resWithdrawCollateralLog } = resWithdrawCollateral;
+        const withdrawEventCount = 2;
+        assert.equal(
+          resWithdrawCollateralLog.length,
+          withdrawEventCount,
+          `triggers must be ${withdrawEventCount} event`
+        );
+
+        expectEvent.inLogs(resWithdrawCollateralLog, 'CollateralWithdrew', {
+          amount: expectedWithdrawAmountByUser, /* Temporary disabled */
+          user: accounts[account],
+          caller: deployerAddress
+        });
+
+        expectEvent.inLogs(resWithdrawCollateralLog, 'Transfer', {
+          from: deployedLeverage.address,
+          to: accounts[account],
+          value: expectedWithdrawAmountByUser /* Temporary disabled */
+        });
+
+        const userBalanceAfterWithdraw = await deployedCollateralToken.balanceOf(accounts[account]);
+        expect(userBalanceAfterWithdraw).to.be.bignumber.equal(
+          userBalanceBeforeWithdraw.add(expectedWithdrawAmountByUser)
+        );
+        if (debug) console.log("balanceOf after withdraw   :", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
+        if (debug) console.log("balanceOf after withdraw   :", account, userBalanceAfterWithdraw.toString())
+      }
+
+      for (let user of users) {
+        if (debug) console.log("user:", user, accounts[user]);
+        const ordersOfUser = await deployedLeverage.ordersOfUser(accounts[user]);
+
+
+        expect(ordersOfUser.length).to.equal(currentOrders.filter(el => el.user === user).length);
+        if (debug) console.log(`ordersOfUser[${user}]:`, ordersOfUser.map(el => el.toString()));
+        await withdraw(user);
+      }
+
+      await expectRevert(
+        deployedLeverage.withdrawCollateral(accounts[0]),
+        "ACCOUNT HAS NO ORDERS"
+      );
+
+      if (debug) console.log("balanceOf after all done   :", (await deployedCollateralToken.balanceOf(deployedLeverage.address)).toString())
+
+      const _ordersCounter = await deployedLeverage._ordersCounter();
+      if (debug) console.log("_ordersCounter:", _ordersCounter.toNumber());
+
+      for (let orderId of [...Array(_ordersCounter.toNumber()).keys()]) {
+        const order = await deployedLeverage._orders(orderId);
+        if (debug) console.log("_orders:", getLogs(order));
+        expect(order.orderer).to.equal('0x0000000000000000000000000000000000000000');
+        expect(order.cross).to.be.bignumber.equal(new BN("0"));
+        expect(order.ownAmount).to.be.bignumber.equal(new BN("0"));
+        expect(order.borrowedAmount).to.be.bignumber.equal(new BN("0"));
+        expect(order.isWhite).to.equal(false);
+        expect(order.eventId).to.be.bignumber.equal(new BN("0"));
+        expect(order.isPending).to.equal(false);
+      }
+
+      const _leverageFee = await deployedLeverage._leverageFee();
+
+      const leverageFee = new bigDecimal(_borrowedCollateral.toString()).multiply(
+        new bigDecimal(_leverageFee.toString())
+          .divide(new bigDecimal(BONE.toString(10)), 18)
+      )
+
+      if (debug) console.log("totalBorrowed:", _borrowedCollateral.toString());
+      if (debug) console.log("_leverageFee:", _leverageFee.toString());
+      if (debug) console.log("leverageFee:", leverageFee.getValue());
+
+      const _lpTokens = new bigDecimal(
+        (await deployedLeverage._lpTokens()).toString()
+      );
+
+      const expectedLpRatio = new BN(_collateralTokensLiquidity
+        .add(leverageFee)
+        .divide(_lpTokens, 18)
+        .multiply(new bigDecimal(BONE.toString(10)))
+        .getValue());
+
+      if (debug) console.log("expectedLpRatio:", expectedLpRatio.toString());
+
+      const _eventsById = await deployedLeverage._events(nowEvent.id);
+      if (debug) console.log("_eventsById:", getLogs(_eventsById));
+
+      if (debug) console.log("totalBorrowed      :   ", getLogs(await deployedLeverage._events(userSelectedEventId)));
+      if (debug) console.log("_borrowedCollateral:   ", (await deployedLeverage._borrowedCollateral()).toString());
+
+      if (debug) console.log("getLpRatio:   ", (await deployedLeverage.getLpRatio()).toString());
+      expect(await deployedLeverage.getLpRatio()).to.be.bignumber.equal(expectedLpRatio);
+
+      expect(
+        await deployedLeverage._borrowedCollateral()
+      ).to.be.bignumber.equal(new BN("0"));
+
+      const _maxUsageThreshold = await deployedLeverage._maxUsageThreshold();
+
+      const expectedAllowedBorrowTotal = new BN(_collateralTokensLiquidity
+        .add(leverageFee)
+        .multiply(new bigDecimal(_maxUsageThreshold.toString()).divide(new bigDecimal(BONE.toString(10)), 18))
+        .getValue()
+      );
+
+      if (debug) console.log("expectedAllowedBorrowTotal:", expectedAllowedBorrowTotal.toString());
+
+      expect(
+        await deployedLeverage.allowedBorrowTotal()
+      ).to.be.bignumber.equal(expectedAllowedBorrowTotal);
+
+      expect(
+        await deployedLeverage.allowedBorrowLeft()
+      ).to.be.bignumber.equal(expectedAllowedBorrowTotal);
+
+      if (debug) console.log("======threshold4:   ", (await deployedLeverage.allowedBorrowTotal()).toString())
+      if (debug) console.log("======threshold4:   ", (await deployedLeverage.allowedBorrowLeft()).toString())
+    });
+
     it("Leverage createOrder", async () => {
 
       const eventDuration = time.duration.seconds(5);
@@ -679,7 +1439,7 @@ const debug = 0;
 
       await expectRevert(
         deployedLeverage.withdrawLiquidity(mntob(2000, multiplier)),
-        "NOT ENOUGH COLLATERAL IN THE CONTRACT"
+        "NOT ENOUGH FREE COLLATERAL IN THE CONTRACT"
       );
       await deployedLeverage.withdrawLiquidity(mntob(512.8, multiplier))
       await deployedCollateralToken.approve(deployedLeverage.address, mntob(512.8, multiplier));

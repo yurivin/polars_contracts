@@ -1603,7 +1603,7 @@ const commissionForCreateSuite = 1; // 1$
 
         await expectRevert(
           deployedLeverage.withdrawLiquidity(mntob(2000, multiplier)),
-          "NOT ENOUGH COLLATERAL IN THE CONTRACT"
+          "NOT ENOUGH FREE COLLATERAL IN THE CONTRACT"
         );
         await deployedLeverage.withdrawLiquidity(mntob(512.8, multiplier))
         await deployedCollateralToken.approve(deployedLeverage.address, mntob(512.8, multiplier));
