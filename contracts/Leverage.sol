@@ -251,7 +251,15 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     function cancelOrder(uint256 orderId) external {
         Order memory order = _orders[orderId];
         require(msg.sender == order.orderer, "NOT YOUR ORDER");
+        cancelOrderInternal(orderId, order);
+    }
 
+    function cancelOrderByAdmin(uint256 orderId) external onlyOwner {
+        Order memory order = _orders[orderId];
+        cancelOrderInternal(orderId, order);
+    }
+
+    function cancelOrderInternal(uint256 orderId, Order memory order) internal {
         require(order.isPending, "ORDER HAS ALREADY BEEN CANCELED");
 
         LeverageEvent memory eventById = _events[order.eventId];
