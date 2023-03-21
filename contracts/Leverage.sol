@@ -76,6 +76,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     }
 
     event OrderCreated(
+        uint256 orderId,
         address user,
         uint256 maxLoss,
         uint256 priceChangePart,
@@ -220,8 +221,6 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
 
         _ordersOfUser[msg.sender].push(_ordersCounter);
 
-        _ordersCounter = add(_ordersCounter, 1);
-
         _borrowedCollateral = add(_borrowedCollateral, userBorrowAmount);
 
         /* solhint-disable prettier/prettier */
@@ -231,6 +230,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         /* solhint-enable prettier/prettier */
 
         emit OrderCreated(
+            _ordersCounter,
             msg.sender,
             maxLoss,
             _priceChangePart,
@@ -245,6 +245,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
             _collateralToken.transferFrom(msg.sender, address(this), amount),
             "Error transfer from"
         );
+        _ordersCounter = add(_ordersCounter, 1);
     }
 
     function cancelOrder(uint256 orderId) external {
