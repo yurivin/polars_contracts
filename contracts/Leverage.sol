@@ -165,9 +165,9 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     }
 
     function allowedBorrowLeft() public view returns (uint256) {
-        uint256 allowedBorrowTotal = allowedBorrowTotal();
-        if(allowedBorrowTotal > _borrowedCollateral) {
-            return sub(allowedBorrowTotal, _borrowedCollateral);
+        uint256 allowedTotal = allowedBorrowTotal();
+        if(allowedTotal > _borrowedCollateral) {
+            return sub(allowedTotal, _borrowedCollateral);
         } else {
             return 0;
         }
