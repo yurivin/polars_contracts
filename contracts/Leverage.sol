@@ -165,9 +165,9 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
     }
 
     function allowedBorrowLeft() public view returns (uint256) {
-        uint256 allowedBorrowTotal = allowedBorrowTotal();
-        if(allowedBorrowTotal > _borrowedCollateral) {
-            return sub(allowedBorrowTotal, _borrowedCollateral);
+        uint256 allowedTotal = allowedBorrowTotal();
+        if(allowedTotal > _borrowedCollateral) {
+            return sub(allowedTotal, _borrowedCollateral);
         } else {
             return 0;
         }
@@ -179,6 +179,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         uint256 maxLoss,
         uint256 eventId
     ) external {
+        require(!_events[eventId].isStarted, "EVENT ALREADY STARTED");
         require(maxLoss != 0, "MAX LOSS PERCENT CANNOT BE 0");
         require(maxLoss <= _maxLossThreshold, "MAX LOSS PERCENT IS VERY BIG");
 
