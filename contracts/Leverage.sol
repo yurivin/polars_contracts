@@ -179,6 +179,7 @@ contract Leverage is DSMath, Ownable, LeverageTokenERC20 {
         uint256 maxLoss,
         uint256 eventId
     ) external {
+        require(!_events[eventId].isStarted, "EVENT ALREADY STARTED");
         require(maxLoss != 0, "MAX LOSS PERCENT CANNOT BE 0");
         require(maxLoss <= _maxLossThreshold, "MAX LOSS PERCENT IS VERY BIG");
 
