@@ -82,10 +82,14 @@ contract PredictionCollateralization is iPredictionCollateralization {
             "Not enough Collateral tokens on Collateralization contract balance"
         );
 
-        if (tokensAmount > 0) {
-            _collateralToken.transfer(destination, tokensAmount);
-        }
         emit WithdrawCollateral(tokensAmount);
+
+        if (tokensAmount > 0) {
+            require(
+                _collateralToken.transfer(destination, tokensAmount),
+                "Error transfer"
+            );
+        }
     }
 
     function buySeparately(
@@ -104,7 +108,10 @@ contract PredictionCollateralization is iPredictionCollateralization {
             paymentToken.allowance(destination, address(this)) >= payment,
             "Not enough delegated tokens"
         );
-        paymentToken.transferFrom(destination, address(this), payment);
+        require(
+            paymentToken.transferFrom(destination, address(this), payment),
+            "Error transfer from"
+        );
         TokenTemplate token = TokenTemplate(tokenAddress);
 
         token.mintTokens(destination, tokensAmount);
@@ -133,7 +140,10 @@ contract PredictionCollateralization is iPredictionCollateralization {
         );
         token.burnFrom(destination, tokensAmount);
 
-        _collateralToken.transfer(destination, payment);
+        require(
+            _collateralToken.transfer(destination, payment),
+            "Error transfer"
+        );
     }
 
     /*
